@@ -23,12 +23,33 @@
   /* TOPBAR */
   #topbar {
     position:fixed; top:0; left:0; right:0; z-index:1000;
-    background:#1a1a1a; display:flex; align-items:center; gap:10px;
-    padding:0 20px; height:52px; border-bottom:2px solid var(--accent); white-space:nowrap;
+    background:#1a1a1a; border-bottom:2px solid var(--accent);
+    display:flex; flex-direction:column;
+  }
+  #topbar-main {
+    display:flex; align-items:center; gap:10px;
+    padding:0 16px; height:52px; white-space:nowrap; overflow:hidden;
   }
   #topbar h1 { font-family:'Bebas Neue',sans-serif; font-size:26px; color:#fff; letter-spacing:2px; flex-shrink:0; }
+  #topbar-controls {
+    display:flex; align-items:center; gap:8px; flex-wrap:nowrap;
+    overflow:hidden; flex:1;
+  }
+  /* Hamburger for small screens */
+  #topbar-menu-btn {
+    display:none; background:none; border:none; color:#aaa;
+    font-size:20px; cursor:pointer; padding:4px 6px; margin-left:auto; flex-shrink:0;
+  }
+  /* Drawer for small screens */
+  #topbar-drawer {
+    display:none; flex-direction:column; gap:8px;
+    background:#1a1a1a; padding:10px 16px 14px;
+    border-top:1px solid #2a2a2a;
+  }
+  #topbar-drawer.open { display:flex; }
+  .drawer-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
   #topbar label { color:#aaa; font-size:12px; flex-shrink:0; }
-  #zoom-slider { -webkit-appearance:none; width:120px; height:4px; border-radius:2px; background:#444; outline:none; cursor:pointer; flex-shrink:0; }
+  #zoom-slider { -webkit-appearance:none; width:100px; height:4px; border-radius:2px; background:#444; outline:none; cursor:pointer; flex-shrink:0; }
   #zoom-slider::-webkit-slider-thumb { -webkit-appearance:none; width:14px; height:14px; border-radius:50%; background:var(--accent); cursor:pointer; }
   #zoom-val { color:#aaa; font-size:11px; min-width:34px; flex-shrink:0; }
   .topbar-key-btn {
@@ -43,9 +64,17 @@
   .topbar-btn:hover { background:#c1121f; }
   .topbar-btn.secondary { background:#2a2a2a; border:1px solid #444; }
   .topbar-btn.secondary:hover { background:#3a3a3a; }
+  /* Responsive breakpoint */
+  @media (max-width:900px){
+    #topbar-controls { display:none; }
+    #topbar-menu-btn { display:block; }
+  }
+  @media (min-width:901px){
+    #topbar-drawer { display:none !important; }
+  }
 
   /* CANVAS */
-  #canvas-wrapper { margin-top:92px; padding:24px 24px 80px; transform-origin:top left; transition:transform .15s ease; width:max-content; min-width:100vw; }
+  #canvas-wrapper { margin-top:92px; /* adjusted by JS */ padding:24px 24px 80px; transform-origin:top left; transition:transform .15s ease; width:max-content; min-width:100vw; }
   #columns-container { display:flex; gap:24px; align-items:flex-start; min-height:80vh; }
   #add-col-btn {
     width:160px; min-width:160px; height:100px; border:2px dashed var(--border); border-radius:10px;
@@ -169,7 +198,7 @@
   .key-modal-hint a { color:var(--accent2); }
 
   /* FILTER BAR */
-  #filter-bar { position:fixed; top:52px; left:0; right:0; z-index:999; background:#1a1a1a; border-bottom:1px solid #2a2a2a; padding:6px 20px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; min-height:40px; }
+  #filter-bar { position:fixed; top:52px; /* adjusted by JS */ left:0; right:0; z-index:999; background:#1a1a1a; border-bottom:1px solid #2a2a2a; padding:6px 20px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; min-height:40px; }
   .filter-group { display:flex; align-items:center; gap:5px; }
   .filter-icon { display:flex; align-items:center; flex-shrink:0; opacity:.85; }
   .filter-chip {
@@ -252,22 +281,44 @@
 </head>
 <body>
 <div id="topbar">
-  <h1>📺 MediaBoard</h1>
-  <button class="topbar-key-btn" id="tmdb-btn" onclick="openKeyModal('tmdb')">
-    <span class="dot" id="tmdb-dot"></span> TMDB
-  </button>
-  <button class="topbar-key-btn" id="igdb-btn" onclick="openKeyModal('igdb')">
-    <span class="dot" id="igdb-dot"></span> IGDB
-  </button>
-  <label>Zoom:</label>
-  <input type="range" id="zoom-slider" min="40" max="100" value="100" step="5">
-  <span id="zoom-val">100%</span>
-  <button class="topbar-btn secondary" onclick="exportJSON()" title="Exportar JSON">📤 Exportar</button>
-  <button class="topbar-btn secondary" onclick="importJSON()" title="Importar JSON">📥 Importar</button>
-  <input type="file" id="import-file-input" accept=".json" style="display:none" onchange="handleImportFile(this)">
-  <div id="sync-status" class="sync-status" title="Estado sincronización Supabase">
-    <span id="sync-dot" class="sync-dot"></span>
-    <span id="sync-label">Sincronizando…</span>
+  <div id="topbar-main">
+    <h1>📺 MediaBoard</h1>
+    <div id="topbar-controls">
+      <button class="topbar-key-btn" id="tmdb-btn" onclick="openKeyModal('tmdb')">
+        <span class="dot" id="tmdb-dot"></span> TMDB
+      </button>
+      <button class="topbar-key-btn" id="igdb-btn" onclick="openKeyModal('igdb')">
+        <span class="dot" id="igdb-dot"></span> IGDB
+      </button>
+      <label>Zoom:</label>
+      <input type="range" id="zoom-slider" min="40" max="100" value="100" step="5">
+      <span id="zoom-val">100%</span>
+      <button class="topbar-btn secondary" onclick="exportJSON()">📤</button>
+      <button class="topbar-btn secondary" onclick="importJSON()">📥</button>
+      <input type="file" id="import-file-input" accept=".json" style="display:none" onchange="handleImportFile(this)">
+    </div>
+    <div id="sync-status" class="sync-status" title="Estado sincronización Supabase">
+      <span id="sync-dot" class="sync-dot"></span>
+      <span id="sync-label">…</span>
+    </div>
+    <button id="topbar-menu-btn" onclick="toggleTopbarDrawer()">☰</button>
+  </div>
+  <div id="topbar-drawer">
+    <div class="drawer-row">
+      <button class="topbar-key-btn" onclick="openKeyModal('tmdb')">
+        <span class="dot" id="tmdb-dot2"></span> TMDB
+      </button>
+      <button class="topbar-key-btn" onclick="openKeyModal('igdb')">
+        <span class="dot" id="igdb-dot2"></span> IGDB
+      </button>
+    </div>
+    <div class="drawer-row">
+      <label>Zoom:</label>
+      <input type="range" id="zoom-slider2" min="40" max="100" value="100" step="5">
+      <span id="zoom-val2">100%</span>
+      <button class="topbar-btn secondary" onclick="exportJSON()">📤 Exportar</button>
+      <button class="topbar-btn secondary" onclick="importJSON()">📥 Importar</button>
+    </div>
   </div>
 </div>
 <div id="filter-bar"></div>
@@ -323,6 +374,35 @@ const DEMO_DATA = {
   attack:   [{id:1429,title:'',name:'Attack on Titan',media_type:'tv',poster_path:'/hTP1DtLGFamjfu8WqjnuScW1lKc.jpg',first_air_date:'2013-04-07'}],
 };
 
+
+// ── TOPBAR RESPONSIVE ─────────────────────────────────────────────────────
+function toggleTopbarDrawer(){
+  const drawer=document.getElementById('topbar-drawer');
+  drawer.classList.toggle('open');
+  adjustCanvasTop();
+}
+function adjustCanvasTop(){
+  const tb=document.getElementById('topbar');
+  const h=tb.getBoundingClientRect().height;
+  const canvas=document.getElementById('canvas-wrapper');
+  const filterBar=document.getElementById('filter-bar');
+  if(filterBar) filterBar.style.top=h+'px';
+  const filterH=filterBar?filterBar.getBoundingClientRect().height:40;
+  if(canvas) canvas.style.marginTop=(h+filterH)+'px';
+}
+// Sync secondary zoom slider
+document.addEventListener('DOMContentLoaded',()=>{
+  const s2=document.getElementById('zoom-slider2');
+  s2?.addEventListener('input',function(){
+    document.getElementById('zoom-val2').textContent=this.value+'%';
+    document.getElementById('zoom-val').textContent=this.value+'%';
+    document.getElementById('zoom-slider').value=this.value;
+    document.getElementById('canvas-wrapper').style.transform=`scale(${this.value/100})`;
+  });
+  // Update dots in drawer too
+  window.addEventListener('resize', adjustCanvasTop);
+  adjustCanvasTop();
+});
 // ── KEYS ──────────────────────────────────────────────────────────────────
 function getKey(type='tmdb'){ return localStorage.getItem('mediaboard_key_'+type)||''; }
 function setKey(type,v){ localStorage.setItem('mediaboard_key_'+type,v); updateDots(); }
@@ -624,36 +704,36 @@ function igdbClientId(){
 
 async function igdbQuery(endpoint, body){
   const token=await getIGDBToken();
-  if(!token){
-    showToast('❌ No se pudo obtener token IGDB. Verifica Client ID y Secret.');
-    return null;
-  }
-  // IGDB blocks CORS from file:// — route through a CORS proxy
+  if(!token) return null;
+
   const IGDB_URL='https://api.igdb.com/v4/'+endpoint;
-  const PROXY='https://cors-proxy.fringe.zone/';
-  // Try direct first (works if served from HTTP), then via proxy
-  const urls=[IGDB_URL, PROXY+IGDB_URL];
-  for(const url of urls){
+  // Multiple CORS proxies to try in order
+  const proxies=[
+    null,                          // direct (works on localhost)
+    'https://corsproxy.io/?',      // reliable, supports POST
+    'https://api.allorigins.win/raw?url=', // fallback
+  ];
+
+  for(const proxy of proxies){
     try{
-      const ctrl=new AbortController(); setTimeout(()=>ctrl.abort(),6000);
-      const r=await fetch(url,{
-        method:'POST',
-        headers:{
-          'Client-ID':igdbClientId(),
-          'Authorization':'Bearer '+token,
-          'Content-Type':'text/plain',
-          ...(url.includes(PROXY)?{'X-Requested-With':'XMLHttpRequest'}:{})
-        },
-        body,
-        signal:ctrl.signal
-      });
+      const url=proxy ? proxy+encodeURIComponent(IGDB_URL) : IGDB_URL;
+      const ctrl=new AbortController(); setTimeout(()=>ctrl.abort(),8000);
+      const headers={
+        'Client-ID':igdbClientId(),
+        'Authorization':'Bearer '+token,
+        'Content-Type':'text/plain',
+      };
+      const fetchOpts={ method:'POST', headers, body, signal:ctrl.signal };
+      // allorigins only supports GET — skip for it
+      if(proxy&&proxy.includes('allorigins')) continue;
+      const r=await fetch(url, fetchOpts);
       if(r.ok){
         const data=await r.json();
         return data;
       }
     }catch(e){ continue; }
   }
-  showToast('❌ Error conectando con IGDB. Puede ser CORS desde archivo local.');
+  showToast('❌ IGDB no responde. Prueba desde enol.github.io/mediaboard');
   return null;
 }
 
@@ -810,6 +890,7 @@ function getAllGenres(){
 }
 
 function renderFilterBar(){
+  setTimeout(adjustCanvasTop, 50);
   const bar=document.getElementById('filter-bar');
   if(!bar) return;
   const genres=getAllGenres();
