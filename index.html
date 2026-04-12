@@ -267,6 +267,30 @@
     border:1.5px solid #ddd;
   }
 
+
+  /* Repo config modal */
+  .repo-tabs { display:flex; gap:0; margin-bottom:20px; border-bottom:2px solid var(--border); }
+  .repo-tab {
+    padding:8px 20px; font-size:13px; font-weight:600; font-family:'DM Sans',sans-serif;
+    cursor:pointer; border:none; background:none; color:var(--text-muted);
+    border-bottom:2px solid transparent; margin-bottom:-2px; transition:all .15s;
+  }
+  .repo-tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+  .repo-tab-content { display:none; }
+  .repo-tab-content.active { display:block; }
+  .repo-section-title { font-family:'Bebas Neue',sans-serif; font-size:16px; letter-spacing:1px; margin-bottom:12px; color:var(--text); }
+  .sql-block {
+    background:#1a1a1a; color:#a8ff78; font-family:monospace; font-size:11px;
+    padding:12px 14px; border-radius:6px; margin:8px 0 12px;
+    white-space:pre; overflow-x:auto; line-height:1.6;
+  }
+  .copy-btn {
+    background:#2a2a2a; color:#aaa; border:1px solid #444; border-radius:4px;
+    padding:3px 10px; font-size:11px; cursor:pointer; font-family:'DM Sans',sans-serif;
+    transition:background .15s; float:right; margin-top:-4px;
+  }
+  .copy-btn:hover { background:#3a3a3a; color:#fff; }
+
   /* GAME CARD extras */
   .hltb-times { display:flex; flex-direction:column; gap:1px; margin-top:3px; }
   .hltb-row { display:flex; justify-content:space-between; align-items:center; font-size:9px; line-height:1.4; }
@@ -290,6 +314,7 @@
       <button class="topbar-key-btn" id="igdb-btn" onclick="openKeyModal('igdb')">
         <span class="dot" id="igdb-dot"></span> IGDB
       </button>
+      <button class="topbar-btn secondary" onclick="openRepoConfig()" style="font-size:11px;padding:5px 10px;">⚙ Repo Config</button>
       <label>Zoom:</label>
       <input type="range" id="zoom-slider" min="40" max="100" value="100" step="5">
       <span id="zoom-val">100%</span>
@@ -311,6 +336,7 @@
       <button class="topbar-key-btn" onclick="openKeyModal('igdb')">
         <span class="dot" id="igdb-dot2"></span> IGDB
       </button>
+      <button class="topbar-btn secondary" onclick="openRepoConfig()" style="font-size:11px;padding:5px 10px;">⚙ Repo Config</button>
     </div>
     <div class="drawer-row">
       <label>Zoom:</label>
@@ -814,6 +840,87 @@ async function pickGame(colId,sectionId,idx,inTop10){
     const sec=col.sections.find(s=>s.id===sectionId); if(sec) sec.cards.push(card);
   }
   closeModal(); renderAll();
+}
+
+
+// ── REPO CONFIG MODAL ─────────────────────────────────────────────────────
+function openRepoConfig(){
+  showModal(`
+    <button class="modal-close-x" onclick="closeModal()">✕</button>
+    <h2>⚙ Configuración del repositorio</h2>
+    <div class="repo-tabs">
+      <button class="repo-tab active" onclick="switchRepoTab('supabase',this)">🗄 Supabase</button>
+      <button class="repo-tab" onclick="switchRepoTab('github',this)">🐙 GitHub Pages</button>
+    </div>
+
+    <div id="repo-tab-supabase" class="repo-tab-content active">
+      <div class="repo-section-title">1 · Crear cuenta y proyecto</div>
+      <div class="key-steps">
+        <div class="key-step"><span class="key-step-num">1</span><div class="key-step-body">Ve a <a href="https://supabase.com" target="_blank">supabase.com</a> → <strong>Start your project</strong> → regístrate con GitHub o email.</div></div>
+        <div class="key-step"><span class="key-step-num">2</span><div class="key-step-body">Pulsa <strong>New project</strong>.<br>· Nombre: <code>mediaboard</code><br>· Region: <em>West EU (Ireland)</em> para España<br>· Contraseña: cualquiera, guárdala<br>Pulsa <strong>Create new project</strong> y espera ~1 min.</div></div>
+        <div class="key-step"><span class="key-step-num">3</span><div class="key-step-body">Ve a <strong>Settings → API</strong> y copia tu <strong>Project URL</strong> y <strong>Publishable key</strong>. Intégralas en el código donde están las constantes <code>SB_URL</code> y <code>SB_KEY</code>.</div></div>
+      </div>
+
+      <div class="repo-section-title">2 · Crear la tabla</div>
+      <div class="key-steps">
+        <div class="key-step"><span class="key-step-num">4</span><div class="key-step-body">En tu proyecto Supabase ve a <strong>SQL Editor</strong> (menú izquierdo) → <strong>New query</strong>.<br>Pega y ejecuta este SQL:</div></div>
+      </div>
+      <div style="position:relative">
+        <button class="copy-btn" onclick="copySql()">Copiar</button>
+        <div class="sql-block" id="sql-block">CREATE TABLE mediaboard (
+  id text PRIMARY KEY,
+  data jsonb NOT NULL,
+  updated_at timestamptz DEFAULT now()
+);
+
+ALTER TABLE mediaboard ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "allow_all" ON mediaboard
+  FOR ALL USING (true) WITH CHECK (true);</div>
+      </div>
+      <div class="key-steps">
+        <div class="key-step"><span class="key-step-num">5</span><div class="key-step-body">Pulsa <strong>Run</strong>. Verás un mensaje de éxito. La tabla ya está lista para sincronizar tu MediaBoard.</div></div>
+      </div>
+      <p style="font-size:12px;color:#888;margin-top:8px">✓ Una vez hecho esto, el indicador de sync en el topbar pasará a verde al cargar la página.</p>
+    </div>
+
+    <div id="repo-tab-github" class="repo-tab-content">
+      <div class="repo-section-title">1 · Crear repositorio</div>
+      <div class="key-steps">
+        <div class="key-step"><span class="key-step-num">1</span><div class="key-step-body">Ve a <a href="https://github.com" target="_blank">github.com</a> → regístrate o inicia sesión.</div></div>
+        <div class="key-step"><span class="key-step-num">2</span><div class="key-step-body">Pulsa <strong>+</strong> → <strong>New repository</strong>.<br>· Nombre: <code>mediaboard</code><br>· Visibilidad: <strong>Public</strong> (obligatorio para Pages gratis)<br>Pulsa <strong>Create repository</strong>.</div></div>
+        <div class="key-step"><span class="key-step-num">3</span><div class="key-step-body">En el repositorio pulsa <strong>Add file → Upload files</strong>.<br>Arrastra el archivo <code>index.html</code> y pulsa <strong>Commit changes</strong>.</div></div>
+      </div>
+
+      <div class="repo-section-title">2 · Activar GitHub Pages</div>
+      <div class="key-steps">
+        <div class="key-step"><span class="key-step-num">4</span><div class="key-step-body">Ve a <strong>Settings</strong> (pestaña del repositorio) → <strong>Pages</strong>.<br>· Source: <em>Deploy from a branch</em><br>· Branch: <code>main</code> · Carpeta: <code>/ (root)</code><br>Pulsa <strong>Save</strong>.</div></div>
+        <div class="key-step"><span class="key-step-num">5</span><div class="key-step-body">Espera 1-2 minutos y recarga Settings → Pages. Aparecerá tu URL:<br><code>https://tuusuario.github.io/mediaboard/</code></div></div>
+      </div>
+
+      <div class="repo-section-title">3 · Actualizar el archivo</div>
+      <div class="key-steps">
+        <div class="key-step"><span class="key-step-num">6</span><div class="key-step-body">Para subir versiones nuevas: repositorio → <strong>Add file → Upload files</strong> → arrastra el nuevo <code>index.html</code> → <strong>Commit changes</strong>.<br><em>Nota: el editor web (lápiz) congela con archivos grandes. Usa siempre Upload.</em></div></div>
+      </div>
+      <p style="font-size:12px;color:#888;margin-top:8px">✓ Con Supabase configurado, cualquier dispositivo que abra tu URL verá siempre el mismo tablero sincronizado.</p>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-primary" onclick="closeModal()">Entendido</button>
+    </div>
+  `, 'wide');
+}
+
+function switchRepoTab(name, btn){
+  document.querySelectorAll('.repo-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.repo-tab-content').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('repo-tab-'+name)?.classList.add('active');
+}
+
+function copySql(){
+  const sql=document.getElementById('sql-block')?.textContent||'';
+  navigator.clipboard?.writeText(sql).then(()=>showToast('SQL copiado ✓')).catch(()=>showToast('Copia el texto manualmente'));
 }
 
 // ── FILTER STATE ──────────────────────────────────────────────────────────
