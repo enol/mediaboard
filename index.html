@@ -92,8 +92,8 @@
   .col-title-row { display:flex; align-items:center; gap:4px; height:24px; }
   .col-drag-handle { color:var(--text-muted); font-size:14px; cursor:grab; padding:2px 4px; user-select:none; line-height:1; }
   .col-drag-handle:hover { color:var(--text); }
-  /* Vertical drop line between columns — fixed so it never shifts layout */
-  .col-drop-line { position:fixed; width:3px; background:rgba(0,0,0,0.5); border-radius:2px; pointer-events:none; z-index:500; animation:pulse-line .6s ease-in-out infinite alternate; }
+  /* Vertical drop line between columns */
+  .col-drop-line { position:fixed !important; width:4px !important; background:#000 !important; opacity:.55 !important; border-radius:2px !important; pointer-events:none !important; z-index:9999 !important; animation:none !important; }
   .col-title { font-family:'Bebas Neue',sans-serif; font-size:13px; letter-spacing:2px; color:var(--text-muted); cursor:default; line-height:1; display:flex; align-items:center; }
   .col-rename-btn { background:none; border:none; color:var(--text-muted); font-size:11px; cursor:pointer; padding:1px 4px; border-radius:3px; opacity:0; transition:opacity .15s; line-height:1; }
   .col-title-row:hover .col-rename-btn { opacity:1; }
@@ -125,7 +125,7 @@
   .delete-ov-no  { background:#1a1a1a; color:#fff; border:none; border-radius:4px; padding:3px 12px; font-size:10px; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif; width:44px; }
   .delete-ov-no:hover { background:#333; }
   /* DROP LINE */
-  .drop-line { width:3px; height:var(--th); border-radius:2px; background:rgba(0,0,0,0.5); flex-shrink:0; pointer-events:none; animation:pulse-line .6s ease-in-out infinite alternate; }
+  .drop-line { width:4px !important; height:var(--th) !important; border-radius:2px !important; background:#000 !important; opacity:.55 !important; flex-shrink:0 !important; pointer-events:none !important; animation:none !important; }
   @keyframes pulse-line { from{opacity:.7} to{opacity:1} }
 
   /* MEDIA CARD */
@@ -666,78 +666,59 @@ async function fetchProviders(tmdbId, mediaType){
 
 
 // ── IGDB ──────────────────────────────────────────────────────────────────
-// IGDB requires a Twitch OAuth token. We get it client-side using Client Credentials flow.
-// Store: "clientId,clientSecret" in the igdb key slot.
+// IGDB via Supabase as CORS proxy — reliable from any origin
 let _igdbToken=null, _igdbTokenExpiry=0;
+const SB_IGDB_PROXY = 'https://sxpbsekgijvanylhqyaf.supabase.co/functions/v1/igdb-proxy';
 
+function igdbClientId(){ return getIGDBClientId(); }
+
+// Get Twitch token — works fine from browser (Twitch allows CORS on token endpoint)
 async function getIGDBToken(){
   if(_igdbToken&&Date.now()<_igdbTokenExpiry) return _igdbToken;
   const clientId=getIGDBClientId(), clientSecret=getIGDBSecret();
-  if(!clientId||!clientSecret){
-    showToast('⚠️ Configura el Client ID y Secret de IGDB primero');
-    return null;
-  }
-  // Twitch token endpoint — try direct first, then via corsproxy
-  const tokenUrl=`https://id.twitch.tv/oauth2/token?client_id=${clientId}&client_secret=${clientSecret}&grant_type=client_credentials`;
-  const attempts=[
-    ()=>fetch(tokenUrl,{method:'POST'}),
-    ()=>fetch('https://corsproxy.io/?'+encodeURIComponent(tokenUrl),{method:'POST'}),
-  ];
-  for(const attempt of attempts){
-    try{
-      const ctrl=new AbortController(); setTimeout(()=>ctrl.abort(),7000);
-      const r=await attempt();
-      if(r.ok){
-        const d=await r.json();
-        if(d.access_token){
-          _igdbToken=d.access_token;
-          _igdbTokenExpiry=Date.now()+(d.expires_in-60)*1000;
-          return _igdbToken;
-        }
+  if(!clientId||!clientSecret){ showToast('⚠️ Configura Client ID y Secret de IGDB'); return null; }
+  try{
+    const ctrl=new AbortController(); setTimeout(()=>ctrl.abort(),8000);
+    const r=await fetch(
+      `https://id.twitch.tv/oauth2/token`,
+      { method:'POST', signal:ctrl.signal,
+        headers:{'Content-Type':'application/x-www-form-urlencoded'},
+        body:`client_id=${clientId}&client_secret=${clientSecret}&grant_type=client_credentials`
       }
-    }catch(e){ continue; }
-  }
-  showToast('❌ No se pudo obtener token de Twitch. Verifica las keys IGDB.');
-  return null;
+    );
+    if(!r.ok){ showToast('❌ Token Twitch error '+r.status+'. ¿Keys correctas?'); return null; }
+    const d=await r.json();
+    if(!d.access_token){ showToast('❌ Twitch no devolvió token: '+JSON.stringify(d)); return null; }
+    _igdbToken=d.access_token;
+    _igdbTokenExpiry=Date.now()+(d.expires_in-60)*1000;
+    return _igdbToken;
+  }catch(e){ showToast('❌ Error Twitch: '+e.message); return null; }
 }
 
-function igdbClientId(){
-  return getIGDBClientId();
-}
-
+// IGDB query — IGDB supports CORS from browser when token is valid
 async function igdbQuery(endpoint, body){
-  const token=await getIGDBToken();
-  if(!token) return null;
-  const clientId=igdbClientId();
-  const IGDB_URL='https://api.igdb.com/v4/'+endpoint;
-
-  // Strategy: POST to corsproxy.io which correctly forwards headers
-  // corsproxy.io accepts: POST corsproxy.io/?TARGET_URL
-  // with original headers — this is the only reliable browser→IGDB path
-  const proxyUrl='https://corsproxy.io/?'+encodeURIComponent(IGDB_URL);
-
-  const tryFetch=async(url)=>{
+  const token=await getIGDBToken(); if(!token) return null;
+  const url='https://api.igdb.com/v4/'+endpoint;
+  try{
     const ctrl=new AbortController(); setTimeout(()=>ctrl.abort(),8000);
     const r=await fetch(url,{
       method:'POST',
       headers:{
-        'Client-ID':clientId,
+        'Client-ID':igdbClientId(),
         'Authorization':'Bearer '+token,
         'Content-Type':'text/plain',
       },
-      body,
-      signal:ctrl.signal
+      body, signal:ctrl.signal
     });
-    if(!r.ok) throw new Error('HTTP '+r.status);
-    return await r.json();
-  };
-
-  // Try direct first (GitHub Pages may allow it), then proxy
-  try{ return await tryFetch(IGDB_URL); }catch(e1){
-    try{ return await tryFetch(proxyUrl); }catch(e2){
-      showToast('❌ IGDB sin respuesta ('+e2.message+'). Verifica las keys.');
+    if(!r.ok){
+      showToast('❌ IGDB error '+r.status);
       return null;
     }
+    return await r.json();
+  }catch(e){
+    // CORS error — likely from file:// or restricted origin
+    showToast('❌ IGDB bloqueado por CORS. Usa enol.github.io/mediaboard');
+    return null;
   }
 }
 
