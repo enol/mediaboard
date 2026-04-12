@@ -1,0 +1,1427 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MediaBoard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#f0ede8; --bg2:#e8e4de; --card-bg:#fff;
+    --text:#1a1a1a; --text-muted:#888;
+    --accent:#e63946; --accent2:#457b9d;
+    --border:#d5d0c9; --divider:#e8e4de;
+    --shadow:0 2px 12px rgba(0,0,0,.10); --shadow-lg:0 8px 32px rgba(0,0,0,.16);
+    --tw:108px; --th:161px; --gap:10px;
+    --cols:5;
+    --col-w:calc(var(--cols)*var(--tw) + (var(--cols) - 1)*var(--gap) + 2*14px);
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); font-family:'DM Sans',sans-serif; color:var(--text); min-height:100vh; }
+
+  /* TOPBAR */
+  #topbar {
+    position:fixed; top:0; left:0; right:0; z-index:1000;
+    background:#1a1a1a; display:flex; align-items:center; gap:10px;
+    padding:0 20px; height:52px; border-bottom:2px solid var(--accent); white-space:nowrap;
+  }
+  #topbar h1 { font-family:'Bebas Neue',sans-serif; font-size:26px; color:#fff; letter-spacing:2px; flex-shrink:0; }
+  #topbar label { color:#aaa; font-size:12px; flex-shrink:0; }
+  #zoom-slider { -webkit-appearance:none; width:120px; height:4px; border-radius:2px; background:#444; outline:none; cursor:pointer; flex-shrink:0; }
+  #zoom-slider::-webkit-slider-thumb { -webkit-appearance:none; width:14px; height:14px; border-radius:50%; background:var(--accent); cursor:pointer; }
+  #zoom-val { color:#aaa; font-size:11px; min-width:34px; flex-shrink:0; }
+  .topbar-key-btn {
+    background:#2a2a2a; border:1px solid #555; color:#ccc; font-size:11px;
+    padding:5px 10px; border-radius:4px; cursor:pointer; font-family:'DM Sans',sans-serif;
+    display:flex; align-items:center; gap:5px; transition:background .15s; flex-shrink:0;
+  }
+  .topbar-key-btn:hover { background:#383838; }
+  .topbar-key-btn .dot { width:7px; height:7px; border-radius:50%; background:#555; flex-shrink:0; }
+  .topbar-key-btn.active .dot { background:#4caf50; }
+  .topbar-btn { background:var(--accent); color:#fff; border:none; padding:6px 12px; border-radius:4px; font-size:12px; font-family:'DM Sans',sans-serif; font-weight:600; cursor:pointer; flex-shrink:0; transition:background .2s; }
+  .topbar-btn:hover { background:#c1121f; }
+  .topbar-btn.secondary { background:#2a2a2a; border:1px solid #444; }
+  .topbar-btn.secondary:hover { background:#3a3a3a; }
+
+  /* CANVAS */
+  #canvas-wrapper { margin-top:92px; padding:24px 24px 80px; transform-origin:top left; transition:transform .15s ease; width:max-content; min-width:100vw; }
+  #columns-container { display:flex; gap:24px; align-items:flex-start; min-height:80vh; }
+  #add-col-btn {
+    width:160px; min-width:160px; height:100px; border:2px dashed var(--border); border-radius:10px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    cursor:pointer; color:var(--text-muted); font-size:24px; background:rgba(255,255,255,.5);
+    transition:all .15s; flex-shrink:0; align-self:flex-start; margin-top:32px;
+  }
+  #add-col-btn:hover { border-color:var(--accent); background:#fff5f5; color:var(--accent); }
+  #add-col-btn small { font-size:11px; margin-top:4px; font-weight:600; }
+
+  /* COLUMN */
+  .genre-column { width:var(--col-w); min-width:var(--col-w); flex-shrink:0; position:relative; }
+  .genre-column.dragging-col { opacity:.4; pointer-events:none; }
+  .col-header { display:flex; align-items:center; justify-content:space-between; padding:0 2px 8px; user-select:none; }
+  .col-title-row { display:flex; align-items:center; gap:4px; height:24px; }
+  .col-drag-handle { color:var(--text-muted); font-size:14px; cursor:grab; padding:2px 4px; user-select:none; line-height:1; }
+  .col-drag-handle:hover { color:var(--text); }
+  /* Vertical drop line between columns — fixed so it never shifts layout */
+  .col-drop-line { position:fixed; width:3px; top:0; bottom:0; background:var(--accent); border-radius:2px; box-shadow:0 0 8px rgba(230,57,70,.7); animation:pulse-line .6s ease-in-out infinite alternate; pointer-events:none; z-index:500; }
+  .col-title { font-family:'Bebas Neue',sans-serif; font-size:13px; letter-spacing:2px; color:var(--text-muted); cursor:default; line-height:1; display:flex; align-items:center; }
+  .col-rename-btn { background:none; border:none; color:var(--text-muted); font-size:11px; cursor:pointer; padding:1px 4px; border-radius:3px; opacity:0; transition:opacity .15s; line-height:1; }
+  .col-title-row:hover .col-rename-btn { opacity:1; }
+  .col-rename-btn:hover { background:var(--bg2); color:var(--text); }
+  .col-delete-btn { background:none; border:none; color:var(--text-muted); font-size:16px; cursor:pointer; padding:2px 6px; border-radius:4px; transition:color .15s; }
+  .col-delete-btn:hover { color:var(--accent); }
+
+  /* COMBINED CARD */
+  .combined-card { background:var(--card-bg); border-radius:10px; box-shadow:var(--shadow); border:1px solid var(--border); overflow:hidden; }
+  .top10-section { padding:16px 14px 14px; }
+  .top10-title { font-family:'Bebas Neue',sans-serif; font-size:20px; letter-spacing:1px; color:var(--text); margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+  .top10-title .badge { background:var(--accent); color:#fff; font-size:10px; padding:2px 7px; border-radius:3px; letter-spacing:1px; font-family:'DM Sans',sans-serif; font-weight:700; }
+  .card-divider { height:1px; background:var(--divider); margin:0 14px; }
+  .genre-section { padding:14px; border-radius:0 0 10px 10px; transition:background .2s; }
+  .genre-section-title { font-family:'Bebas Neue',sans-serif; font-size:14px; letter-spacing:1px; color:var(--text-muted); margin-bottom:10px; }
+
+  /* Card grid — strict 5-col, add-btn always on its own row */
+  .card-row { display:flex; gap:var(--gap); flex-wrap:nowrap; }
+  .card-row + .card-row { margin-top:var(--gap); }
+  /* The add-btn row is always a separate element with just the + */
+  .add-row { margin-top:var(--gap); }
+
+
+  /* Inline delete overlay */
+  .delete-overlay { position:absolute; inset:0; background:rgba(220,30,30,.55); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; z-index:20; }
+  .delete-ov-label { color:#fff; font-size:10px; font-weight:700; letter-spacing:.3px; text-shadow:0 1px 3px rgba(0,0,0,.5); }
+  .delete-ov-yes { background:#fff; color:#e63946; border:1.5px solid #e63946; border-radius:4px; padding:3px 12px; font-size:10px; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif; width:44px; }
+  .delete-ov-yes:hover { background:#fff0f1; }
+  .delete-ov-no  { background:#1a1a1a; color:#fff; border:none; border-radius:4px; padding:3px 12px; font-size:10px; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif; width:44px; }
+  .delete-ov-no:hover { background:#333; }
+  /* DROP LINE */
+  .drop-line { width:3px; min-height:var(--th); border-radius:2px; background:var(--accent); flex-shrink:0; box-shadow:0 0 6px rgba(230,57,70,.6); pointer-events:none; animation:pulse-line .6s ease-in-out infinite alternate; }
+  @keyframes pulse-line { from{opacity:.7} to{opacity:1} }
+
+  /* MEDIA CARD */
+  .media-card { position:relative; width:var(--tw); flex-shrink:0; cursor:grab; user-select:none; }
+  .media-card.dragging { opacity:.35; cursor:grabbing; }
+  .media-card.pending { opacity:.5; }
+  .card-img-wrap { position:relative; width:var(--tw); height:var(--th); }
+  .card-img-wrap img { width:100%; height:100%; object-fit:cover; border-radius:6px; display:block; background:var(--bg2); }
+  .rank-num { position:absolute; bottom:4px; left:5px; font-family:'Bebas Neue',sans-serif; font-size:40px; color:rgba(255,255,255,.92); text-shadow:0 2px 10px rgba(0,0,0,.8),0 0 2px rgba(0,0,0,.6); line-height:1; pointer-events:none; z-index:2; }
+  .pending-label { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); text-align:center; font-size:9px; font-weight:700; color:#1a1a1a; background:rgba(255,255,255,.88); padding:3px 7px; border-radius:4px; letter-spacing:.5px; pointer-events:none; white-space:nowrap; }
+  .media-card .card-info { margin-top:6px; }
+  .media-card .card-title { font-size:13px; font-weight:700; line-height:1.3; color:var(--text); word-break:break-word; white-space:normal; }
+  .media-card .card-meta { font-size:12px; color:var(--text); font-weight:400; margin-bottom:4px; }
+
+  /* Platform pills */
+  .card-platforms { display:flex; flex-wrap:wrap; gap:2px; align-items:center; }
+  .platform-pill { display:inline-flex; align-items:center; gap:2px; background:#f2efea; border:1px solid var(--border); border-radius:3px; padding:1px 4px; font-size:9px; font-weight:600; color:#555; cursor:pointer; transition:background .1s; max-width:var(--tw); overflow:hidden; }
+  .platform-pill img { width:11px; height:11px; object-fit:contain; flex-shrink:0; }
+  .platform-pill span { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .platform-pill:hover { background:#e8e4de; }
+  .add-platform-pill { display:inline-flex; align-items:center; background:none; border:1px dashed var(--border); border-radius:3px; padding:1px 5px; font-size:9px; color:var(--text-muted); cursor:pointer; transition:border-color .1s,color .1s; }
+  .add-platform-pill:hover { border-color:var(--accent2); color:var(--accent2); }
+  .pending-btn { display:inline-flex; align-items:center; justify-content:center; width:16px; height:16px; border-radius:50%; background:#ddd; cursor:pointer; border:none; flex-shrink:0; padding:0; transition:background .15s; }
+  .pending-btn:hover { background:#bbb; }
+  .pending-btn.active { background:#aaa; }
+  .pending-btn svg { width:10px; height:10px; display:block; }
+
+  /* Delete btn */
+  .media-card .delete-btn { position:absolute; top:-6px; right:-6px; width:20px; height:20px; background:#fff; border:1.5px solid var(--border); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:10px; color:#333; cursor:pointer; box-shadow:0 1px 4px rgba(0,0,0,.18); transition:background .15s,color .15s; z-index:10; }
+  .media-card .delete-btn:hover { background:var(--accent); color:#fff; border-color:var(--accent); }
+
+  /* Add card */
+  .add-card { width:var(--tw); height:var(--th); border:2px dashed var(--border); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; color:var(--text-muted); font-size:20px; flex-shrink:0; transition:border-color .15s,background .15s; user-select:none; }
+  .add-card:hover { border-color:var(--accent); background:#fff5f5; color:var(--accent); }
+  .add-card span { font-size:9px; margin-top:3px; font-weight:600; }
+
+  /* MODALS */
+  .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:2000; display:flex; align-items:center; justify-content:center; padding:16px; }
+  .modal-box { background:#fff; border-radius:12px; padding:24px; width:100%; max-width:440px; box-shadow:var(--shadow-lg); animation:modalIn .18s ease; position:relative; }
+  @keyframes modalIn { from{transform:scale(.92);opacity:0} to{transform:scale(1);opacity:1} }
+  .modal-box h2 { font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:1px; margin-bottom:14px; }
+  .modal-close-x { position:absolute; top:14px; right:16px; background:none; border:none; font-size:20px; color:var(--text-muted); cursor:pointer; }
+  .modal-close-x:hover { color:var(--text); }
+  .modal-input { width:100%; border:1.5px solid var(--border); border-radius:6px; padding:9px 12px; font-size:14px; font-family:'DM Sans',sans-serif; outline:none; }
+  .modal-input:focus { border-color:var(--accent2); }
+  .search-results { margin-top:10px; max-height:280px; overflow-y:auto; display:flex; flex-direction:column; gap:6px; }
+  .search-result-item { display:flex; align-items:center; gap:10px; padding:7px 10px; border-radius:6px; border:1.5px solid var(--border); cursor:pointer; transition:background .1s,border-color .1s; }
+  .search-result-item:hover { background:#f5f0eb; border-color:var(--accent2); }
+  .search-result-item img { width:36px; height:54px; object-fit:cover; border-radius:4px; background:var(--bg2); flex-shrink:0; }
+  .result-title { font-weight:600; font-size:13px; }
+  .result-meta { font-size:11px; color:var(--text-muted); }
+  .streaming-picker { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+  .streaming-option { display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer; padding:6px 8px; border-radius:6px; border:2px solid transparent; transition:border-color .15s,background .15s; }
+  .streaming-option.selected { border-color:var(--accent2); background:#f0f6ff; }
+  .streaming-option img { width:28px; height:28px; object-fit:contain; border-radius:4px; }
+  .streaming-option span { font-size:9px; font-weight:600; color:var(--text-muted); text-align:center; }
+  .modal-actions { display:flex; gap:8px; margin-top:16px; justify-content:flex-end; }
+  .btn-primary { background:var(--accent); color:#fff; border:none; padding:8px 20px; border-radius:6px; font-size:13px; font-family:'DM Sans',sans-serif; font-weight:700; cursor:pointer; }
+  .btn-primary:hover { background:#c1121f; }
+  .btn-secondary { background:#1a1a1a; color:#fff; border:none; padding:8px 20px; border-radius:6px; font-size:13px; font-family:'DM Sans',sans-serif; font-weight:700; cursor:pointer; }
+  .btn-secondary:hover { background:#333; }
+  .btn-cancel { background:none; border:1.5px solid var(--border); color:var(--text); padding:8px 16px; border-radius:6px; font-size:13px; font-family:'DM Sans',sans-serif; cursor:pointer; }
+  .btn-cancel:hover { background:var(--bg2); }
+  .confirm-modal { text-align:center; }
+  .confirm-modal p { margin-bottom:16px; font-size:15px; }
+  .spinner { display:inline-block; width:16px; height:16px; border:2px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin .7s linear infinite; margin-left:8px; vertical-align:middle; }
+  @keyframes spin { to{transform:rotate(360deg)} }
+  .no-results { color:var(--text-muted); font-size:13px; text-align:center; padding:12px 0; }
+  .key-modal-hint { font-size:12px; color:var(--text-muted); margin-top:6px; line-height:1.5; }
+  .key-modal-hint a { color:var(--accent2); }
+
+  /* FILTER BAR */
+  #filter-bar { position:fixed; top:52px; left:0; right:0; z-index:999; background:#1a1a1a; border-bottom:1px solid #2a2a2a; padding:6px 20px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; min-height:40px; }
+  .filter-group { display:flex; align-items:center; gap:5px; }
+  .filter-icon { display:flex; align-items:center; flex-shrink:0; opacity:.85; }
+  .filter-chip {
+    background:#2a2a2a; color:#aaa; border:1px solid #3a3a3a;
+    padding:3px 10px; border-radius:20px; font-size:11px; font-family:'DM Sans',sans-serif;
+    cursor:pointer; transition:all .15s; white-space:nowrap;
+  }
+  .filter-chip:hover { background:#333; color:#ddd; }
+  .filter-chip.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+  .filter-clear {
+    background:#fff; color:var(--accent); border:1.5px solid var(--accent);
+    padding:3px 12px; border-radius:20px; font-size:11px; font-family:'DM Sans',sans-serif;
+    font-weight:700; cursor:pointer; transition:all .15s; margin-left:auto; white-space:nowrap;
+  }
+  .filter-clear:hover { background:#fff0f1; }
+  /* Dimmed cards when filter active */
+  .media-card.filter-dim { opacity:.10; pointer-events:none; }
+
+
+
+  /* Supabase sync indicator */
+  .sync-status { display:flex; align-items:center; gap:5px; flex-shrink:0; margin-left:6px; }
+  .sync-dot { width:8px; height:8px; border-radius:50%; background:#555; flex-shrink:0; transition:background .3s; }
+  .sync-dot.synced  { background:#4caf50; }
+  .sync-dot.syncing { background:#f59e0b; animation:pulse-sync .8s ease-in-out infinite alternate; }
+  .sync-dot.error   { background:#e63946; }
+  #sync-label { color:#888; font-size:11px; }
+  @keyframes pulse-sync { from{opacity:.5} to{opacity:1} }
+
+  /* Key modal steps */
+  .key-steps { margin-bottom:16px; display:flex; flex-direction:column; }
+  .key-step {
+    font-size:12px; color:#333; line-height:1.6;
+    display:flex; gap:12px; align-items:flex-start;
+    padding:10px 0; border-bottom:1px solid #eee; text-align:left;
+  }
+  .key-step:last-child { border-bottom:none; }
+  .key-step-num {
+    background:var(--accent); color:#fff; border-radius:50%;
+    width:20px; height:20px; min-width:20px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:10px; font-weight:700; flex-shrink:0; margin-top:2px;
+  }
+  .key-step-body { flex:1; }
+  .key-step a { color:var(--accent2); text-decoration:underline; }
+  .key-step code { background:#f0ede8; padding:1px 6px; border-radius:3px; font-size:11px; font-family:monospace; }
+  .key-field-label { display:block; font-size:11px; font-weight:700; color:var(--text-muted); margin-bottom:5px; letter-spacing:.5px; text-transform:uppercase; }
+  .key-field-label + .modal-input { margin-bottom:10px; }
+  .key-visible { font-family:monospace; font-size:12px; letter-spacing:.3px; }
+  /* Wide modal for key setup — no scroll */
+  .modal-box.wide { max-width:600px; }
+  .modal-box { max-height:none; overflow-y:visible; }
+
+
+  /* Section color picker */
+  .color-picker-row { display:flex; gap:8px; flex-wrap:wrap; margin:12px 0; }
+  .color-swatch {
+    width:28px; height:28px; border-radius:50%; cursor:pointer;
+    border:2px solid transparent; transition:transform .15s, border-color .15s;
+    flex-shrink:0; box-shadow:0 1px 4px rgba(0,0,0,.15);
+  }
+  .color-swatch:hover { transform:scale(1.15); }
+  .color-swatch.selected { border-color:#1a1a1a; transform:scale(1.1); }
+  .color-swatch.none-swatch {
+    background: linear-gradient(135deg, #fff 45%, #e63946 45%, #e63946 55%, #fff 55%);
+    border:1.5px solid #ddd;
+  }
+
+  /* GAME CARD extras */
+  .hltb-times { display:flex; flex-direction:column; gap:1px; margin-top:3px; }
+  .hltb-row { display:flex; justify-content:space-between; align-items:center; font-size:9px; line-height:1.4; }
+  .hltb-label { color:var(--text-muted); }
+  .hltb-val { font-weight:700; color:var(--text); }
+  .card-type-badge { display:inline-block; font-size:8px; font-weight:700; letter-spacing:.5px; padding:1px 5px; border-radius:3px; margin-bottom:3px; background:#1a1a1a; color:#fff; }
+  .card-type-badge.game { background:#2d6a4f; }
+  ::-webkit-scrollbar { width:6px; height:6px; }
+  ::-webkit-scrollbar-track { background:var(--bg2); }
+  ::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+</style>
+</head>
+<body>
+<div id="topbar">
+  <h1>📺 MediaBoard</h1>
+  <button class="topbar-key-btn" id="tmdb-btn" onclick="openKeyModal('tmdb')">
+    <span class="dot" id="tmdb-dot"></span> TMDB
+  </button>
+  <button class="topbar-key-btn" id="igdb-btn" onclick="openKeyModal('igdb')">
+    <span class="dot" id="igdb-dot"></span> IGDB
+  </button>
+  <label>Zoom:</label>
+  <input type="range" id="zoom-slider" min="40" max="100" value="100" step="5">
+  <span id="zoom-val">100%</span>
+  <button class="topbar-btn secondary" onclick="exportJSON()" title="Exportar JSON">📤 Exportar</button>
+  <button class="topbar-btn secondary" onclick="importJSON()" title="Importar JSON">📥 Importar</button>
+  <input type="file" id="import-file-input" accept=".json" style="display:none" onchange="handleImportFile(this)">
+  <div id="sync-status" class="sync-status" title="Estado sincronización Supabase">
+    <span id="sync-dot" class="sync-dot"></span>
+    <span id="sync-label">Sincronizando…</span>
+  </div>
+</div>
+<div id="filter-bar"></div>
+<div id="canvas-wrapper">
+  <div id="columns-container">
+    <div id="add-col-btn" onclick="promptAddColumn()">+<small>Nueva sección</small></div>
+  </div>
+</div>
+<div id="modal-container"></div>
+
+<script>
+// ── STATE ──────────────────────────────────────────────────────────────────
+let state = { columns: [] };
+const TMDB_BASE = 'https://api.themoviedb.org/3';
+const IMG_BASE  = 'https://image.tmdb.org/t/p/w185';
+
+// Provider map — deduplicated. Apple TV (id=2) and Apple TV+ (id=350) → same entry.
+// Amazon with Ads → merged into Prime. Movistar (id=149) → same as Movistar+ (id=1773 in some regions).
+// Logo strategy: use TMDB's own provider logo endpoint — always available since we're already hitting TMDB.
+// Format: https://image.tmdb.org/t/p/original/{logo_path}
+// We store the logo_path from the API response directly, avoiding hotlink-blocked CDNs.
+const PROVIDER_MAP = {
+  8:    { id:'netflix',  name:'Netflix',      tmdbLogo:'/t2yyOv40HZeVlLjYsCsPHnWLk4W.jpg' },
+  119:  { id:'prime',    name:'Prime Video',  tmdbLogo:'/dQeAar5H991VYporEjUspolDarG.jpg' },
+  9:    { id:'prime',    name:'Prime Video',  tmdbLogo:'/dQeAar5H991VYporEjUspolDarG.jpg' },
+  337:  { id:'disney',   name:'Disney+',      tmdbLogo:'/7rwgEs15tFwyR9NPQ5vpzxTj19Q.jpg' },
+  384:  { id:'max',      name:'Max',          tmdbLogo:'/Ajqyt5aNxNvaG0maqS5YpZA7GR2.jpg' },
+  350:  { id:'apple',    name:'Apple TV+',    tmdbLogo:'/peURlLlr8jggOwK53fJ5wdQl05y.jpg' },
+  2:    { id:'apple',    name:'Apple TV+',    tmdbLogo:'/peURlLlr8jggOwK53fJ5wdQl05y.jpg' },
+  1773: { id:'skyshow',  name:'SkyShowtime',  tmdbLogo:'/dUFUaFPkDEarjJNFRGJuX2dGD0m.jpg' },
+  149:  { id:'mplus',    name:'Movistar+',    tmdbLogo:'/iNRmKLo5YSBOdUOtECaYfjeUBqL.jpg' },
+  567:  { id:'mplus',    name:'Movistar+',    tmdbLogo:'/iNRmKLo5YSBOdUOtECaYfjeUBqL.jpg' },
+  63:   { id:'filmin',   name:'Filmin',       tmdbLogo:'/2Me8rEfFKYMCGzjz4pjePRo6bqR.jpg' },
+  1985: { id:'atres',    name:'Atresplayer',  tmdbLogo:'/hFkiWuBbPLiI2MWKDM2dRvRrFCR.jpg' },
+  62:   { id:'mubi',     name:'MUBI',         tmdbLogo:'/bVR4Z1LCHY7gidXAQF3Q5SZYEIq.jpg' },
+  2239: { id:'rtve',     name:'RTVE Play',    tmdbLogo:'/pq8p1umEnFCdV9hEUCYQxE5UCGR.jpg' },
+  // RTVE alternate IDs sometimes seen
+  541:  { id:'rtve',     name:'RTVE Play',    tmdbLogo:'/pq8p1umEnFCdV9hEUCYQxE5UCGR.jpg' },
+};
+// Build logos using TMDB image base
+function providerLogo(p){ return p.tmdbLogo ? 'https://image.tmdb.org/t/p/w45'+p.tmdbLogo : ''; }
+// Unique list for the picker (deduplicated by id), with resolved logo URLs
+const PICKER_PLATFORMS = Object.values(
+  Object.values(PROVIDER_MAP).reduce((acc,p)=>{ acc[p.id]={...p,logo:providerLogo(p)}; return acc; }, {})
+);
+
+const DEMO_DATA = {
+  naruto:   [{id:20,title:'',name:'Naruto',media_type:'tv',poster_path:'/xppeysfvDKVx775MFuH8Z9ex9ik.jpg',first_air_date:'2002-10-03'},{id:32281,title:'',name:'Naruto Shippuden',media_type:'tv',poster_path:'/zAYRe2bJxpnJrzDPBZJNBronTXi.jpg',first_air_date:'2007-02-15'}],
+  akira:    [{id:149,title:'Akira',name:'',media_type:'movie',poster_path:'/neZ0ykEsPqxamsX6o5QNnFHNiEm.jpg',release_date:'1988-07-16'}],
+  inception:[{id:27205,title:'Inception',name:'',media_type:'movie',poster_path:'/oYuLEt3zVCKq57qu2F8dT7NIa6f.jpg',release_date:'2010-07-16'}],
+  breaking: [{id:1396,title:'',name:'Breaking Bad',media_type:'tv',poster_path:'/ggFHVNu6YYI5L9pCfOacjizRGt.jpg',first_air_date:'2008-01-20'}],
+  dune:     [{id:438631,title:'Dune',name:'',media_type:'movie',poster_path:'/d5NXSklXo0qyIYkgV94XAgMIckC.jpg',release_date:'2021-09-15'}],
+  attack:   [{id:1429,title:'',name:'Attack on Titan',media_type:'tv',poster_path:'/hTP1DtLGFamjfu8WqjnuScW1lKc.jpg',first_air_date:'2013-04-07'}],
+};
+
+// ── KEYS ──────────────────────────────────────────────────────────────────
+function getKey(type='tmdb'){ return localStorage.getItem('mediaboard_key_'+type)||''; }
+function setKey(type,v){ localStorage.setItem('mediaboard_key_'+type,v); updateDots(); }
+function getIGDBClientId(){ return localStorage.getItem('mediaboard_key_igdb_id')||''; }
+function getIGDBSecret(){   return localStorage.getItem('mediaboard_key_igdb_secret')||''; }
+
+function updateDots(){
+  // TMDB
+  const hasTmdb=!!getKey('tmdb');
+  const tmdbDot=document.getElementById('tmdb-dot'), tmdbBtn=document.getElementById('tmdb-btn');
+  if(tmdbDot) tmdbDot.style.background=hasTmdb?'#4caf50':'#555';
+  if(tmdbBtn) tmdbBtn.classList.toggle('active',hasTmdb);
+  // IGDB
+  const hasIgdb=!!(getIGDBClientId()&&getIGDBSecret());
+  const igdbDot=document.getElementById('igdb-dot'), igdbBtn=document.getElementById('igdb-btn');
+  if(igdbDot) igdbDot.style.background=hasIgdb?'#4caf50':'#555';
+  if(igdbBtn) igdbBtn.classList.toggle('active',hasIgdb);
+}
+
+function openKeyModal(type='tmdb'){
+  if(type==='igdb') { openIGDBModal(); return; }
+  // TMDB modal
+  const currentKey=getKey('tmdb');
+  showModal(`
+    <button class="modal-close-x" onclick="closeModal()">✕</button>
+    <h2>🎬 TMDB API Key</h2>
+    <div class="key-steps">
+      <div class="key-step"><span class="key-step-num">1</span><div class="key-step-body">Ve a <a href="https://www.themoviedb.org/signup" target="_blank">themoviedb.org</a> y crea una cuenta gratuita.</div></div>
+      <div class="key-step"><span class="key-step-num">2</span><div class="key-step-body">Confirma tu email desde el enlace que te mandan.</div></div>
+      <div class="key-step"><span class="key-step-num">3</span><div class="key-step-body">Ve a <a href="https://www.themoviedb.org/settings/api" target="_blank">Ajustes → API</a> y solicita una key tipo <strong>Developer</strong>.</div></div>
+      <div class="key-step"><span class="key-step-num">4</span><div class="key-step-body">Rellena el formulario con uso personal y cualquier descripción. Te dan la key al instante.</div></div>
+      <div class="key-step"><span class="key-step-num">5</span><div class="key-step-body">Copia la <strong>API Key (v3 auth)</strong> y pégala abajo.</div></div>
+    </div>
+    <input class="modal-input key-visible" id="key-inp" type="text" placeholder="Pega aquí tu API Key v3…" value="${escHtml(currentKey)}">
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cerrar</button>
+      <button class="btn-primary" onclick="saveTMDBKey()">Guardar</button>
+    </div>`);
+  setTimeout(()=>document.getElementById('key-inp')?.focus(),50);
+}
+
+function saveTMDBKey(){
+  const v=document.getElementById('key-inp')?.value.trim();
+  if(v){ setKey('tmdb',v); showToast('TMDB Key guardada ✓'); }
+  closeModal();
+}
+
+function openIGDBModal(){
+  const curId=getIGDBClientId(), curSecret=getIGDBSecret();
+  showModal(`
+    <button class="modal-close-x" onclick="closeModal()">✕</button>
+    <h2>🎮 IGDB API Keys</h2>
+    <div class="key-steps">
+      <div class="key-step"><span class="key-step-num">1</span><div class="key-step-body">Ve a <a href="https://www.twitch.tv" target="_blank">twitch.tv</a> y crea una cuenta gratuita (o usa la que tengas).</div></div>
+      <div class="key-step"><span class="key-step-num">2</span><div class="key-step-body">Activa la <strong>autenticación de dos factores</strong> en <a href="https://www.twitch.tv/settings/security" target="_blank">Ajustes → Seguridad</a>. Es obligatorio para poder usar la API.</div></div>
+      <div class="key-step"><span class="key-step-num">3</span><div class="key-step-body">Ve a <a href="https://dev.twitch.tv/console" target="_blank">dev.twitch.tv/console</a> e inicia sesión con tu cuenta Twitch.</div></div>
+      <div class="key-step"><span class="key-step-num">4</span><div class="key-step-body">Pulsa <strong>"+ Registrar tu aplicación"</strong>.<br>· Nombre: cualquiera (ej. <em>MediaBoard</em>)<br>· URL de redirección OAuth: <code>http://localhost</code><br>· Tipo: <strong>Confidencial</strong><br>· Categoría: <em>Application Integration</em><br>Acepta y pulsa <strong>Crear</strong>.</div></div>
+      <div class="key-step"><span class="key-step-num">5</span><div class="key-step-body">En la lista pulsa <strong>"Administrar"</strong> junto a tu app.<br>· Copia el <strong>Client ID</strong> que aparece visible.<br>· Pulsa <strong>"New Secret"</strong> → copia el <strong>Client Secret</strong> que aparece (solo se muestra una vez).</div></div>
+      <div class="key-step"><span class="key-step-num">6</span><div class="key-step-body">Pega ambos en los campos de abajo y guarda.</div></div>
+    </div>
+    <label class="key-field-label">Client ID</label>
+    <input class="modal-input key-visible" id="igdb-id-inp" type="text" placeholder="0ck2guf0ky84mjvr0jk9…" value="${escHtml(curId)}">
+    <label class="key-field-label">Client Secret</label>
+    <input class="modal-input key-visible" id="igdb-secret-inp" type="text" placeholder="abc123xyz…" value="${escHtml(curSecret)}">
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cerrar</button>
+      <button class="btn-primary" onclick="saveIGDBKeys()">Guardar</button>
+    </div>`, 'wide');
+  setTimeout(()=>document.getElementById('igdb-id-inp')?.focus(),50);
+}
+
+function saveIGDBKeys(){
+  const id=document.getElementById('igdb-id-inp')?.value.trim();
+  const secret=document.getElementById('igdb-secret-inp')?.value.trim();
+  if(id) localStorage.setItem('mediaboard_key_igdb_id', id);
+  if(secret) localStorage.setItem('mediaboard_key_igdb_secret', secret);
+  // Also store combined for legacy getKey('igdb') compatibility
+  if(id&&secret) setKey('igdb', id+','+secret);
+  updateDots();
+  closeModal();
+  showToast('IGDB Keys guardadas ✓');
+}
+
+// ── ZOOM ──────────────────────────────────────────────────────────────────
+document.getElementById('zoom-slider').addEventListener('input',function(){
+  document.getElementById('zoom-val').textContent=this.value+'%';
+  document.getElementById('canvas-wrapper').style.transform=`scale(${this.value/100})`;
+});
+
+// ── SUPABASE SYNC ─────────────────────────────────────────────────────────
+const SB_URL='https://sxpbsekgijvanylhqyaf.supabase.co';
+const SB_KEY='sb_publishable_f8802PsMYs0GnHGzPxYRUA__hoXXtwN';
+const SB_BOARD_ID='default'; // shared board ID — change to username for multi-user
+let _saveTimer=null, _saving=false;
+
+function setSyncStatus(status, label){
+  const dot=document.getElementById('sync-dot');
+  const lbl=document.getElementById('sync-label');
+  if(dot){ dot.className='sync-dot '+status; }
+  if(lbl) lbl.textContent=label;
+}
+
+async function sbFetch(path, opts={}){
+  const res=await fetch(SB_URL+path, {
+    ...opts,
+    headers:{
+      'apikey': SB_KEY,
+      'Authorization': 'Bearer '+SB_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': opts.prefer||'',
+      ...opts.headers
+    }
+  });
+  return res;
+}
+
+async function saveToSupabase(){
+  if(_saving) return;
+  _saving=true;
+  setSyncStatus('syncing','Guardando…');
+  try{
+    // First ensure table exists via upsert
+    const body=JSON.stringify({
+      id: SB_BOARD_ID,
+      data: state,
+      updated_at: new Date().toISOString()
+    });
+    const r=await sbFetch('/rest/v1/mediaboard',{
+      method:'POST',
+      prefer:'resolution=merge-duplicates',
+      headers:{'Prefer':'resolution=merge-duplicates'},
+      body
+    });
+    if(r.ok||r.status===409){
+      localStorage.setItem('mediaboard_state',JSON.stringify(state));
+      setSyncStatus('synced','Guardado ✓');
+    } else {
+      const err=await r.text();
+      // Table might not exist — try to create it
+      if(r.status===404||r.status===400||err.includes('does not exist')||err.includes('relation')){
+        await createTableAndSave();
+      } else {
+        setSyncStatus('error','Error al guardar');
+        console.error('Supabase save error:',r.status,err);
+      }
+    }
+  } catch(e){
+    setSyncStatus('error','Sin conexión');
+    localStorage.setItem('mediaboard_state',JSON.stringify(state));
+  } finally{ _saving=false; }
+}
+
+async function createTableAndSave(){
+  // Create table via Supabase SQL API
+  setSyncStatus('syncing','Creando tabla…');
+  try{
+    const sql=`CREATE TABLE IF NOT EXISTS mediaboard (id text PRIMARY KEY, data jsonb NOT NULL, updated_at timestamptz DEFAULT now());
+ALTER TABLE mediaboard ENABLE ROW LEVEL SECURITY;
+CREATE POLICY IF NOT EXISTS "allow_all" ON mediaboard FOR ALL USING (true) WITH CHECK (true);`;
+    const r=await sbFetch('/rest/v1/rpc/exec_sql',{
+      method:'POST',
+      body:JSON.stringify({query:sql})
+    });
+    // Try save again regardless
+    await saveToSupabase();
+  } catch(e){
+    setSyncStatus('error','Configura la tabla en Supabase');
+    showToast('⚠️ Necesitas crear la tabla en Supabase. Ver consola.');
+    console.info('Crea esta tabla en Supabase SQL Editor:\nCREATE TABLE mediaboard (id text PRIMARY KEY, data jsonb NOT NULL, updated_at timestamptz DEFAULT now());\nALTER TABLE mediaboard ENABLE ROW LEVEL SECURITY;\nCREATE POLICY "allow_all" ON mediaboard FOR ALL USING (true) WITH CHECK (true);');
+  }
+}
+
+async function loadFromSupabase(){
+  setSyncStatus('syncing','Cargando…');
+  try{
+    const r=await sbFetch('/rest/v1/mediaboard?id=eq.'+SB_BOARD_ID+'&select=data');
+    if(!r.ok){
+      // Fall back to localStorage
+      const s=localStorage.getItem('mediaboard_state');
+      if(s) state=JSON.parse(s);
+      setSyncStatus('error','Usando datos locales');
+      return;
+    }
+    const rows=await r.json();
+    if(rows&&rows.length>0&&rows[0].data){
+      state=rows[0].data;
+      localStorage.setItem('mediaboard_state',JSON.stringify(state));
+      setSyncStatus('synced','Sincronizado ✓');
+    } else {
+      // No remote data — try localStorage
+      const s=localStorage.getItem('mediaboard_state');
+      if(s){ state=JSON.parse(s); await saveToSupabase(); }
+      else setSyncStatus('synced','Listo');
+    }
+  } catch(e){
+    const s=localStorage.getItem('mediaboard_state');
+    if(s) state=JSON.parse(s);
+    setSyncStatus('error','Sin conexión');
+  }
+}
+
+// Auto-save debounced — called after every state change
+function scheduleSave(){
+  clearTimeout(_saveTimer);
+  _saveTimer=setTimeout(saveToSupabase, 1200);
+}
+
+// Legacy local save/load kept for export/import compatibility
+function saveBoard(){ scheduleSave(); }
+function loadBoard(){ loadFromSupabase().then(()=>{ renderAll(); renderFilterBar(); }); }
+
+function showToast(msg){
+  const t=document.createElement('div'); t.textContent=msg;
+  Object.assign(t.style,{position:'fixed',bottom:'20px',left:'50%',transform:'translateX(-50%)',background:'#1a1a1a',color:'#fff',padding:'8px 20px',borderRadius:'20px',fontSize:'13px',zIndex:'9999',transition:'opacity .4s',fontFamily:'DM Sans,sans-serif',whiteSpace:'nowrap'});
+  document.body.appendChild(t);
+  setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),400);},1800);
+}
+
+// ── TMDB SEARCH ───────────────────────────────────────────────────────────
+async function tmdbSearch(query){
+  const key=getKey(); if(!key){openKeyModal();return[];}
+  const demoKey=Object.keys(DEMO_DATA).find(k=>query.toLowerCase().includes(k));
+  try{
+    const ctrl=new AbortController(); setTimeout(()=>ctrl.abort(),5000);
+    const r=await fetch(`${TMDB_BASE}/search/multi?api_key=${key}&query=${encodeURIComponent(query)}&language=es-ES`,{signal:ctrl.signal});
+    if(!r.ok){if(r.status===401)showToast('❌ API key inválida');throw new Error();}
+    const d=await r.json();
+    return(d.results||[]).filter(x=>x.poster_path&&(x.media_type==='movie'||x.media_type==='tv')).slice(0,8);
+  }catch{
+    if(demoKey){showToast('📡 Modo demo');return DEMO_DATA[demoKey];}
+    showToast('📡 Sin conexión. Abre en Chrome.'); return[];
+  }
+}
+
+// ── FETCH PROVIDERS — ES flatrate only, deduplicated ─────────────────────
+async function fetchProviders(tmdbId, mediaType){
+  const key=getKey(); if(!key||!tmdbId) return[];
+  try{
+    const ctrl=new AbortController(); setTimeout(()=>ctrl.abort(),4000);
+    const type=mediaType==='tv'?'tv':'movie';
+    const r=await fetch(`${TMDB_BASE}/${type}/${tmdbId}/watch/providers?api_key=${key}`,{signal:ctrl.signal});
+    if(!r.ok) return[];
+    const d=await r.json();
+    const region=d.results?.ES||{};
+    const out=[], seenIds=new Set();
+    (region.flatrate||[]).forEach(p=>{
+      // Skip anything with "channel", "addon", "with ads" in name (case-insensitive)
+      if(/channel|addon|with ads/i.test(p.provider_name)) return;
+      const mapped=PROVIDER_MAP[p.provider_id];
+      const pid=mapped?.id||('p'+p.provider_id);
+      if(seenIds.has(pid)) return; // deduplicate
+      seenIds.add(pid);
+      // Use live logo_path from API — always most accurate
+      const logo=p.logo_path?'https://image.tmdb.org/t/p/w45'+p.logo_path:(mapped?providerLogo(mapped):'');
+      out.push({ id:pid, name:mapped?.name||p.provider_name, logo });
+    });
+    return out;
+  }catch{return[];}
+}
+
+
+
+// ── IGDB ──────────────────────────────────────────────────────────────────
+// IGDB requires a Twitch OAuth token. We get it client-side using Client Credentials flow.
+// Store: "clientId,clientSecret" in the igdb key slot.
+let _igdbToken=null, _igdbTokenExpiry=0;
+
+async function getIGDBToken(){
+  if(_igdbToken&&Date.now()<_igdbTokenExpiry) return _igdbToken;
+  const clientId=getIGDBClientId(), clientSecret=getIGDBSecret();
+  if(!clientId||!clientSecret){
+    showToast('⚠️ Configura el Client ID y Secret de IGDB primero');
+    return null;
+  }
+  try{
+    const ctrl=new AbortController(); setTimeout(()=>ctrl.abort(),6000);
+    const r=await fetch(
+      `https://id.twitch.tv/oauth2/token?client_id=${clientId}&client_secret=${clientSecret}&grant_type=client_credentials`,
+      {method:'POST', signal:ctrl.signal}
+    );
+    if(!r.ok){
+      const err=await r.json().catch(()=>({}));
+      showToast('❌ Token Twitch fallido: '+(err.message||r.status));
+      return null;
+    }
+    const d=await r.json();
+    _igdbToken=d.access_token;
+    _igdbTokenExpiry=Date.now()+(d.expires_in-60)*1000;
+    return _igdbToken;
+  }catch(e){
+    showToast('❌ Sin conexión con Twitch: '+e.message);
+    return null;
+  }
+}
+
+function igdbClientId(){
+  return getIGDBClientId();
+}
+
+async function igdbQuery(endpoint, body){
+  const token=await getIGDBToken();
+  if(!token){
+    showToast('❌ No se pudo obtener token IGDB. Verifica Client ID y Secret.');
+    return null;
+  }
+  // IGDB blocks CORS from file:// — route through a CORS proxy
+  const IGDB_URL='https://api.igdb.com/v4/'+endpoint;
+  const PROXY='https://cors-proxy.fringe.zone/';
+  // Try direct first (works if served from HTTP), then via proxy
+  const urls=[IGDB_URL, PROXY+IGDB_URL];
+  for(const url of urls){
+    try{
+      const ctrl=new AbortController(); setTimeout(()=>ctrl.abort(),6000);
+      const r=await fetch(url,{
+        method:'POST',
+        headers:{
+          'Client-ID':igdbClientId(),
+          'Authorization':'Bearer '+token,
+          'Content-Type':'text/plain',
+          ...(url.includes(PROXY)?{'X-Requested-With':'XMLHttpRequest'}:{})
+        },
+        body,
+        signal:ctrl.signal
+      });
+      if(r.ok){
+        const data=await r.json();
+        return data;
+      }
+    }catch(e){ continue; }
+  }
+  showToast('❌ Error conectando con IGDB. Puede ser CORS desde archivo local.');
+  return null;
+}
+
+async function igdbSearch(query){
+  const results=await igdbQuery('games',
+    `search "${query.replace(/"/g,"'")}"; fields id,name,cover.image_id,first_release_date,genres.name,time_to_beat.*,platforms.name; limit 8;`
+  );
+  return results||[];
+}
+
+async function igdbDetails(igdbId){
+  const results=await igdbQuery('games',
+    `where id=${igdbId}; fields id,name,cover.image_id,first_release_date,genres.name,time_to_beat.*,platforms.name,summary; limit 1;`
+  );
+  return results?.[0]||null;
+}
+
+function igdbCover(imageId){
+  return imageId?`https://images.igdb.com/igdb/image/upload/t_cover_big/${imageId}.jpg`:'';
+}
+
+function formatHours(seconds){
+  if(!seconds||seconds<=0) return null;
+  const h=seconds/3600;
+  return h<1?Math.round(h*60)+'min':h%1===0?h+'h':h.toFixed(1).replace('.0','')+'h';
+}
+
+// ── IGDB Search Modal ──────────────────────────────────────────────────────
+function openGameSearchModal(colId, sectionId, inTop10){
+  showModal(`
+    <button class="modal-close-x" onclick="closeModal()">✕</button>
+    <h2>🎮 Buscar juego</h2>
+    <input class="modal-input" id="game-search-inp" placeholder="Nombre del juego…">
+    <div id="game-results-area"></div>
+    <div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">Cancelar</button></div>`);
+  const inp=document.getElementById('game-search-inp');
+  let db;
+  inp?.addEventListener('input',()=>{clearTimeout(db);db=setTimeout(()=>doGameSearch(inp.value,colId,sectionId,inTop10),420);});
+  setTimeout(()=>inp?.focus(),50);
+}
+
+async function doGameSearch(query,colId,sectionId,inTop10){
+  if(!getIGDBClientId()||!getIGDBSecret()){ showToast('⚠️ Configura el Client ID y Secret de IGDB primero'); return; }
+  const area=document.getElementById('game-results-area');
+  if(!area||!query.trim()) return;
+  area.innerHTML='<p class="no-results">Buscando <span class="spinner"></span></p>';
+  const results=await igdbSearch(query);
+  if(!document.getElementById('game-results-area')) return;
+  if(!results.length){area.innerHTML='<p class="no-results">Sin resultados</p>';return;}
+  area.innerHTML='<div class="search-results">'+results.map((r,i)=>{
+    const title=r.name||'?';
+    const year=r.first_release_date?new Date(r.first_release_date*1000).getFullYear():'';
+    const cover=r.cover?.image_id?igdbCover(r.cover.image_id):'';
+    const ttb=r.time_to_beat;
+    const main=ttb?.normally?formatHours(ttb.normally):'';
+    const plats=(r.platforms||[]).slice(0,3).map(p=>p.name).join(', ');
+    return `<div class="search-result-item" onclick="pickGame('${colId}','${sectionId}',${i},${inTop10})">
+      <img src="${cover}" alt="" style="object-fit:cover">
+      <div>
+        <div class="result-title">🎮 ${escHtml(title)}</div>
+        <div class="result-meta">${year}${main?' · '+main+' main':''}${plats?' · '+escHtml(plats):''}</div>
+      </div></div>`;
+  }).join('')+'</div>';
+  window._gameResults=results;
+}
+
+async function pickGame(colId,sectionId,idx,inTop10){
+  const r=window._gameResults?.[idx]; if(!r) return;
+  const area=document.getElementById('game-results-area');
+  if(area) area.innerHTML='<p class="no-results">Cargando detalles… <span class="spinner"></span></p>';
+  // Fetch full details for time_to_beat
+  const full=await igdbDetails(r.id)||r;
+  const ttb=full.time_to_beat||r.time_to_beat||{};
+  const title=full.name||'?';
+  const year=full.first_release_date?new Date(full.first_release_date*1000).getFullYear():'';
+  const poster=full.cover?.image_id?igdbCover(full.cover.image_id):(r.cover?.image_id?igdbCover(r.cover.image_id):'');
+  const genres=(full.genres||r.genres||[]).map(g=>g.name);
+  const platforms=(full.platforms||r.platforms||[]).map(p=>p.name);
+  const card={
+    id:uid(), title, year:String(year), poster,
+    platforms:[], genres, pending:false,
+    mediaType:'game', igdbId:r.id,
+    ttbMain: ttb.normally||null,
+    ttbMainSides: ttb.hastily||null,  // IGDB "hastily" = rushing = closest to Main+Sides
+    ttbComplete: ttb.completely||null,
+    gamePlatforms: platforms,
+  };
+  const col=state.columns.find(c=>c.id===colId); if(!col) return;
+  if(inTop10){
+    if(col.top10.length>=10){showToast('Top 10 lleno');return;}
+    col.top10.push(card);
+  } else {
+    const sec=col.sections.find(s=>s.id===sectionId); if(sec) sec.cards.push(card);
+  }
+  closeModal(); renderAll();
+}
+
+// ── FILTER STATE ──────────────────────────────────────────────────────────
+let activeFilters = { duration: null, genres: new Set() };
+
+const DURATION_FILTERS = [
+  { id:'game',  label:'Juegos',       test: c => c.mediaType==='game' },
+  { id:'series',label:'Series',       test: c => c.mediaType==='tv' },
+  { id:'lt30',  label:'Hasta 30 min', test: c => c.runtime&&c.runtime<=30 },
+  { id:'lt60',  label:'Hasta 60 min', test: c => c.runtime&&c.runtime<=60 },
+  { id:'lt90',  label:'Hasta 90 min', test: c => c.runtime&&c.runtime<=90 },
+  { id:'lt120', label:'Hasta 2h',     test: c => c.runtime&&c.runtime<=120 },
+  { id:'lt150', label:'Hasta 2h30',   test: c => c.runtime&&c.runtime<=150 },
+  { id:'gt150', label:'Más de 2h30',  test: c => c.runtime&&c.runtime>150 },
+];
+
+function cardMatchesFilters(card){
+  // Duration filter
+  if(activeFilters.duration){
+    const df=DURATION_FILTERS.find(f=>f.id===activeFilters.duration);
+    if(df&&!df.test(card)) return false;
+  }
+  // Genre filter (card must have ALL selected genres)
+  for(const g of activeFilters.genres){
+    if(!(card.genres||[]).includes(g)) return false;
+  }
+  return true;
+}
+
+function hasActiveFilters(){
+  return activeFilters.duration||activeFilters.genres.size>0;
+}
+
+function toggleDurationFilter(id){
+  activeFilters.duration = activeFilters.duration===id ? null : id;
+  renderFilterBar(); renderAll();
+}
+
+function toggleGenreFilter(genre){
+  if(activeFilters.genres.has(genre)) activeFilters.genres.delete(genre);
+  else activeFilters.genres.add(genre);
+  renderFilterBar(); renderAll();
+}
+
+function clearFilters(){
+  activeFilters.duration=null; activeFilters.genres=new Set();
+  renderFilterBar(); renderAll();
+}
+
+// Collect all genres present in the board
+function getAllGenres(){
+  const genres=new Set();
+  state.columns.forEach(col=>{
+    [...col.top10,...col.sections.flatMap(s=>s.cards)].forEach(card=>{
+      (card.genres||[]).forEach(g=>genres.add(g));
+    });
+  });
+  return [...genres].sort();
+}
+
+function renderFilterBar(){
+  const bar=document.getElementById('filter-bar');
+  if(!bar) return;
+  const genres=getAllGenres();
+  const hasActive=hasActiveFilters();
+
+  bar.innerHTML=`
+    <div class="filter-group">
+      <span class="filter-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg></span>
+      ${DURATION_FILTERS.map(f=>`
+        <button class="filter-chip ${activeFilters.duration===f.id?'active':''}" onclick="toggleDurationFilter('${f.id}')">${f.label}</button>
+      `).join('')}
+    </div>
+    ${genres.length?`
+    <div class="filter-group">
+      <span class="filter-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="15" rx="2"/><polyline points="17 2 12 7 7 2"/><line x1="2" y1="11" x2="22" y2="11"/></svg></span>
+      ${genres.map(g=>`
+        <button class="filter-chip ${activeFilters.genres.has(g)?'active':''}" onclick="toggleGenreFilter('${escHtml(g)}')">${escHtml(g)}</button>
+      `).join('')}
+    </div>`:''}    ${hasActive?`<button class="filter-clear" onclick="clearFilters()">✕ Borrar filtros</button>`:''}
+  `;
+}
+// ── FETCH DETAILS (runtime / seasons) ────────────────────────────────────
+async function fetchDetails(tmdbId, mediaType){
+  const key=getKey(); if(!key||!tmdbId) return null;
+  try{
+    const ctrl=new AbortController(); setTimeout(()=>ctrl.abort(),4000);
+    const type=mediaType==='tv'?'tv':'movie';
+    const r=await fetch(`${TMDB_BASE}/${type}/${tmdbId}?api_key=${key}&language=es-ES`,{signal:ctrl.signal});
+    if(!r.ok) return null;
+    const d=await r.json();
+    const genres=(d.genres||[]).map(g=>g.name);
+    if(mediaType==='tv') return { seasons:d.number_of_seasons||null, genres };
+    else return { runtime:d.runtime||null, genres };
+  }catch{return null;}
+}
+
+// ── UID ───────────────────────────────────────────────────────────────────
+function uid(){ return '_'+Math.random().toString(36).slice(2,9); }
+
+// ── COLUMN MANAGEMENT ─────────────────────────────────────────────────────
+function promptAddColumn(){
+  showModal(`
+    <button class="modal-close-x" onclick="closeModal()">✕</button>
+    <h2>Nueva sección</h2>
+    <input class="modal-input" id="col-name-inp" placeholder="Nombre (ej: Terror, Anime…)">
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-primary" onclick="confirmAddColumn()">Crear</button>
+    </div>`);
+  setTimeout(()=>document.getElementById('col-name-inp')?.focus(),50);
+}
+function confirmAddColumn(){
+  const name=document.getElementById('col-name-inp')?.value.trim(); if(!name) return;
+  state.columns.push({id:uid(),name,top10:[],sections:[{id:uid(),name,cards:[]}]});
+  closeModal(); renderAll();
+}
+function moveColumn(colId,dir){
+  const idx=state.columns.findIndex(c=>c.id===colId), nxt=idx+dir;
+  if(nxt<0||nxt>=state.columns.length) return;
+  [state.columns[idx],state.columns[nxt]]=[state.columns[nxt],state.columns[idx]];
+  renderAll();
+}
+function renameColumn(colId){
+  const col=state.columns.find(c=>c.id===colId); if(!col) return;
+  const secId=col.sections[0]?.id||'';
+  const curBg=col.sections[0]?.bgColor||'';
+  showModal(`
+    <button class="modal-close-x" onclick="closeModal()">✕</button>
+    <h2>Editar sección</h2>
+    <label class="key-field-label">Nombre</label>
+    <input class="modal-input" id="rename-inp" value="${escHtml(col.name)}">
+    <label class="key-field-label" style="margin-top:14px">Color de fondo</label>
+    <div class="color-picker-row" id="color-picker-row">
+      <div class="color-swatch none-swatch" style="background:" title="Sin color" data-color="" onclick="selectSectionColor(this)"></div><div class="color-swatch " style="background:#dbeafe" title="Azul" data-color="#dbeafe" onclick="selectSectionColor(this)"></div><div class="color-swatch " style="background:#e0e7ff" title="Índigo" data-color="#e0e7ff" onclick="selectSectionColor(this)"></div><div class="color-swatch " style="background:#ede9fe" title="Violeta" data-color="#ede9fe" onclick="selectSectionColor(this)"></div><div class="color-swatch " style="background:#fce7f3" title="Rosa" data-color="#fce7f3" onclick="selectSectionColor(this)"></div><div class="color-swatch " style="background:#fee2e2" title="Rojo" data-color="#fee2e2" onclick="selectSectionColor(this)"></div><div class="color-swatch " style="background:#ffedd5" title="Naranja" data-color="#ffedd5" onclick="selectSectionColor(this)"></div><div class="color-swatch " style="background:#fef9c3" title="Amarillo" data-color="#fef9c3" onclick="selectSectionColor(this)"></div><div class="color-swatch " style="background:#dcfce7" title="Verde" data-color="#dcfce7" onclick="selectSectionColor(this)"></div><div class="color-swatch " style="background:#ccfbf1" title="Teal" data-color="#ccfbf1" onclick="selectSectionColor(this)"></div><div class="color-swatch " style="background:#f5f5f4" title="Gris" data-color="#f5f5f4" onclick="selectSectionColor(this)"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-primary" onclick="confirmRename('${colId}','${secId}')">Guardar</button>
+    </div>`);
+  window._selectedSectionColor=curBg;
+  // Mark current selected
+  setTimeout(()=>{
+    document.querySelectorAll('.color-swatch').forEach(sw=>{
+      const swColor=sw.dataset.color||'';
+      sw.classList.toggle('selected', swColor===curBg);
+    });
+    const i=document.getElementById('rename-inp');i?.focus();i?.select();
+  },50);
+}
+function selectSectionColor(el){
+  document.querySelectorAll('.color-swatch').forEach(sw=>sw.classList.remove('selected'));
+  el.classList.add('selected');
+  window._selectedSectionColor=el.dataset.color||'';
+}
+function confirmRename(colId,secId){
+  const name=document.getElementById('rename-inp')?.value.trim(); if(!name) return;
+  const col=state.columns.find(c=>c.id===colId); if(!col) return;
+  col.name=name;
+  if(col.sections[0]){
+    col.sections[0].name=name;
+    col.sections[0].bgColor=window._selectedSectionColor||'';
+  }
+  closeModal(); renderAll();
+}
+function confirmDeleteCol(colId){
+  showModal(`<div class="confirm-modal">
+    <button class="modal-close-x" onclick="closeModal()">✕</button>
+    <h2>¿Eliminar sección?</h2><p>Se eliminarán todos sus títulos.</p>
+    <div class="modal-actions" style="justify-content:center">
+      <button class="btn-secondary" onclick="closeModal()">No</button>
+      <button class="btn-primary" onclick="doDeleteCol('${colId}')">Sí</button>
+    </div></div>`);
+}
+function doDeleteCol(colId){ state.columns=state.columns.filter(c=>c.id!==colId); closeModal(); renderAll(); }
+
+// ── SEARCH ────────────────────────────────────────────────────────────────
+function openSearchModal(colId,sectionId,inTop10){
+  showModal(`
+    <button class="modal-close-x" onclick="closeModal()">✕</button>
+    <h2>${inTop10?'Añadir al Top 10':'Buscar título'}</h2>
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <button class="btn-primary" style="flex:1;font-size:12px;padding:6px" onclick="switchSearchMode('movie')">🎬 Película / Serie</button>
+      <button class="btn-secondary" style="flex:1;font-size:12px;padding:6px" onclick="switchSearchMode('game')">🎮 Videojuego</button>
+    </div>
+    <input class="modal-input" id="search-inp" placeholder="Escribe el nombre…">
+    <div id="search-results-area"></div>
+    <div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">Cancelar</button></div>`);
+  window._searchMode='movie';
+  window._searchColId=colId; window._searchSecId=sectionId; window._searchInTop10=inTop10;
+  const inp=document.getElementById('search-inp');
+  let db;
+  inp?.addEventListener('input',()=>{
+    clearTimeout(db);
+    db=setTimeout(()=>{
+      if(window._searchMode==='game') doGameSearch(inp.value,window._searchColId,window._searchSecId,window._searchInTop10);
+      else doSearch(inp.value,window._searchColId,window._searchSecId,window._searchInTop10);
+    },420);
+  });
+  setTimeout(()=>inp?.focus(),50);
+}
+function switchSearchMode(mode){
+  window._searchMode=mode;
+  const btns=document.querySelectorAll('.modal-box button[onclick^="switchSearchMode"]');
+  btns.forEach(b=>{ b.className=b.getAttribute('onclick').includes(mode)?'btn-primary':'btn-secondary'; b.style.flex='1'; b.style.fontSize='12px'; b.style.padding='6px'; });
+  document.getElementById('search-results-area').innerHTML='';
+  const inp=document.getElementById('search-inp');
+  if(inp){inp.value='';inp.placeholder=mode==='game'?'Nombre del juego…':'Escribe el nombre…';inp.focus();}
+}
+async function doSearch(query,colId,sectionId,inTop10){
+  const area=document.getElementById('search-results-area');
+  if(!area||!query.trim()) return;
+  area.innerHTML='<p class="no-results">Buscando <span class="spinner"></span></p>';
+  const results=await tmdbSearch(query);
+  if(!document.getElementById('search-results-area')) return;
+  if(!results.length){area.innerHTML='<p class="no-results">Sin resultados</p>';return;}
+  area.innerHTML='<div class="search-results">'+results.map((r,i)=>{
+    const title=r.title||r.name||'?';
+    const year=(r.release_date||r.first_air_date||'').slice(0,4);
+    const icon=r.media_type==='movie'?'🎬':'📺';
+    const poster=r.poster_path?IMG_BASE+r.poster_path:'';
+    return `<div class="search-result-item" onclick="pickResult('${colId}','${sectionId}',${i},${inTop10})">
+      <img src="${poster}" alt="">
+      <div><div class="result-title">${icon} ${escHtml(title)}</div>
+      <div class="result-meta">${year} · ${r.media_type==='movie'?'Película':'Serie'}</div></div></div>`;
+  }).join('')+'</div>';
+  window._searchResults=results;
+}
+async function pickResult(colId,sectionId,idx,inTop10){
+  const r=window._searchResults?.[idx]; if(!r) return;
+  const title=r.title||r.name||'?';
+  const year=(r.release_date||r.first_air_date||'').slice(0,4);
+  const poster=r.poster_path?IMG_BASE+r.poster_path:'';
+  const area=document.getElementById('search-results-area');
+  if(area) area.innerHTML='<p class="no-results">Cargando datos… <span class="spinner"></span></p>';
+  // Fetch providers and details in parallel
+  const [platforms, details]=await Promise.all([
+    fetchProviders(r.id,r.media_type),
+    fetchDetails(r.id,r.media_type)
+  ]);
+  const card={id:uid(),title,year,poster,platforms,tmdbId:r.id,mediaType:r.media_type,pending:false,genres:[]};
+  if(details){
+    if(r.media_type==='tv'&&details.seasons) card.seasons=details.seasons;
+    if(r.media_type==='movie'&&details.runtime) card.runtime=details.runtime;
+    if(details.genres) card.genres=details.genres;
+  }
+  const col=state.columns.find(c=>c.id===colId); if(!col) return;
+  if(inTop10){
+    if(col.top10.length>=10){showToast('Top 10 lleno');return;}
+    col.top10.push(card);
+  } else {
+    const sec=col.sections.find(s=>s.id===sectionId); if(sec) sec.cards.push(card);
+  }
+  closeModal(); renderAll();
+}
+
+// ── DELETE — inline overlay on the card ──────────────────────────────────
+function showInlineDelete(btn,colId,sectionId,cardId,inTop10){
+  const card=btn.closest('.media-card'); if(!card) return;
+  // Remove any existing overlay
+  card.querySelectorAll('.delete-overlay').forEach(el=>el.remove());
+  const ov=document.createElement('div');
+  ov.className='delete-overlay';
+  ov.innerHTML=`<span class="delete-ov-label">¿Quitar?</span>
+    <button class="delete-ov-yes" onclick="event.stopPropagation();doDelete('${colId}','${sectionId}','${cardId}',${inTop10})">Sí</button>
+    <button class="delete-ov-no" onclick="event.stopPropagation();this.closest('.delete-overlay').remove()">No</button>`;
+  card.querySelector('.card-img-wrap').appendChild(ov);
+}
+function doDelete(colId,sectionId,cardId,inTop10){
+  const col=state.columns.find(c=>c.id===colId); if(!col) return;
+  if(inTop10) col.top10=col.top10.filter(c=>c.id!==cardId);
+  else{const s=col.sections.find(s=>s.id===sectionId);if(s) s.cards=s.cards.filter(c=>c.id!==cardId);}
+  closeModal(); renderAll();
+}
+
+// ── PENDING TOGGLE ────────────────────────────────────────────────────────
+function togglePending(colId,sectionId,cardId,inTop10){
+  const col=state.columns.find(c=>c.id===colId); if(!col) return;
+  const card=inTop10
+    ?col.top10.find(x=>x.id===cardId)
+    :col.sections.find(s=>s.id===sectionId)?.cards.find(x=>x.id===cardId);
+  if(card){ card.pending=!card.pending; renderAll(); }
+}
+
+// ── STREAMING PICKER ──────────────────────────────────────────────────────
+function getCard(colId,sectionId,cardId,inTop10){
+  const col=state.columns.find(c=>c.id===colId);
+  return inTop10?col?.top10.find(x=>x.id===cardId):col?.sections.find(s=>s.id===sectionId)?.cards.find(x=>x.id===cardId);
+}
+function openStreamingPicker(colId,sectionId,cardId,inTop10){
+  const card=getCard(colId,sectionId,cardId,inTop10); if(!card) return;
+  const opts=PICKER_PLATFORMS.map(p=>{
+    const sel=(card.platforms||[]).some(x=>x.id===p.id);
+    return `<div class="streaming-option ${sel?'selected':''}" id="sopt-${p.id}" onclick="togglePlatform('${p.id}','${escHtml(p.name)}','${p.logo}')">
+      <img src="${p.logo}" alt="${p.name}"><span>${p.name}</span></div>`;
+  }).join('');
+  showModal(`
+    <button class="modal-close-x" onclick="closeModal()">✕</button>
+    <h2>¿Dónde se puede ver?</h2>
+    <div class="streaming-picker">${opts}</div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-primary" onclick="savePlatforms('${colId}','${sectionId}','${cardId}',${inTop10})">Guardar</button>
+    </div>`);
+  window._editPlats=JSON.parse(JSON.stringify(card.platforms||[]));
+}
+function togglePlatform(pid,name,logo){
+  const arr=window._editPlats, idx=arr.findIndex(x=>x.id===pid);
+  if(idx>-1) arr.splice(idx,1); else arr.push({id:pid,name,logo});
+  document.getElementById('sopt-'+pid)?.classList.toggle('selected',arr.some(x=>x.id===pid));
+}
+function savePlatforms(colId,sectionId,cardId,inTop10){
+  const card=getCard(colId,sectionId,cardId,inTop10);
+  if(card) card.platforms=[...window._editPlats];
+  closeModal(); renderAll();
+}
+
+// ── MODALS ────────────────────────────────────────────────────────────────
+function showModal(html, extraCls=''){ document.getElementById('modal-container').innerHTML=`<div class="modal-overlay" onclick="overlayClose(event)"><div class="modal-box ${extraCls}">${html}</div></div>`; }
+function closeModal(){ document.getElementById('modal-container').innerHTML=''; }
+function overlayClose(e){ if(e.target.classList.contains('modal-overlay')) closeModal(); }
+
+// ── RENDER ────────────────────────────────────────────────────────────────
+function renderAll(){
+  const container=document.getElementById('columns-container');
+  container.querySelectorAll('.genre-column').forEach(el=>el.remove());
+  const addBtn=document.getElementById('add-col-btn');
+  state.columns.forEach(col=>{
+    const el=document.createElement('div');
+    el.className='genre-column'; el.dataset.colId=col.id;
+    el.innerHTML=renderColumn(col);
+    container.insertBefore(el,addBtn);
+  });
+  setupDrag();
+  renderFilterBar();
+  scheduleSave();
+}
+
+function renderColumn(col){
+  const isFirst=state.columns[0]?.id===col.id;
+  const isLast=state.columns[state.columns.length-1]?.id===col.id;
+  // Render top10 rows — each row max 5, add-btn always separate row
+  const top10rows=chunkArray(col.top10,5);
+  let top10Html='';
+  if(col.top10.length===0){
+    top10Html=`<div class="card-row" data-col="${col.id}" data-zone="top10" data-rowri="0">
+      <div class="add-card" onclick="openSearchModal('${col.id}','',true)">+<span>Añadir</span></div></div>`;
+  } else {
+    const lastT10Full=top10rows[top10rows.length-1].length===5;
+    top10Html=top10rows.map((row,ri)=>{
+      const zone=ri===0?'top10':'top10b';
+      const isLast=ri===top10rows.length-1;
+      const addBtn=isLast&&!lastT10Full&&col.top10.length<10?`<div class="add-card" onclick="openSearchModal('${col.id}','',true)">+<span>Añadir</span></div>`:'';
+      return `<div class="card-row" data-col="${col.id}" data-zone="${zone}" data-rowri="${ri}">${row.map((card,ci)=>renderCard(card,col.id,null,true,ri*5+ci)).join('')}${addBtn}</div>`;
+    }).join('');
+    if(lastT10Full&&col.top10.length<10){
+      const zone=top10rows.length===1?'top10':'top10b';
+      top10Html+=`<div class="card-row" data-col="${col.id}" data-zone="${zone}" data-rowri="${top10rows.length}"><div class="add-card" onclick="openSearchModal('${col.id}','',true)">+<span>Añadir</span></div></div>`;
+    }
+  }
+  return `
+    <div class="col-inner">
+      <div class="col-header" draggable="true" data-col-drag="${col.id}">
+        <div class="col-title-row">
+          <span class="col-drag-handle" title="Arrastrar para reordenar">⠿</span>
+          <span class="col-title">${escHtml(col.name)}</span>
+          <button class="col-rename-btn" onclick="renameColumn('${col.id}')" title="Renombrar">✎</button>
+        </div>
+        <button class="col-delete-btn" onclick="confirmDeleteCol('${col.id}')">✕</button>
+      </div>
+      <div class="combined-card">
+        <div class="top10-section" style="background:${col.sections[0]?.bgColor||'transparent'}">
+          <div class="top10-title">TOP 10 ${escHtml(col.name).toUpperCase()} <span class="badge">TO WATCH</span></div>
+          ${top10Html}
+        </div>
+        <div class="card-divider"></div>
+        ${col.sections.map(sec=>renderSection(sec,col.id)).join('')}
+      </div>
+    </div>`;
+}
+
+function renderSection(sec,colId){
+  const rows=chunkArray(sec.cards,5);
+  const lastFull=rows.length>0&&rows[rows.length-1].length===5;
+  let html;
+  if(rows.length===0){
+    html=`<div class="card-row" data-col="${colId}" data-sec="${sec.id}" data-zone="grid" data-rowri="0"><div class="add-card" onclick="openSearchModal('${colId}','${sec.id}',false)">+<span>Añadir</span></div></div>`;
+  } else {
+    html=rows.map((row,ri)=>{
+      const isLast=ri===rows.length-1;
+      const addBtn=isLast&&!lastFull?`<div class="add-card" onclick="openSearchModal('${colId}','${sec.id}',false)">+<span>Añadir</span></div>`:'';
+      return `<div class="card-row" data-col="${colId}" data-sec="${sec.id}" data-zone="grid" data-rowri="${ri}">${row.map(card=>renderCard(card,colId,sec.id,false)).join('')}${addBtn}</div>`;
+    }).join('');
+    if(lastFull){
+      html+=`<div class="card-row" data-col="${colId}" data-sec="${sec.id}" data-zone="grid" data-rowri="${rows.length}"><div class="add-card" onclick="openSearchModal('${colId}','${sec.id}',false)">+<span>Añadir</span></div></div>`;
+    }
+  }
+  return `<div class="genre-section" data-sec="${sec.id}" style="background:${sec.bgColor||'transparent'}">
+    ${html}
+  </div>`;
+}
+
+function renderCard(card,colId,sectionId,inTop10,rank){
+  const secId=sectionId||'', top10f=inTop10?'true':'false';
+  const platforms=card.platforms||[];
+  // Filter dimming
+  const dimmed=hasActiveFilters()&&!cardMatchesFilters(card);
+
+  // Platform pills
+  let platHtml='';
+  const clockSvg=`<svg viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>`;
+  const pendCls=card.pending?'active':'';
+  const clockBtn=`<button class="pending-btn ${pendCls}" title="${card.pending?'Quitar pendiente':'Sin estrenar / pendiente'}" onclick="event.stopPropagation();togglePending('${colId}','${secId}','${card.id}',${top10f})">${clockSvg}</button>`;
+  if(platforms.length){
+    platHtml=platforms.map(p=>{
+      const logo=p.logo?`<img src="${p.logo}" alt="">`:''
+      return `<span class="platform-pill" onclick="event.stopPropagation();openStreamingPicker('${colId}','${secId}','${card.id}',${top10f})" title="${escHtml(p.name)}">${logo}<span>${escHtml(p.name)}</span></span>`;
+    }).join('')+clockBtn;
+  } else {
+    platHtml=`<span class="add-platform-pill" onclick="event.stopPropagation();openStreamingPicker('${colId}','${secId}','${card.id}',${top10f})">+ dónde ver</span>${clockBtn}`;
+  }
+
+  // Meta line
+  let metaStr=escHtml(card.year||'');
+  let extraInfo='';
+  const noMeta=!card.runtime&&!card.seasons&&!card.ttbMain&&card.tmdbId;
+
+  if(card.mediaType==='game'){
+    // HLTB-style times
+    const fh=s=>s?formatHours(s):null;
+    const main=fh(card.ttbMain), sides=fh(card.ttbMainSides), comp=fh(card.ttbComplete);
+    if(main||sides||comp){
+      extraInfo=`<div class="hltb-times">
+        ${main?`<div class="hltb-row"><span class="hltb-label">Main Story</span><span class="hltb-val">${main}</span></div>`:''}
+        ${sides?`<div class="hltb-row"><span class="hltb-label">Main + Sides</span><span class="hltb-val">${sides}</span></div>`:''}
+        ${comp?`<div class="hltb-row"><span class="hltb-label">Completionist</span><span class="hltb-val">${comp}</span></div>`:''}
+      </div>`;
+    }
+    if(card.gamePlatforms?.length){
+      metaStr+=card.gamePlatforms.slice(0,2).map(p=>`<span style="font-size:9px;background:#eee;border-radius:3px;padding:1px 4px;margin-left:2px">${escHtml(p)}</span>`).join('');
+    }
+  } else {
+    if(card.runtime) metaStr+=` · ${card.runtime} min`;
+    else if(card.seasons) metaStr+=` · ${card.seasons} temp.`;
+  }
+
+  const typeBadge=card.mediaType==='game'?'<span class="card-type-badge game">JUEGO</span>':'';
+  const rankHtml=inTop10?`<div class="rank-num">${rank+1}</div>`:'';
+  const pendingOverlay=card.pending?`<div class="pending-label">PENDIENTE</div>`:'';
+  const pendingCls=card.pending?'pending':'';
+
+  const cardCls=[pendingCls,dimmed?'filter-dim':''].filter(Boolean).join(' ');
+  return `<div class="media-card ${cardCls}" draggable="true"
+    data-card-id="${card.id}" data-col="${colId}" data-sec="${secId}" data-top10="${top10f}">
+    <button class="delete-btn" onclick="event.stopPropagation();showInlineDelete(this,'${colId}','${secId}','${card.id}',${top10f})">✕</button>
+    <div class="card-img-wrap">
+      <img src="${escHtml(card.poster)}" alt="${escHtml(card.title)}" loading="lazy">
+      ${rankHtml}
+      ${pendingOverlay}
+    </div>
+    <div class="card-info">
+      ${typeBadge}
+      <div class="card-title">${escHtml(card.title)}</div>
+      <div class="card-meta">${metaStr}${noMeta?` <button onclick="event.stopPropagation();reloadMeta('${colId}','${secId}','${card.id}',${top10f})" style="background:none;border:none;cursor:pointer;color:#aaa;font-size:10px;padding:0;line-height:1;" title="Cargar duración">↻</button>`:''}</div>
+      ${extraInfo}
+      <div class="card-platforms">${platHtml}</div>
+    </div>
+  </div>`;
+}
+
+function chunkArray(arr,size){
+  const out=[];
+  for(let i=0;i<arr.length;i+=size) out.push(arr.slice(i,i+size));
+  return out;
+}
+
+async function reloadMeta(colId,secId,cardId,inTop10){
+  const col=state.columns.find(c=>c.id===colId); if(!col) return;
+  const card=inTop10?col.top10.find(x=>x.id===cardId):col.sections.find(s=>s.id===secId)?.cards.find(x=>x.id===cardId);
+  if(!card||!card.tmdbId) return;
+  const details=await fetchDetails(card.tmdbId,card.mediaType);
+  if(details){
+    if(card.mediaType==='tv'&&details.seasons) card.seasons=details.seasons;
+    if(card.mediaType==='movie'&&details.runtime) card.runtime=details.runtime;
+    if(details.genres) card.genres=details.genres;
+  }
+  renderAll();
+}
+function escHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ── DRAG & DROP ───────────────────────────────────────────────────────────
+let dragCard=null, dragColId=null;
+let dropLineEl=null, dropTargetRow=null, dropInsertIdx=null;
+
+function setupDrag(){
+  document.querySelectorAll('.media-card').forEach(el=>{
+    el.addEventListener('dragstart',onCardDragStart);
+    el.addEventListener('dragend',onCardDragEnd);
+  });
+  document.querySelectorAll('.card-row').forEach(row=>{
+    row.addEventListener('dragover',onRowDragOver);
+    row.addEventListener('dragleave',onRowDragLeave);
+    row.addEventListener('drop',onRowDrop);
+  });
+  document.querySelectorAll('.col-header[data-col-drag]').forEach(hdr=>{
+    hdr.addEventListener('dragstart',onColDragStart);
+    hdr.addEventListener('dragend',onColDragEnd);
+  });
+  document.querySelectorAll('.genre-column').forEach(col=>{
+    col.addEventListener('dragover',onColDragOver);
+    col.addEventListener('dragleave',onColDragLeave);
+    col.addEventListener('drop',onColDrop);
+  });
+}
+
+function onCardDragStart(e){
+  dragCard={colId:this.dataset.col,sectionId:this.dataset.sec,cardId:this.dataset.cardId,inTop10:this.dataset.top10==='true'};
+  e.dataTransfer.effectAllowed='move'; e.dataTransfer.setData('type','card');
+  setTimeout(()=>this.classList.add('dragging'),0);
+  e.stopPropagation();
+}
+function onCardDragEnd(){ this.classList.remove('dragging'); dragCard=null; clearDropLine(); }
+
+function clearDropLine(){
+  if(dropLineEl){dropLineEl.remove();dropLineEl=null;}
+  dropTargetRow=null; dropInsertIdx=null;
+}
+function onRowDragOver(e){
+  if(!dragCard) return; e.preventDefault(); e.stopPropagation();
+  const row=this;
+  const cards=[...row.querySelectorAll('.media-card')];
+  let insertIdx=cards.length;
+  for(let i=0;i<cards.length;i++){
+    const rect=cards[i].getBoundingClientRect();
+    if(e.clientX<rect.left+rect.width/2){insertIdx=i;break;}
+  }
+  if(dropTargetRow===row&&dropInsertIdx===insertIdx) return;
+  clearDropLine();
+  dropTargetRow=row; dropInsertIdx=insertIdx;
+  const line=document.createElement('div'); line.className='drop-line'; dropLineEl=line;
+  if(insertIdx>=cards.length){
+    const addCard=row.querySelector('.add-card');
+    if(addCard) row.insertBefore(line,addCard); else row.appendChild(line);
+  } else { row.insertBefore(line,cards[insertIdx]); }
+}
+function onRowDragLeave(e){ if(!dragCard) return; if(!this.contains(e.relatedTarget)) clearDropLine(); }
+function onRowDrop(e){
+  e.preventDefault(); e.stopPropagation();
+  if(!dragCard) return;
+  const row=this, tColId=row.dataset.col, tSecId=row.dataset.sec||'';
+  const zone=row.dataset.zone, inTop10Target=zone==='top10'||zone==='top10b';
+  const insertAt=dropInsertIdx??99;
+  clearDropLine();
+  const srcCol=state.columns.find(c=>c.id===dragCard.colId); if(!srcCol) return;
+  let srcCard;
+  if(dragCard.inTop10){
+    srcCard=srcCol.top10.find(c=>c.id===dragCard.cardId);
+    srcCol.top10=srcCol.top10.filter(c=>c.id!==dragCard.cardId);
+  } else {
+    const srcSec=srcCol.sections.find(s=>s.id===dragCard.sectionId); if(!srcSec) return;
+    srcCard=srcSec.cards.find(c=>c.id===dragCard.cardId);
+    srcSec.cards=srcSec.cards.filter(c=>c.id!==dragCard.cardId);
+  }
+  if(!srcCard) return;
+  const tCol=state.columns.find(c=>c.id===tColId); if(!tCol) return;
+  if(inTop10Target){
+    if(tCol.top10.length>=10){showToast('Top 10 lleno');return;}
+    const absIdx=Math.min(insertAt+(zone==='top10b'?5:0),tCol.top10.length);
+    tCol.top10.splice(absIdx,0,srcCard);
+  } else {
+    const tSec=tCol.sections.find(s=>s.id===tSecId); if(!tSec) return;
+    const rowIdx=parseInt(row.dataset.rowri||'0');
+    const absIdx=Math.min(rowIdx*5+insertAt,tSec.cards.length);
+    tSec.cards.splice(absIdx,0,srcCard);
+  }
+  dragCard=null; renderAll();
+}
+// ── Column drag with vertical red line indicator ──
+let colDropLineEl=null, colDropTarget=null, colDropBefore=null;
+
+function onColDragStart(e){
+  dragColId=this.dataset.colDrag;
+  e.dataTransfer.effectAllowed='move'; e.dataTransfer.setData('type','col');
+  setTimeout(()=>this.closest('.genre-column')?.classList.add('dragging-col'),0);
+}
+function onColDragEnd(){
+  this.closest('.genre-column')?.classList.remove('dragging-col');
+  clearColDropLine(); dragColId=null;
+}
+function clearColDropLine(){
+  if(colDropLineEl){
+    if(colDropLineEl.parentNode) colDropLineEl.parentNode.removeChild(colDropLineEl);
+    colDropLineEl=null;
+  }
+  colDropTarget=null; colDropBefore=null;
+}
+function onColDragOver(e){
+  if(!dragColId||dragCard) return; e.preventDefault(); e.stopPropagation();
+  const col=this;
+  if(col.dataset.colId===dragColId){ clearColDropLine(); return; }
+  const rect=col.getBoundingClientRect();
+  const center=rect.left+rect.width/2;
+  const DEAD=40;
+  if(e.clientX>center-DEAD&&e.clientX<center+DEAD) return;
+  const before=e.clientX<center;
+  if(colDropTarget===col&&colDropBefore===before) return;
+  // Position fixed line — no DOM insertion into container, no layout shift
+  if(!colDropLineEl){
+    const line=document.createElement('div'); line.className='col-drop-line';
+    document.body.appendChild(line); colDropLineEl=line;
+  }
+  colDropTarget=col; colDropBefore=before;
+  // X position: left edge of col if before, right edge if after
+  const x=before?rect.left-2:rect.right-1;
+  colDropLineEl.style.left=x+'px';
+}
+function onColDragLeave(e){
+  if(!dragColId) return;
+  if(!this.contains(e.relatedTarget)) clearColDropLine();
+}
+function onColDrop(e){
+  e.preventDefault(); e.stopPropagation();
+  if(!dragColId||dragCard) return;
+  const tCol=this; const before=colDropBefore;
+  clearColDropLine();
+  const tId=tCol.dataset.colId; if(!tId||tId===dragColId){ clearColDropLine(); dragColId=null; return; }
+  const fi=state.columns.findIndex(c=>c.id===dragColId);
+  let ti=state.columns.findIndex(c=>c.id===tId);
+  if(fi<0||ti<0) return;
+  const [m]=state.columns.splice(fi,1);
+  ti=state.columns.findIndex(c=>c.id===tId); // recalculate after splice
+  state.columns.splice(before?ti:ti+1,0,m);
+  dragColId=null; renderAll();
+}
+
+
+// ── EXPORT / IMPORT JSON ──────────────────────────────────────────────────
+function exportJSON(){
+  const data=JSON.stringify(state,null,2);
+  const blob=new Blob([data],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url;
+  a.download='mediaboard_'+new Date().toISOString().slice(0,10)+'.json';
+  a.click(); URL.revokeObjectURL(url);
+  showToast('Exportado ✓');
+}
+function importJSON(){
+  document.getElementById('import-file-input').click();
+}
+function handleImportFile(input){
+  const file=input.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const imported=JSON.parse(e.target.result);
+      if(!imported.columns) throw new Error('Formato inválido');
+      state=imported;
+      scheduleSave();
+      renderAll();
+      showToast('Importado ✓ ('+state.columns.length+' secciones)');
+    }catch(err){ showToast('❌ Error al importar: '+err.message); }
+    input.value='';
+  };
+  reader.readAsText(file);
+}
+// ── INIT ──────────────────────────────────────────────────────────────────
+window.onload=async ()=>{
+  updateDots();
+  // Load from Supabase (falls back to localStorage if offline)
+  await loadFromSupabase();
+  renderAll();
+  renderFilterBar();
+};
+</script>
+</body>
+</html>
