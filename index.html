@@ -93,7 +93,7 @@
   .col-drag-handle { color:var(--text-muted); font-size:14px; cursor:grab; padding:2px 4px; user-select:none; line-height:1; }
   .col-drag-handle:hover { color:var(--text); }
   /* Vertical drop line between columns — fixed so it never shifts layout */
-  .col-drop-line { position:fixed; width:3px; top:0; bottom:0; background:var(--accent); border-radius:2px; box-shadow:0 0 8px rgba(230,57,70,.7); animation:pulse-line .6s ease-in-out infinite alternate; pointer-events:none; z-index:500; }
+  .col-drop-line { position:fixed; width:3px; background:rgba(0,0,0,0.5); border-radius:2px; pointer-events:none; z-index:500; animation:pulse-line .6s ease-in-out infinite alternate; }
   .col-title { font-family:'Bebas Neue',sans-serif; font-size:13px; letter-spacing:2px; color:var(--text-muted); cursor:default; line-height:1; display:flex; align-items:center; }
   .col-rename-btn { background:none; border:none; color:var(--text-muted); font-size:11px; cursor:pointer; padding:1px 4px; border-radius:3px; opacity:0; transition:opacity .15s; line-height:1; }
   .col-title-row:hover .col-rename-btn { opacity:1; }
@@ -111,7 +111,7 @@
   .genre-section-title { font-family:'Bebas Neue',sans-serif; font-size:14px; letter-spacing:1px; color:var(--text-muted); margin-bottom:10px; }
 
   /* Card grid — strict 5-col, add-btn always on its own row */
-  .card-row { display:flex; gap:var(--gap); flex-wrap:nowrap; }
+  .card-row { display:flex; gap:var(--gap); flex-wrap:nowrap; align-items:flex-start; }
   .card-row + .card-row { margin-top:var(--gap); }
   /* The add-btn row is always a separate element with just the + */
   .add-row { margin-top:var(--gap); }
@@ -125,7 +125,7 @@
   .delete-ov-no  { background:#1a1a1a; color:#fff; border:none; border-radius:4px; padding:3px 12px; font-size:10px; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif; width:44px; }
   .delete-ov-no:hover { background:#333; }
   /* DROP LINE */
-  .drop-line { width:3px; min-height:var(--th); border-radius:2px; background:var(--accent); flex-shrink:0; box-shadow:0 0 6px rgba(230,57,70,.6); pointer-events:none; animation:pulse-line .6s ease-in-out infinite alternate; }
+  .drop-line { width:3px; height:var(--th); border-radius:2px; background:rgba(0,0,0,0.5); flex-shrink:0; pointer-events:none; animation:pulse-line .6s ease-in-out infinite alternate; }
   @keyframes pulse-line { from{opacity:.7} to{opacity:1} }
 
   /* MEDIA CARD */
@@ -677,25 +677,28 @@ async function getIGDBToken(){
     showToast('⚠️ Configura el Client ID y Secret de IGDB primero');
     return null;
   }
-  try{
-    const ctrl=new AbortController(); setTimeout(()=>ctrl.abort(),6000);
-    const r=await fetch(
-      `https://id.twitch.tv/oauth2/token?client_id=${clientId}&client_secret=${clientSecret}&grant_type=client_credentials`,
-      {method:'POST', signal:ctrl.signal}
-    );
-    if(!r.ok){
-      const err=await r.json().catch(()=>({}));
-      showToast('❌ Token Twitch fallido: '+(err.message||r.status));
-      return null;
-    }
-    const d=await r.json();
-    _igdbToken=d.access_token;
-    _igdbTokenExpiry=Date.now()+(d.expires_in-60)*1000;
-    return _igdbToken;
-  }catch(e){
-    showToast('❌ Sin conexión con Twitch: '+e.message);
-    return null;
+  // Twitch token endpoint — try direct first, then via corsproxy
+  const tokenUrl=`https://id.twitch.tv/oauth2/token?client_id=${clientId}&client_secret=${clientSecret}&grant_type=client_credentials`;
+  const attempts=[
+    ()=>fetch(tokenUrl,{method:'POST'}),
+    ()=>fetch('https://corsproxy.io/?'+encodeURIComponent(tokenUrl),{method:'POST'}),
+  ];
+  for(const attempt of attempts){
+    try{
+      const ctrl=new AbortController(); setTimeout(()=>ctrl.abort(),7000);
+      const r=await attempt();
+      if(r.ok){
+        const d=await r.json();
+        if(d.access_token){
+          _igdbToken=d.access_token;
+          _igdbTokenExpiry=Date.now()+(d.expires_in-60)*1000;
+          return _igdbToken;
+        }
+      }
+    }catch(e){ continue; }
   }
+  showToast('❌ No se pudo obtener token de Twitch. Verifica las keys IGDB.');
+  return null;
 }
 
 function igdbClientId(){
@@ -705,36 +708,37 @@ function igdbClientId(){
 async function igdbQuery(endpoint, body){
   const token=await getIGDBToken();
   if(!token) return null;
-
+  const clientId=igdbClientId();
   const IGDB_URL='https://api.igdb.com/v4/'+endpoint;
-  // Multiple CORS proxies to try in order
-  const proxies=[
-    null,                          // direct (works on localhost)
-    'https://corsproxy.io/?',      // reliable, supports POST
-    'https://api.allorigins.win/raw?url=', // fallback
-  ];
 
-  for(const proxy of proxies){
-    try{
-      const url=proxy ? proxy+encodeURIComponent(IGDB_URL) : IGDB_URL;
-      const ctrl=new AbortController(); setTimeout(()=>ctrl.abort(),8000);
-      const headers={
-        'Client-ID':igdbClientId(),
+  // Strategy: POST to corsproxy.io which correctly forwards headers
+  // corsproxy.io accepts: POST corsproxy.io/?TARGET_URL
+  // with original headers — this is the only reliable browser→IGDB path
+  const proxyUrl='https://corsproxy.io/?'+encodeURIComponent(IGDB_URL);
+
+  const tryFetch=async(url)=>{
+    const ctrl=new AbortController(); setTimeout(()=>ctrl.abort(),8000);
+    const r=await fetch(url,{
+      method:'POST',
+      headers:{
+        'Client-ID':clientId,
         'Authorization':'Bearer '+token,
         'Content-Type':'text/plain',
-      };
-      const fetchOpts={ method:'POST', headers, body, signal:ctrl.signal };
-      // allorigins only supports GET — skip for it
-      if(proxy&&proxy.includes('allorigins')) continue;
-      const r=await fetch(url, fetchOpts);
-      if(r.ok){
-        const data=await r.json();
-        return data;
-      }
-    }catch(e){ continue; }
+      },
+      body,
+      signal:ctrl.signal
+    });
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    return await r.json();
+  };
+
+  // Try direct first (GitHub Pages may allow it), then proxy
+  try{ return await tryFetch(IGDB_URL); }catch(e1){
+    try{ return await tryFetch(proxyUrl); }catch(e2){
+      showToast('❌ IGDB sin respuesta ('+e2.message+'). Verifica las keys.');
+      return null;
+    }
   }
-  showToast('❌ IGDB no responde. Prueba desde enol.github.io/mediaboard');
-  return null;
 }
 
 async function igdbSearch(query){
@@ -1442,7 +1446,14 @@ function onColDragOver(e){
     document.body.appendChild(line); colDropLineEl=line;
   }
   colDropTarget=col; colDropBefore=before;
-  // X position: left edge of col if before, right edge if after
+  if(!colDropLineEl){
+    const line=document.createElement('div'); line.className='col-drop-line';
+    document.body.appendChild(line); colDropLineEl=line;
+  }
+  // Position: from canvas-wrapper top to bottom of viewport
+  const canvasTop=document.getElementById('canvas-wrapper')?.getBoundingClientRect().top||92;
+  colDropLineEl.style.top=canvasTop+'px';
+  colDropLineEl.style.bottom='0';
   const x=before?rect.left-2:rect.right-1;
   colDropLineEl.style.left=x+'px';
 }
