@@ -1055,21 +1055,27 @@ async function getIGDBToken(){ return 'edge-fn'; }
 async function igdbQuery(endpoint, body){
   const clientId=getIGDBClientId(), clientSecret=getIGDBSecret();
   if(!clientId||!clientSecret){ showToast('⚠️ Configura Client ID y Secret de IGDB'); return null; }
+  // Get anon key — stored separately or fall back to SB_KEY
+  const anonKey=localStorage.getItem('mediaboard_sb_anon')||SB_KEY;
   try{
     const ctrl=new AbortController(); setTimeout(()=>ctrl.abort(),10000);
     const r=await fetch(SB_IGDB_PROXY,{
       method:'POST',
       headers:{
         'Content-Type':'application/json',
-        'apikey': SB_KEY,
-        'Authorization': 'Bearer '+SB_KEY,
+        'apikey': anonKey,
+        'Authorization': 'Bearer '+anonKey,
       },
       body: JSON.stringify({ endpoint, body, clientId, clientSecret }),
       signal: ctrl.signal
     });
     if(!r.ok){
       const err=await r.text();
-      showToast('❌ IGDB proxy error '+r.status+': '+err.slice(0,60));
+      if(r.status===401){
+        showToast('❌ Edge Function: necesitas la Anon Key de Supabase. Pulsa ⚙ Repo Config → Supabase.');
+      } else {
+        showToast('❌ IGDB proxy error '+r.status+': '+err.slice(0,60));
+      }
       return null;
     }
     return await r.json();
@@ -1189,7 +1195,13 @@ function openRepoConfig(){
       <div class="key-steps">
         <div class="key-step"><span class="key-step-num">1</span><div class="key-step-body">Ve a <a href="https://supabase.com" target="_blank">supabase.com</a> → <strong>Start your project</strong> → regístrate con GitHub o email.</div></div>
         <div class="key-step"><span class="key-step-num">2</span><div class="key-step-body">Pulsa <strong>New project</strong>.<br>· Nombre: <code>mediaboard</code><br>· Region: <em>West EU (Ireland)</em> para España<br>· Contraseña: cualquiera, guárdala<br>Pulsa <strong>Create new project</strong> y espera ~1 min.</div></div>
-        <div class="key-step"><span class="key-step-num">3</span><div class="key-step-body">Ve a <strong>Settings → API</strong> y copia tu <strong>Project URL</strong> y <strong>Publishable key</strong>. Intégralas en el código donde están las constantes <code>SB_URL</code> y <code>SB_KEY</code>.</div></div>
+        <div class="key-step"><span class="key-step-num">3</span><div class="key-step-body">Ve a <strong>Settings → API</strong>.<br>· Copia la <strong>Project URL</strong> e intégrala en la constante <code>SB_URL</code> del código.<br>· En la pestaña <strong>"Legacy anon, service_role API keys"</strong> copia la <strong>anon key</strong> (empieza por <code>eyJ…</code>) y pégala abajo 👇</div></div>
+      <div class="key-step"><span class="key-step-num">4</span><div class="key-step-body">
+        <label class="key-field-label">Supabase Anon Key (eyJ…)</label>
+        <input class="modal-input key-visible" id="sb-anon-inp" type="text" placeholder="eyJhbGciOiJIUzI1NiIs…" value="${escHtml(localStorage.getItem('mediaboard_sb_anon')||'')}">
+        <button class="btn-primary" style="margin-top:8px;font-size:12px;padding:6px 14px" onclick="saveSbAnonKey()">Guardar Anon Key</button>
+        <p style="font-size:11px;color:#888;margin-top:6px">Esta key permite a la app usar las Edge Functions de Supabase (necesaria para IGDB).</p>
+      </div></div>
       </div>
 
       <div class="repo-section-title">2 · Crear la tabla</div>
@@ -1240,6 +1252,12 @@ CREATE POLICY "allow_all" ON mediaboard
       <button class="btn-primary" onclick="closeModal()">Entendido</button>
     </div>
   `, 'wide');
+}
+
+
+function saveSbAnonKey(){
+  const v=document.getElementById('sb-anon-inp')?.value.trim();
+  if(v){ localStorage.setItem('mediaboard_sb_anon',v); showToast('Anon Key guardada ✓'); }
 }
 
 function switchRepoTab(name, btn){
@@ -2194,7 +2212,7 @@ async function testIGDB(){
   try{
     const r=await fetch(SB_IGDB_PROXY,{
       method:'POST',
-      headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY},
+      headers:{'Content-Type':'application/json','apikey':(localStorage.getItem('mediaboard_sb_anon')||SB_KEY),'Authorization':'Bearer '+(localStorage.getItem('mediaboard_sb_anon')||SB_KEY)},
       body:JSON.stringify({endpoint:'games',body:'search "zelda"; fields name; limit 2;',clientId,clientSecret})
     });
     log('   HTTP status: '+r.status+(r.ok?' ✅':' ❌'),'#333');
