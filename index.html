@@ -1087,14 +1087,14 @@ async function igdbQuery(endpoint, body){
 
 async function igdbSearch(query){
   const results=await igdbQuery('games',
-    `search "${query.replace(/"/g,"'")}"; fields id,name,cover.image_id,first_release_date,genres.name,time_to_beat.*,platforms.name; limit 8;`
+    `search "${query.replace(/"/g,"'")}"; fields id,name,cover.image_id,first_release_date,genres.name,platforms.name; limit 8;`
   );
   return results||[];
 }
 
 async function igdbDetails(igdbId){
   const results=await igdbQuery('games',
-    `where id=${igdbId}; fields id,name,cover.image_id,first_release_date,genres.name,time_to_beat.*,platforms.name,summary; limit 1;`
+    `where id=${igdbId}; fields id,name,cover.image_id,first_release_date,genres.name,platforms.name,summary; limit 1;`
   );
   return results?.[0]||null;
 }
@@ -1131,14 +1131,8 @@ async function doGameSearch(query,colId,sectionId,inTop10){
   if(!area||!query.trim()) return;
   area.innerHTML='<p class="no-results">Buscando <span class="spinner"></span></p>';
   const results=await igdbSearch(query);
-  console.log('[IGDB] raw results:', JSON.stringify(results?.slice(0,2)));
   if(!document.getElementById(areaId)) return;
-  if(!results||!results.length){area.innerHTML='<p class="no-results">Sin resultados para "'+escHtml(query)+'"</p>';return;}
-  // Show raw first result in UI temporarily for debug
-  if(results[0]&&!results[0].name) {
-    area.innerHTML='<p class="no-results" style="color:red">⚠️ Datos sin nombre: '+escHtml(JSON.stringify(results[0]).slice(0,100))+'</p>';
-    return;
-  }
+  if(!results||!results.length||!results[0]?.name){area.innerHTML='<p class="no-results">Sin resultados</p>';return;}
   area.innerHTML='<div class="search-results">'+results.map((r,i)=>{
     const title=r.name||'?';
     const year=r.first_release_date?new Date(r.first_release_date*1000).getFullYear():'';
@@ -1176,9 +1170,9 @@ async function pickGame(colId,sectionId,idx,inTop10){
     id:uid(), title, year:String(year), poster,
     platforms:[], genres, pending:false,
     mediaType:'game', igdbId:r.id,
-    ttbMain: ttb.normally||null,
-    ttbMainSides: ttb.hastily||null,  // IGDB "hastily" = rushing = closest to Main+Sides
-    ttbComplete: ttb.completely||null,
+    ttbMain: null,
+    ttbMainSides: null,
+    ttbComplete: null,
     gamePlatforms: platforms,
   };
   const col=state.columns.find(c=>c.id===colId); if(!col) return;
