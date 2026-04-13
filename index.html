@@ -1131,8 +1131,14 @@ async function doGameSearch(query,colId,sectionId,inTop10){
   if(!area||!query.trim()) return;
   area.innerHTML='<p class="no-results">Buscando <span class="spinner"></span></p>';
   const results=await igdbSearch(query);
+  console.log('[IGDB] raw results:', JSON.stringify(results?.slice(0,2)));
   if(!document.getElementById(areaId)) return;
-  if(!results.length){area.innerHTML='<p class="no-results">Sin resultados</p>';return;}
+  if(!results||!results.length){area.innerHTML='<p class="no-results">Sin resultados para "'+escHtml(query)+'"</p>';return;}
+  // Show raw first result in UI temporarily for debug
+  if(results[0]&&!results[0].name) {
+    area.innerHTML='<p class="no-results" style="color:red">⚠️ Datos sin nombre: '+escHtml(JSON.stringify(results[0]).slice(0,100))+'</p>';
+    return;
+  }
   area.innerHTML='<div class="search-results">'+results.map((r,i)=>{
     const title=r.name||'?';
     const year=r.first_release_date?new Date(r.first_release_date*1000).getFullYear():'';
@@ -1140,7 +1146,11 @@ async function doGameSearch(query,colId,sectionId,inTop10){
     const ttb=r.time_to_beat;
     const main=ttb?.normally?formatHours(ttb.normally):'';
     const plats=(r.platforms||[]).slice(0,3).map(p=>p.name).join(', ');
-    return `<div class="search-result-item" onclick="pickGame('${colId}','${sectionId}',${i},${inTop10})">
+    // Use _searchColId etc if available (combined modal), else use passed params
+    const _cid=window._searchColId||colId;
+    const _sid=window._searchSecId||sectionId;
+    const _t10=window._searchInTop10!==undefined?window._searchInTop10:inTop10;
+    return `<div class="search-result-item" onclick="pickGame('${_cid}','${_sid}',${i},${_t10})">
       <img src="${cover}" alt="" style="object-fit:cover">
       <div>
         <div class="result-title">🎮 ${escHtml(title)}</div>
@@ -1152,7 +1162,7 @@ async function doGameSearch(query,colId,sectionId,inTop10){
 
 async function pickGame(colId,sectionId,idx,inTop10){
   const r=window._gameResults?.[idx]; if(!r) return;
-  const area=document.getElementById('game-results-area');
+  const area=document.getElementById('game-results-area')||document.getElementById('search-results-area');
   if(area) area.innerHTML='<p class="no-results">Cargando detalles… <span class="spinner"></span></p>';
   // Fetch full details for time_to_beat
   const full=await igdbDetails(r.id)||r;
@@ -1534,7 +1544,7 @@ async function doSearch(query,colId,sectionId,inTop10){
   area.innerHTML='<p class="no-results">Buscando <span class="spinner"></span></p>';
   const results=await tmdbSearch(query);
   if(!document.getElementById('search-results-area')) return;
-  if(!results.length){area.innerHTML='<p class="no-results">Sin resultados</p>';return;}
+  if(!results||!results.length){area.innerHTML='<p class="no-results">Sin resultados para "'+escHtml(query)+'"</p>';return;}
   area.innerHTML='<div class="search-results">'+results.map((r,i)=>{
     const title=r.title||r.name||'?';
     const year=(r.release_date||r.first_air_date||'').slice(0,4);
