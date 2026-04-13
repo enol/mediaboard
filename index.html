@@ -1125,11 +1125,13 @@ function openGameSearchModal(colId, sectionId, inTop10){
 
 async function doGameSearch(query,colId,sectionId,inTop10){
   if(!getIGDBClientId()||!getIGDBSecret()){ showToast('⚠️ Configura el Client ID y Secret de IGDB primero'); return; }
-  const area=document.getElementById('game-results-area');
+  // Support both the standalone game modal and the combined search modal
+  const area=document.getElementById('game-results-area')||document.getElementById('search-results-area');
+  const areaId=document.getElementById('game-results-area')?'game-results-area':'search-results-area';
   if(!area||!query.trim()) return;
   area.innerHTML='<p class="no-results">Buscando <span class="spinner"></span></p>';
   const results=await igdbSearch(query);
-  if(!document.getElementById('game-results-area')) return;
+  if(!document.getElementById(areaId)) return;
   if(!results.length){area.innerHTML='<p class="no-results">Sin resultados</p>';return;}
   area.innerHTML='<div class="search-results">'+results.map((r,i)=>{
     const title=r.name||'?';
