@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>MediaBoard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -111,7 +114,7 @@
   .genre-section-title { font-family:'Bebas Neue',sans-serif; font-size:14px; letter-spacing:1px; color:var(--text-muted); margin-bottom:10px; }
 
   /* Card grid — strict 5-col, add-btn always on its own row */
-  .card-row { display:flex; gap:var(--gap); flex-wrap:nowrap; align-items:flex-start; }
+  .card-row { display:flex; gap:var(--gap); flex-wrap:nowrap; align-items:flex-start; overflow:visible; }
   .card-row + .card-row { margin-top:var(--gap); }
   /* The add-btn row is always a separate element with just the + */
   .add-row { margin-top:var(--gap); }
@@ -125,7 +128,7 @@
   .delete-ov-no  { background:#1a1a1a; color:#fff; border:none; border-radius:4px; padding:3px 12px; font-size:10px; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif; width:44px; }
   .delete-ov-no:hover { background:#333; }
   /* DROP LINE */
-  .drop-line { width:4px !important; height:var(--th) !important; border-radius:2px !important; background:#000 !important; opacity:.55 !important; flex-shrink:0 !important; pointer-events:none !important; animation:none !important; }
+  .drop-line { width:3px; height:var(--th); border-radius:99px; background:rgba(0,0,0,.6); flex-shrink:0; pointer-events:none; align-self:center; }
   @keyframes pulse-line { from{opacity:.7} to{opacity:1} }
 
   /* MEDIA CARD */
@@ -201,6 +204,17 @@
   #filter-bar { position:fixed; top:52px; /* adjusted by JS */ left:0; right:0; z-index:999; background:#1a1a1a; border-bottom:1px solid #2a2a2a; padding:6px 20px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; min-height:40px; }
   .filter-group { display:flex; align-items:center; gap:5px; }
   .filter-icon { display:flex; align-items:center; flex-shrink:0; opacity:.85; }
+
+  .filter-toggle-btn {
+    display:inline-flex; align-items:center; gap:5px;
+    padding:3px 10px; border-radius:20px; font-size:11px;
+    font-family:'DM Sans',sans-serif; cursor:pointer; transition:all .15s;
+    border:1.5px solid #444; background:#2a2a2a; color:#888; flex-shrink:0;
+  }
+  .filter-toggle-btn.on  { border-color:#4caf50; color:#4caf50; background:#1a2a1a; }
+  .filter-toggle-btn.off { border-color:#444;    color:#666;    background:#2a2a2a; }
+  .filter-toggle-btn:hover { border-color:#777; color:#ccc; }
+
   .filter-chip {
     background:#2a2a2a; color:#aaa; border:1px solid #3a3a3a;
     padding:3px 10px; border-radius:20px; font-size:11px; font-family:'DM Sans',sans-serif;
@@ -294,14 +308,14 @@
 
   /* Card context menu */
   .card-menu-btn {
-    position:absolute; bottom:6px; right:4px; z-index:10;
-    width:22px; height:16px; background:rgba(0,0,0,.75); border:none;
-    border-radius:3px; cursor:pointer; display:flex; flex-direction:column;
+    position:absolute; bottom:6px; right:5px; z-index:10;
+    width:24px; height:18px; background:rgba(0,0,0,.55); border:none;
+    border-radius:4px; cursor:pointer; display:flex; flex-direction:column;
     align-items:center; justify-content:center; gap:3px; padding:2px 4px;
-    opacity:0; transition:opacity .15s;
+    opacity:.45; transition:opacity .15s, background .15s;
   }
-  .card-menu-btn span { display:block; width:12px; height:1.5px; background:#fff; border-radius:1px; }
-  .media-card:hover .card-menu-btn { opacity:1; }
+  .card-menu-btn span { display:block; width:13px; height:1.5px; background:#fff; border-radius:1px; }
+  .card-menu-btn:hover, .media-card:hover .card-menu-btn { opacity:1; background:rgba(0,0,0,.82); }
   .card-context-menu {
     position:fixed; z-index:3000; background:#1a1a1a; border:1px solid #333;
     border-radius:8px; box-shadow:0 4px 20px rgba(0,0,0,.4); min-width:160px;
@@ -318,6 +332,17 @@
   .card-ctx-submenu { background:#222; padding:4px 0; }
   .card-ctx-sub-item { padding:7px 14px 7px 38px; color:#aaa; font-size:11px; font-family:'DM Sans',sans-serif; cursor:pointer; transition:background .1s; }
   .card-ctx-sub-item:hover { background:#2a2a2a; color:#fff; }
+
+
+  /* Rating overlay on card */
+  .card-rating {
+    position:absolute; top:5px; left:5px; z-index:3;
+    background:rgba(0,0,0,.72); color:#fff;
+    font-size:10px; font-weight:700; font-family:'DM Sans',sans-serif;
+    padding:2px 5px; border-radius:4px;
+    display:flex; align-items:center; gap:3px;
+  }
+  .card-rating svg { flex-shrink:0; }
 
   /* GAME CARD extras */
   .hltb-times { display:flex; flex-direction:column; gap:1px; margin-top:3px; }
@@ -939,6 +964,8 @@ function copySql(){
 
 // ── FILTER STATE ──────────────────────────────────────────────────────────
 let activeFilters = { duration: null, genres: new Set() };
+let showPlatforms = true;   // toggle platform pills visibility
+let showRatings   = false;  // toggle TMDB rating overlay on cards
 
 const DURATION_FILTERS = [
   { id:'game',  label:'Juegos',       test: c => c.mediaType==='game' },
@@ -968,6 +995,21 @@ function cardMatchesFilters(card){
 
 function hasActiveFilters(){
   return activeFilters.duration||activeFilters.genres.size>0;
+}
+
+
+function toggleShowPlatforms(){
+  showPlatforms=!showPlatforms;
+  document.querySelectorAll('.card-platforms').forEach(el=>{
+    el.style.display=showPlatforms?'':'none';
+  });
+  renderFilterBar();
+}
+
+function toggleShowRatings(){
+  showRatings=!showRatings;
+  renderFilterBar();
+  renderAll(); // re-render to show/hide rating overlays
 }
 
 function toggleDurationFilter(id){
@@ -1004,6 +1046,8 @@ function renderFilterBar(){
   const genres=getAllGenres();
   const hasActive=hasActiveFilters();
 
+  const platIcon=`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 2l-4 5-4-5"/></svg>`;
+  const starIcon=`<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
   bar.innerHTML=`
     <div class="filter-group">
       <span class="filter-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg></span>
@@ -1011,13 +1055,20 @@ function renderFilterBar(){
         <button class="filter-chip ${activeFilters.duration===f.id?'active':''}" onclick="toggleDurationFilter('${f.id}')">${f.label}</button>
       `).join('')}
     </div>
+    <button class="filter-toggle-btn ${showPlatforms?'on':'off'}" onclick="toggleShowPlatforms()" title="Mostrar/ocultar plataformas">
+      ${platIcon} Plataformas
+    </button>
     ${genres.length?`
     <div class="filter-group">
       <span class="filter-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="15" rx="2"/><polyline points="17 2 12 7 7 2"/><line x1="2" y1="11" x2="22" y2="11"/></svg></span>
       ${genres.map(g=>`
         <button class="filter-chip ${activeFilters.genres.has(g)?'active':''}" onclick="toggleGenreFilter('${escHtml(g)}')">${escHtml(g)}</button>
       `).join('')}
-    </div>`:''}    ${hasActive?`<button class="filter-clear" onclick="clearFilters()">✕ Borrar filtros</button>`:''}
+    </div>`:''}
+    <button class="filter-toggle-btn ${showRatings?'on':'off'}" onclick="toggleShowRatings()" title="Mostrar/ocultar nota TMDB en las cards">
+      ${starIcon} Nota
+    </button>
+    ${hasActive?`<button class="filter-clear" onclick="clearFilters()">✕ Borrar filtros</button>`:''}
   `;
 }
 // ── FETCH DETAILS (runtime / seasons) ────────────────────────────────────
@@ -1030,8 +1081,8 @@ async function fetchDetails(tmdbId, mediaType){
     if(!r.ok) return null;
     const d=await r.json();
     const genres=(d.genres||[]).map(g=>g.name);
-    if(mediaType==='tv') return { seasons:d.number_of_seasons||null, genres, ended: d.status==='Ended'||d.status==='Canceled' };
-    else return { runtime:d.runtime||null, genres };
+    if(mediaType==='tv') return { seasons:d.number_of_seasons||null, genres, ended: d.status==='Ended'||d.status==='Canceled', rating:d.vote_average?Math.round(d.vote_average*10)/10:null };
+    else return { runtime:d.runtime||null, genres, rating:d.vote_average?Math.round(d.vote_average*10)/10:null };
   }catch{return null;}
 }
 
@@ -1182,6 +1233,7 @@ async function pickResult(colId,sectionId,idx,inTop10){
   if(details){
     if(r.media_type==='tv'&&details.seasons) card.seasons=details.seasons;
     if(r.media_type==='tv'&&details.ended!==undefined) card.ended=details.ended;
+    if(details.rating) card.rating=details.rating;
     if(r.media_type==='movie'&&details.runtime) card.runtime=details.runtime;
     if(details.genres) card.genres=details.genres;
   }
@@ -1343,6 +1395,17 @@ function renderSection(sec,colId){
 
 function renderCard(card,colId,sectionId,inTop10,rank){
   const secId=sectionId||'', top10f=inTop10?'true':'false';
+
+  // Empty slot — just a placeholder with a delete button
+  if(card.isEmpty){
+    return `<div class="media-card" style="opacity:.4" data-card-id="${card.id}" data-col="${colId}" data-sec="${secId}" data-top10="${top10f}" draggable="true">
+      <button class="delete-btn" onclick="event.stopPropagation();showInlineDelete(this,'${colId}','${secId}','${card.id}',${top10f})">✕</button>
+      <div class="card-img-wrap" style="border:2px dashed #ccc;border-radius:6px;background:#f5f3f0;display:flex;align-items:center;justify-content:center;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#bbb" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/></svg>
+      </div>
+    </div>`;
+  }
+
   const platforms=card.platforms||[];
   // Filter dimming
   const dimmed=hasActiveFilters()&&!cardMatchesFilters(card);
@@ -1396,18 +1459,19 @@ function renderCard(card,colId,sectionId,inTop10,rank){
   return `<div class="media-card ${cardCls}" draggable="true"
     data-card-id="${card.id}" data-col="${colId}" data-sec="${secId}" data-top10="${top10f}">
     <button class="delete-btn" onclick="event.stopPropagation();showInlineDelete(this,'${colId}','${secId}','${card.id}',${top10f})">✕</button>
-    <button class="card-menu-btn" onclick="event.stopPropagation();openCardMenu(event,'${colId}','${secId}','${card.id}',${top10f})"><span></span><span></span><span></span></button>
     <div class="card-img-wrap">
       <img src="${escHtml(card.poster)}" alt="${escHtml(card.title)}" loading="lazy">
       ${rankHtml}
       ${pendingOverlay}
+      ${showRatings&&card.rating?`<div class="card-rating"><svg width="9" height="9" viewBox="0 0 24 24" fill="#f59e0b" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>${card.rating}</div>`:''}
+      <button class="card-menu-btn" onclick="event.stopPropagation();openCardMenu(event,'${colId}','${secId}','${card.id}',${top10f})"><span></span><span></span><span></span></button>
     </div>
     <div class="card-info">
       ${typeBadge}
       <div class="card-title">${escHtml(card.title)}</div>
       <div class="card-meta">${metaStr}${noMeta?` <button onclick="event.stopPropagation();reloadMeta('${colId}','${secId}','${card.id}',${top10f})" style="background:none;border:none;cursor:pointer;color:#aaa;font-size:10px;padding:0;line-height:1;" title="Cargar duración">↻</button>`:''}</div>
       ${extraInfo}
-      <div class="card-platforms">${platHtml}</div>
+      <div class="card-platforms" style="${showPlatforms?'':' display:none'}">${platHtml}</div>
     </div>
   </div>`;
 }
@@ -1437,6 +1501,7 @@ async function reloadMeta(colId,secId,cardId,inTop10){
   if(details){
     if(card.mediaType==='tv'&&details.seasons) card.seasons=details.seasons;
     if(card.mediaType==='tv'&&details.ended!==undefined) card.ended=details.ended;
+    if(details.rating) card.rating=details.rating;
     if(card.mediaType==='movie'&&details.runtime) card.runtime=details.runtime;
     if(details.genres) card.genres=details.genres;
   }
@@ -1471,8 +1536,8 @@ function openCardMenu(e, colId, secId, cardId, inTop10){
       <span class="ctx-icon">↪</span> Mover a…
     </div>
     <div class="card-ctx-sep"></div>
-    <div class="card-ctx-item" onclick="closeCardMenu();duplicateCard('${colId}','${secId}','${cardId}',${inTop10})">
-      <span class="ctx-icon">⧉</span> Duplicar
+    <div class="card-ctx-item" onclick="closeCardMenu();insertEmptySlot('${colId}','${secId}','${cardId}',${inTop10})">
+      <span class="ctx-icon">▭</span> Añadir hueco a la derecha
     </div>
     <div class="card-ctx-sep"></div>
     <div class="card-ctx-item" onclick="closeCardMenu();showCardInfo('${colId}','${secId}','${cardId}',${inTop10})">
@@ -1527,19 +1592,23 @@ function moveCardTo(srcColId, srcSecId, cardId, inTop10, tgtColId, tgtSecId){
   renderAll(); showToast('Movido ✓');
 }
 
-function duplicateCard(colId, secId, cardId, inTop10){
-  const card=getCard(colId,secId,cardId,inTop10); if(!card) return;
-  const copy={...JSON.parse(JSON.stringify(card)), id:uid()};
+function insertEmptySlot(colId, secId, cardId, inTop10){
+  // Insert an empty placeholder card immediately to the right of the target card
+  const emptyCard={
+    id:uid(), title:'', year:'', poster:'', platforms:[], genres:[],
+    pending:false, mediaType:'empty', isEmpty:true
+  };
   const col=state.columns.find(c=>c.id===colId); if(!col) return;
   if(inTop10){
     const idx=col.top10.findIndex(x=>x.id===cardId);
-    col.top10.splice(idx+1,0,copy);
+    if(col.top10.length>=10){showToast('Top 10 lleno');return;}
+    col.top10.splice(idx+1,0,emptyCard);
   } else {
     const sec=col.sections.find(s=>s.id===secId); if(!sec) return;
     const idx=sec.cards.findIndex(x=>x.id===cardId);
-    sec.cards.splice(idx+1,0,copy);
+    sec.cards.splice(idx+1,0,emptyCard);
   }
-  renderAll(); showToast('Duplicado ✓');
+  renderAll(); showToast('Hueco añadido ✓');
 }
 
 async function showCardInfo(colId, secId, cardId, inTop10){
