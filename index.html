@@ -1089,8 +1089,9 @@ async function fetchDetails(tmdbId, mediaType){
     if(!r.ok) return null;
     const d=await r.json();
     const genres=(d.genres||[]).map(g=>g.name);
-    if(mediaType==='tv') return { seasons:d.number_of_seasons||null, genres, ended: d.status==='Ended'||d.status==='Canceled', rating:d.vote_average>0?Math.round(d.vote_average*10)/10:null };
-    else return { runtime:d.runtime||null, genres, rating:d.vote_average>0?Math.round(d.vote_average*10)/10:null };
+    const rating=typeof d.vote_average==='number'&&d.vote_average>0 ? Math.round(d.vote_average*10)/10 : null;
+    if(mediaType==='tv') return { seasons:d.number_of_seasons||null, genres, ended: d.status==='Ended'||d.status==='Canceled', rating };
+    else return { runtime:d.runtime||null, genres, rating };
   }catch{return null;}
 }
 
@@ -1131,7 +1132,7 @@ function renameColumn(colId){
     <input class="modal-input" id="rename-inp" value="${escHtml(col.name)}">
     <label class="key-field-label" style="margin-top:14px">Color de fondo</label>
     <div class="color-picker-row" id="color-picker-row">
-      <div class="color-swatch none-swatch" style="background:" title="Sin color" data-color="" onclick="selectSectionColor(this)"></div><div class="color-swatch " style="background:#dbeafe" title="Azul" data-color="#dbeafe" onclick="selectSectionColor(this)"></div><div class="color-swatch " style="background:#e0e7ff" title="Índigo" data-color="#e0e7ff" onclick="selectSectionColor(this)"></div><div class="color-swatch " style="background:#ede9fe" title="Violeta" data-color="#ede9fe" onclick="selectSectionColor(this)"></div><div class="color-swatch " style="background:#ffedd5" title="Naranja" data-color="#ffedd5" onclick="selectSectionColor(this)"></div><div class="color-swatch " style="background:#fef9c3" title="Amarillo" data-color="#fef9c3" onclick="selectSectionColor(this)"></div><div class="color-swatch " style="background:#dcfce7" title="Verde" data-color="#dcfce7" onclick="selectSectionColor(this)"></div><div class="color-swatch " style="background:#ccfbf1" title="Teal" data-color="#ccfbf1" onclick="selectSectionColor(this)"></div><div class="color-swatch " style="background:#e5e7eb" title="Gris claro" data-color="#e5e7eb" onclick="selectSectionColor(this)"></div><div class="color-swatch " style="background:#374151" title="Gris oscuro" data-color="#374151" onclick="selectSectionColor(this)"></div>
+      <div class="color-swatch none-swatch" style="background:" title="Sin color" data-color="" onclick="selectSectionColor(this)"></div><div class="color-swatch " style="background:#dbeafe" title="Azul" data-color="#dbeafe" onclick="selectSectionColor(this)"></div><div class="color-swatch " style="background:#e0e7ff" title="Índigo" data-color="#e0e7ff" onclick="selectSectionColor(this)"></div><div class="color-swatch " style="background:#ede9fe" title="Violeta" data-color="#ede9fe" onclick="selectSectionColor(this)"></div><div class="color-swatch " style="background:#ffedd5" title="Naranja" data-color="#ffedd5" onclick="selectSectionColor(this)"></div><div class="color-swatch " style="background:#fef9c3" title="Amarillo" data-color="#fef9c3" onclick="selectSectionColor(this)"></div><div class="color-swatch " style="background:#dcfce7" title="Verde" data-color="#dcfce7" onclick="selectSectionColor(this)"></div><div class="color-swatch " style="background:#ccfbf1" title="Teal" data-color="#ccfbf1" onclick="selectSectionColor(this)"></div><div class="color-swatch " style="background:#e5e7eb" title="Gris claro" data-color="#e5e7eb" onclick="selectSectionColor(this)"></div><div class="color-swatch " style="background:#6b7280" title="Gris" data-color="#6b7280" onclick="selectSectionColor(this)"></div>
     </div>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
@@ -1241,7 +1242,7 @@ async function pickResult(colId,sectionId,idx,inTop10){
   if(details){
     if(r.media_type==='tv'&&details.seasons) card.seasons=details.seasons;
     if(r.media_type==='tv'&&details.ended!==undefined) card.ended=details.ended;
-    if(details.rating) card.rating=details.rating;
+    if(details.rating!==undefined&&details.rating!==null) card.rating=details.rating;
     if(r.media_type==='movie'&&details.runtime) card.runtime=details.runtime;
     if(details.genres) card.genres=details.genres;
   }
@@ -1469,7 +1470,7 @@ function renderCard(card,colId,sectionId,inTop10,rank){
       <img src="${escHtml(card.poster)}" alt="${escHtml(card.title)}" loading="lazy">
       ${rankHtml}
       ${pendingOverlay}
-      ${showRatings&&card.rating!=null?`<div class="card-rating"><svg width="9" height="9" viewBox="0 0 24 24" fill="#f59e0b" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>${card.rating}</div>`:''}
+      ${showRatings?(card.rating!=null?`<div class="card-rating"><svg width="9" height="9" viewBox="0 0 24 24" fill="#f59e0b" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>${card.rating}</div>`:`<div class="card-rating" style="cursor:pointer" onclick="event.stopPropagation();reloadMeta('${colId}','${secId}','${card.id}',${top10f})" title="Cargar nota">★ ?</div>`):''}
       <button class="card-menu-btn" onclick="event.stopPropagation();openCardMenu(event,'${colId}','${secId}','${card.id}',${top10f})"><span></span><span></span><span></span></button>
     </div>
     <div class="card-info">
@@ -1507,7 +1508,7 @@ async function reloadMeta(colId,secId,cardId,inTop10){
   if(details){
     if(card.mediaType==='tv'&&details.seasons) card.seasons=details.seasons;
     if(card.mediaType==='tv'&&details.ended!==undefined) card.ended=details.ended;
-    if(details.rating) card.rating=details.rating;
+    if(details.rating!==undefined&&details.rating!==null) card.rating=details.rating;
     if(card.mediaType==='movie'&&details.runtime) card.runtime=details.runtime;
     if(details.genres) card.genres=details.genres;
   }
