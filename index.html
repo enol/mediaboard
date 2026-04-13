@@ -527,6 +527,7 @@
       <button class="topbar-key-btn" id="igdb-btn" onclick="openKeyModal('igdb')">
         <span class="dot" id="igdb-dot"></span> IGDB
       </button>
+      <button class="topbar-btn secondary" onclick="testIGDB()" style="font-size:11px;padding:5px 8px;" title="Probar conexión IGDB">🔧 Test IGDB</button>
       <button class="topbar-btn secondary" onclick="openRepoConfig()" style="font-size:11px;padding:5px 10px;">⚙ Repo Config</button>
       <label>Zoom:</label>
       <input type="range" id="zoom-slider" min="40" max="100" value="65" step="5">
@@ -2155,6 +2156,83 @@ document.addEventListener('touchstart',e=>{
 },{passive:true});
 document.addEventListener('touchend',()=>{ clearTimeout(_lpTimer); _lpCard=null; },{passive:true});
 document.addEventListener('touchmove',()=>{ clearTimeout(_lpTimer); _lpCard=null; },{passive:true});
+
+
+// ── IGDB DIAGNOSTIC ───────────────────────────────────────────────────────
+async function testIGDB(){
+  const clientId=getIGDBClientId(), clientSecret=getIGDBSecret();
+  if(!clientId||!clientSecret){
+    showModal('<button class="modal-close-x" onclick="closeModal()">✕</button><h2>🔧 Test IGDB</h2><p style="color:red;margin-top:8px">❌ No hay Client ID o Secret configurados.<br>Pulsa el botón IGDB en el topbar para configurarlos.</p><div class="modal-actions"><button class="btn-primary" onclick="closeModal()">OK</button></div>');
+    return;
+  }
+
+  showModal('<button class="modal-close-x" onclick="closeModal()">✕</button><h2>🔧 Test IGDB</h2><p id="test-log" style="font-family:monospace;font-size:11px;line-height:1.8;white-space:pre-wrap">Probando…</p>');
+
+  const log=(msg,color='#333')=>{
+    const p=document.getElementById('test-log');
+    if(p) p.innerHTML+='\n<span style="color:'+color+'">'+msg+'</span>';
+  };
+
+  // Step 1: Twitch token
+  log('1. Obteniendo token de Twitch…','#888');
+  try{
+    const r=await fetch(`https://id.twitch.tv/oauth2/token?client_id=${clientId}&client_secret=${clientSecret}&grant_type=client_credentials`,{method:'POST'});
+    const d=await r.json();
+    if(d.access_token){
+      log('   ✅ Token OK: '+d.access_token.slice(0,12)+'…','#2d6a4f');
+    } else {
+      log('   ❌ Sin token: '+JSON.stringify(d),'red');
+      return;
+    }
+  }catch(e){
+    log('   ❌ Error Twitch: '+e.message,'red');
+  }
+
+  // Step 2: Edge Function
+  log('\n2. Probando Edge Function Supabase…','#888');
+  log('   URL: '+SB_IGDB_PROXY,'#555');
+  try{
+    const r=await fetch(SB_IGDB_PROXY,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY},
+      body:JSON.stringify({endpoint:'games',body:'search "zelda"; fields name; limit 2;',clientId,clientSecret})
+    });
+    log('   HTTP status: '+r.status+(r.ok?' ✅':' ❌'),'#333');
+    const text=await r.text();
+    log('   Respuesta: '+text.slice(0,200),'#333');
+    if(r.ok){
+      try{
+        const data=JSON.parse(text);
+        if(Array.isArray(data)&&data.length){
+          log('   ✅ IGDB funciona! Ejemplo: '+data[0].name,'#2d6a4f');
+        } else {
+          log('   ⚠️ Respuesta vacía o inesperada','orange');
+        }
+      }catch(e){ log('   ⚠️ No es JSON válido','orange'); }
+    }
+  }catch(e){
+    log('   ❌ Error Edge Function: '+e.message,'red');
+  }
+
+  // Step 3: Direct IGDB (will likely fail)
+  log('\n3. Probando IGDB directo (referencia)…','#888');
+  try{
+    const t=await fetch(`https://id.twitch.tv/oauth2/token?client_id=${clientId}&client_secret=${clientSecret}&grant_type=client_credentials`,{method:'POST'});
+    const td=await t.json();
+    const r=await fetch('https://api.igdb.com/v4/games',{
+      method:'POST',
+      headers:{'Client-ID':clientId,'Authorization':'Bearer '+td.access_token,'Content-Type':'text/plain'},
+      body:'search "zelda"; fields name; limit 1;'
+    });
+    log('   HTTP status: '+r.status+(r.ok?' ✅':' ❌'),'#333');
+    if(r.ok) log('   ✅ CORS directo funciona desde este origen','#2d6a4f');
+    else log('   ❌ CORS bloqueado (normal desde GitHub Pages)','#888');
+  }catch(e){
+    log('   ❌ Bloqueado: '+e.message,'#888');
+  }
+
+  log('\n— Diagnóstico completo —','#888');
+}
 
 function escHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
