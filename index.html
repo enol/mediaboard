@@ -1415,7 +1415,26 @@ function renameColumn(colId){
     <input class="modal-input" id="rename-inp" value="${escHtml(col.name)}">
     <label class="key-field-label" style="margin-top:14px">Color de fondo</label>
     <div class="color-picker-row" id="color-picker-row">
-      <div class="color-swatch none-swatch" style="background:" title="Sin color" data-color="" onclick="selectSectionColor(this)"></div><div class="color-swatch " style="background:#dbeafe" title="Azul" data-color="#dbeafe" onclick="selectSectionColor(this)"></div><div class="color-swatch " style="background:#e0e7ff" title="Índigo" data-color="#e0e7ff" onclick="selectSectionColor(this)"></div><div class="color-swatch " style="background:#ede9fe" title="Violeta" data-color="#ede9fe" onclick="selectSectionColor(this)"></div><div class="color-swatch " style="background:#ffedd5" title="Naranja" data-color="#ffedd5" onclick="selectSectionColor(this)"></div><div class="color-swatch " style="background:#fef9c3" title="Amarillo" data-color="#fef9c3" onclick="selectSectionColor(this)"></div><div class="color-swatch " style="background:#dcfce7" title="Verde" data-color="#dcfce7" onclick="selectSectionColor(this)"></div><div class="color-swatch " style="background:#ccfbf1" title="Teal" data-color="#ccfbf1" onclick="selectSectionColor(this)"></div><div class="color-swatch " style="background:#e5e7eb" title="Gris claro" data-color="#e5e7eb" onclick="selectSectionColor(this)"></div><div class="color-swatch " style="background:#6b7280" title="Gris" data-color="#6b7280" onclick="selectSectionColor(this)"></div>
+      <div class="color-swatch none-swatch" style="background:" title="Sin color" data-color="" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#dbeafe" title="Azul" data-color="#dbeafe" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#bfdbfe" title="Azul medio" data-color="#bfdbfe" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#e0e7ff" title="Índigo" data-color="#e0e7ff" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#ede9fe" title="Violeta" data-color="#ede9fe" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#fce7f3" title="Rosa" data-color="#fce7f3" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#fecdd3" title="Coral" data-color="#fecdd3" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#ffedd5" title="Naranja" data-color="#ffedd5" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#fde68a" title="Ámbar" data-color="#fde68a" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#fef9c3" title="Amarillo" data-color="#fef9c3" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#d9f99d" title="Lima" data-color="#d9f99d" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#dcfce7" title="Verde" data-color="#dcfce7" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#a7f3d0" title="Menta" data-color="#a7f3d0" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#ccfbf1" title="Teal" data-color="#ccfbf1" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#bae6fd" title="Cielo" data-color="#bae6fd" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#e5e7eb" title="Gris claro" data-color="#e5e7eb" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#f3e8ff" title="Lavanda" data-color="#f3e8ff" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#fdf2f8" title="Blush" data-color="#fdf2f8" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#ecfdf5" title="Menta claro" data-color="#ecfdf5" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#6b7280" title="Gris" data-color="#6b7280" onclick="selectSectionColor(this)"></div>
     </div>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
@@ -1514,11 +1533,30 @@ async function pickResult(colId,sectionId,idx,inTop10){
   const poster=r.poster_path?IMG_BASE+r.poster_path:'';
   const area=document.getElementById('search-results-area');
   if(area) area.innerHTML='<p class="no-results">Cargando datos… <span class="spinner"></span></p>';
-  // Fetch providers and details in parallel
-  const [platforms, details]=await Promise.all([
+  const [platforms,details]=await Promise.all([
     fetchProviders(r.id,r.media_type),
     fetchDetails(r.id,r.media_type)
   ]);
+
+  // If filling an empty slot — replace it instead of pushing
+  if(window._fillSlotMode&&window._fillSlotTarget){
+    const target=window._fillSlotTarget;
+    window._fillSlotMode=false; window._fillSlotTarget=null;
+    const newCard={id:target.cardId,title,year,poster,platforms,tmdbId:r.id,mediaType:r.media_type,pending:false,genres:[],isEmpty:false};
+    if(details){
+      if(r.media_type==='tv'&&details.seasons) newCard.seasons=details.seasons;
+      if(r.media_type==='movie'&&details.runtime) newCard.runtime=details.runtime;
+      if(details.genres) newCard.genres=details.genres;
+      if(details.rating!==undefined&&details.rating!==null) newCard.rating=details.rating;
+      if(r.media_type==='tv'&&details.ended!==undefined) newCard.ended=details.ended;
+    }
+    const col=state.columns.find(c=>c.id===target.colId); if(!col) return;
+    if(target.inTop10){ const i=col.top10.findIndex(x=>x.id===target.cardId); if(i>=0) col.top10[i]=newCard; }
+    else{ const sec=col.sections.find(s=>s.id===target.secId); if(sec){ const i=sec.cards.findIndex(x=>x.id===target.cardId); if(i>=0) sec.cards[i]=newCard; } }
+    closeModal(); renderAll(); return;
+  }
+
+  // Normal add
   const card={id:uid(),title,year,poster,platforms,tmdbId:r.id,mediaType:r.media_type,pending:false,genres:[]};
   if(details){
     if(r.media_type==='tv'&&details.seasons) card.seasons=details.seasons;
@@ -1910,36 +1948,7 @@ function fillEmptySlot(colId, secId, cardId, inTop10){
   // Override pickResult to replace slot instead of pushing
   window._fillSlotMode=true;
 }
-// Patch pickResult to handle slot replacement
-const _origPickResult=pickResult;
-async function pickResult(colId,sectionId,idx,inTop10){
-  if(window._fillSlotMode&&window._fillSlotTarget){
-    const target=window._fillSlotTarget;
-    window._fillSlotMode=false; window._fillSlotTarget=null;
-    // Get the result
-    const r=window._searchResults?.[idx]; if(!r) return;
-    const title=r.title||r.name||'?';
-    const year=(r.release_date||r.first_air_date||'').slice(0,4);
-    const poster=r.poster_path?IMG_BASE+r.poster_path:'';
-    const area=document.getElementById('search-results-area');
-    if(area) area.innerHTML='<p class="no-results">Cargando datos… <span class="spinner"></span></p>';
-    const [platforms,details]=await Promise.all([fetchProviders(r.id,r.media_type),fetchDetails(r.id,r.media_type)]);
-    const newCard={id:target.cardId,title,year,poster,platforms,tmdbId:r.id,mediaType:r.media_type,pending:false,genres:[],isEmpty:false};
-    if(details){
-      if(r.media_type==='tv'&&details.seasons) newCard.seasons=details.seasons;
-      if(r.media_type==='movie'&&details.runtime) newCard.runtime=details.runtime;
-      if(details.genres) newCard.genres=details.genres;
-      if(details.rating) newCard.rating=details.rating;
-      if(r.media_type==='tv'&&details.ended!==undefined) newCard.ended=details.ended;
-    }
-    // Replace empty slot with real card
-    const col=state.columns.find(c=>c.id===target.colId); if(!col) return;
-    if(target.inTop10){ const i=col.top10.findIndex(x=>x.id===target.cardId); if(i>=0) col.top10[i]=newCard; }
-    else { const sec=col.sections.find(s=>s.id===target.secId); if(sec){ const i=sec.cards.findIndex(x=>x.id===target.cardId); if(i>=0) sec.cards[i]=newCard; } }
-    closeModal(); renderAll(); return;
-  }
-  return _origPickResult(colId,sectionId,idx,inTop10);
-}
+
 
 function insertEmptySlot(colId, secId, cardId, inTop10){
   // Insert an empty placeholder card immediately to the right of the target card
@@ -2062,10 +2071,13 @@ function renameSection(colId, secId){
   const curBg=sec.bgColor||'';
 
   const COLORS=[
-    {hex:'',label:'Sin color'},{hex:'#dbeafe',label:'Azul'},{hex:'#e0e7ff',label:'Índigo'},
-    {hex:'#ede9fe',label:'Violeta'},{hex:'#ffedd5',label:'Naranja'},{hex:'#fef9c3',label:'Amarillo'},
-    {hex:'#dcfce7',label:'Verde'},{hex:'#ccfbf1',label:'Teal'},{hex:'#e5e7eb',label:'Gris claro'},
-    {hex:'#6b7280',label:'Gris'},
+    {hex:'',label:'Sin color'},{hex:'#dbeafe',label:'Azul'},{hex:'#bfdbfe',label:'Azul medio'},
+    {hex:'#e0e7ff',label:'Índigo'},{hex:'#ede9fe',label:'Violeta'},{hex:'#fce7f3',label:'Rosa'},
+    {hex:'#fecdd3',label:'Coral'},{hex:'#ffedd5',label:'Naranja'},{hex:'#fde68a',label:'Ámbar'},
+    {hex:'#fef9c3',label:'Amarillo'},{hex:'#d9f99d',label:'Lima'},{hex:'#dcfce7',label:'Verde'},
+    {hex:'#a7f3d0',label:'Menta'},{hex:'#ccfbf1',label:'Teal'},{hex:'#bae6fd',label:'Cielo'},
+    {hex:'#e5e7eb',label:'Gris claro'},{hex:'#f3e8ff',label:'Lavanda'},{hex:'#fdf2f8',label:'Blush'},
+    {hex:'#ecfdf5',label:'Menta claro'},{hex:'#6b7280',label:'Gris'},
   ];
   const swatches=COLORS.map(col=>`
     <div class="color-swatch ${!col.hex?'none-swatch':''}" style="background:${col.hex}" title="${col.label}" data-color="${col.hex}" onclick="selectSectionColor(this)"></div>
