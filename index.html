@@ -106,11 +106,11 @@
 
   /* COMBINED CARD */
   .combined-card { background:var(--card-bg); border-radius:10px; box-shadow:var(--shadow); border:1px solid var(--border); overflow:hidden; }
-  .top10-section { padding:16px 14px 14px; }
+  .top10-section { padding:16px 14px 20px; }
   .top10-title { font-family:'Bebas Neue',sans-serif; font-size:20px; letter-spacing:1px; color:var(--text); margin-bottom:14px; display:flex; align-items:center; gap:8px; }
   .top10-title .badge { background:var(--accent); color:#fff; font-size:10px; padding:2px 7px; border-radius:3px; letter-spacing:1px; font-family:'DM Sans',sans-serif; font-weight:700; }
-  .card-divider { height:1px; background:#c8c3bb; margin:14px 0 0; }
-  .genre-section { padding:20px 14px 14px; border-radius:0 0 10px 10px; transition:background .2s; }
+  .card-divider { height:2px; background:#c8c3bb; margin:0; }
+  .genre-section { padding:22px 14px 16px; border-radius:0 0 10px 10px; transition:background .2s; }
   .genre-section-title { font-family:'Bebas Neue',sans-serif; font-size:14px; letter-spacing:1px; color:var(--text-muted); margin-bottom:10px; }
 
   /* Card grid — strict 5-col, add-btn always on its own row */
@@ -345,13 +345,14 @@
 
   /* Rating overlay on card */
   .card-rating {
-    position:absolute; top:5px; left:5px; z-index:3;
-    background:rgba(0,0,0,.72); color:#fff;
-    font-size:10px; font-weight:700; font-family:'DM Sans',sans-serif;
-    padding:2px 5px; border-radius:4px;
-    display:flex; align-items:center; gap:3px;
+    position:absolute; top:6px; left:6px; z-index:3;
+    background:rgba(0,0,0,.78); color:#fff;
+    font-size:13px; font-weight:700; font-family:'DM Sans',sans-serif;
+    padding:3px 8px; border-radius:5px;
+    display:flex; align-items:center; gap:4px;
+    line-height:1;
   }
-  .card-rating svg { flex-shrink:0; }
+  .card-rating svg { flex-shrink:0; width:13px; height:13px; }
 
   /* GAME CARD extras */
   .hltb-times { display:flex; flex-direction:column; gap:1px; margin-top:3px; }
@@ -1471,7 +1472,7 @@ function renderCard(card,colId,sectionId,inTop10,rank){
       <img src="${escHtml(card.poster)}" alt="${escHtml(card.title)}" loading="lazy">
       ${rankHtml}
       ${pendingOverlay}
-      ${showRatings&&card.rating!=null?`<div class="card-rating"><svg width="9" height="9" viewBox="0 0 24 24" fill="#f59e0b" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>${card.rating}</div>`:''}
+      ${showRatings&&card.rating!=null?`<div class="card-rating"><svg width="13" height="13" viewBox="0 0 24 24" fill="#f59e0b" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>${card.rating}</div>`:''}
       <button class="card-menu-btn" onclick="event.stopPropagation();openCardMenu(event,'${colId}','${secId}','${card.id}',${top10f})"><span></span><span></span><span></span></button>
     </div>
     <div class="card-info">
