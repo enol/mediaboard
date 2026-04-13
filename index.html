@@ -380,6 +380,7 @@
       <label>Zoom:</label>
       <input type="range" id="zoom-slider" min="40" max="100" value="65" step="5">
       <span id="zoom-val">65%</span>
+      <button class="topbar-btn secondary" onclick="reloadAllMeta()" title="Recargar duración, nota y géneros de todos los títulos">↻ Todo</button>
       <button class="topbar-btn secondary" onclick="exportJSON()">📤</button>
       <button class="topbar-btn secondary" onclick="importJSON()">📥</button>
       <input type="file" id="import-file-input" accept=".json" style="display:none" onchange="handleImportFile(this)">
@@ -1470,7 +1471,7 @@ function renderCard(card,colId,sectionId,inTop10,rank){
       <img src="${escHtml(card.poster)}" alt="${escHtml(card.title)}" loading="lazy">
       ${rankHtml}
       ${pendingOverlay}
-      ${showRatings?(card.rating!=null?`<div class="card-rating"><svg width="9" height="9" viewBox="0 0 24 24" fill="#f59e0b" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>${card.rating}</div>`:`<div class="card-rating" style="cursor:pointer" onclick="event.stopPropagation();reloadMeta('${colId}','${secId}','${card.id}',${top10f})" title="Cargar nota">★ ?</div>`):''}
+      ${showRatings&&card.rating!=null?`<div class="card-rating"><svg width="9" height="9" viewBox="0 0 24 24" fill="#f59e0b" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>${card.rating}</div>`:''}
       <button class="card-menu-btn" onclick="event.stopPropagation();openCardMenu(event,'${colId}','${secId}','${card.id}',${top10f})"><span></span><span></span><span></span></button>
     </div>
     <div class="card-info">
@@ -1701,6 +1702,43 @@ async function showCardInfo(colId, secId, cardId, inTop10){
       ${cast||'<p style="color:#888;font-size:12px">Sin datos de reparto</p>'}
     `);
   }catch(e){ showToast('❌ Error cargando info: '+e.message); }
+}
+
+
+// ── RELOAD ALL METADATA ───────────────────────────────────────────────────
+async function reloadAllMeta(){
+  const key=getKey(); if(!key){ showToast('⚠️ Necesitas la API Key de TMDB'); return; }
+  // Collect all cards with tmdbId
+  const todos=[];
+  state.columns.forEach(col=>{
+    col.top10.forEach(card=>{ if(card.tmdbId&&card.mediaType!=='game'&&card.mediaType!=='empty') todos.push({card, arr:col.top10}); });
+    col.sections.forEach(sec=>sec.cards.forEach(card=>{ if(card.tmdbId&&card.mediaType!=='game'&&card.mediaType!=='empty') todos.push({card, arr:sec.cards}); }));
+  });
+  if(!todos.length){ showToast('Sin títulos que actualizar'); return; }
+  showToast('Recargando '+todos.length+' títulos…');
+  setSyncStatus('syncing','Actualizando…');
+  let done=0;
+  // Process in batches of 3 to avoid rate limiting
+  for(let i=0;i<todos.length;i+=3){
+    const batch=todos.slice(i,i+3);
+    await Promise.all(batch.map(async ({card})=>{
+      const details=await fetchDetails(card.tmdbId, card.mediaType);
+      if(details){
+        if(card.mediaType==='tv'&&details.seasons) card.seasons=details.seasons;
+        if(card.mediaType==='movie'&&details.runtime) card.runtime=details.runtime;
+        if(details.genres?.length) card.genres=details.genres;
+        if(details.rating!==undefined&&details.rating!==null) card.rating=details.rating;
+        if(card.mediaType==='tv'&&details.ended!==undefined) card.ended=details.ended;
+      }
+      done++;
+    }));
+    // Small pause between batches
+    if(i+3<todos.length) await new Promise(r=>setTimeout(r,300));
+  }
+  renderAll();
+  saveBoard();
+  showToast('✓ Actualizados '+done+' títulos');
+  setSyncStatus('synced','Guardado ✓');
 }
 
 function escHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
