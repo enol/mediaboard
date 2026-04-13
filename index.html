@@ -103,11 +103,11 @@
 
   /* COMBINED CARD */
   .combined-card { background:var(--card-bg); border-radius:10px; box-shadow:var(--shadow); border:1px solid var(--border); overflow:hidden; }
-  .top10-section { padding:16px 14px 14px; }
+  .top10-section { padding:16px 14px 20px; }
   .top10-title { font-family:'Bebas Neue',sans-serif; font-size:20px; letter-spacing:1px; color:var(--text); margin-bottom:14px; display:flex; align-items:center; gap:8px; }
   .top10-title .badge { background:var(--accent); color:#fff; font-size:10px; padding:2px 7px; border-radius:3px; letter-spacing:1px; font-family:'DM Sans',sans-serif; font-weight:700; }
-  .card-divider { height:1px; background:var(--divider); margin:0 14px; }
-  .genre-section { padding:14px; border-radius:0 0 10px 10px; transition:background .2s; }
+  .card-divider { height:2px; background:#b0aba3; margin:20px 0 0; }
+  .genre-section { padding:20px 14px 14px; border-radius:0 0 10px 10px; transition:background .2s; }
   .genre-section-title { font-family:'Bebas Neue',sans-serif; font-size:14px; letter-spacing:1px; color:var(--text-muted); margin-bottom:10px; }
 
   /* Card grid — strict 5-col, add-btn always on its own row */
@@ -291,6 +291,34 @@
   }
   .copy-btn:hover { background:#3a3a3a; color:#fff; }
 
+
+  /* Card context menu */
+  .card-menu-btn {
+    position:absolute; bottom:6px; right:4px; z-index:10;
+    width:22px; height:16px; background:rgba(0,0,0,.75); border:none;
+    border-radius:3px; cursor:pointer; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:3px; padding:2px 4px;
+    opacity:0; transition:opacity .15s;
+  }
+  .card-menu-btn span { display:block; width:12px; height:1.5px; background:#fff; border-radius:1px; }
+  .media-card:hover .card-menu-btn { opacity:1; }
+  .card-context-menu {
+    position:fixed; z-index:3000; background:#1a1a1a; border:1px solid #333;
+    border-radius:8px; box-shadow:0 4px 20px rgba(0,0,0,.4); min-width:160px;
+    overflow:hidden;
+  }
+  .card-ctx-item {
+    display:flex; align-items:center; gap:8px; padding:9px 14px;
+    color:#ddd; font-size:12px; font-family:'DM Sans',sans-serif;
+    cursor:pointer; transition:background .1s; user-select:none;
+  }
+  .card-ctx-item:hover { background:#2a2a2a; color:#fff; }
+  .card-ctx-item .ctx-icon { font-size:13px; width:16px; text-align:center; flex-shrink:0; }
+  .card-ctx-sep { height:1px; background:#2a2a2a; margin:2px 0; }
+  .card-ctx-submenu { background:#222; padding:4px 0; }
+  .card-ctx-sub-item { padding:7px 14px 7px 38px; color:#aaa; font-size:11px; font-family:'DM Sans',sans-serif; cursor:pointer; transition:background .1s; }
+  .card-ctx-sub-item:hover { background:#2a2a2a; color:#fff; }
+
   /* GAME CARD extras */
   .hltb-times { display:flex; flex-direction:column; gap:1px; margin-top:3px; }
   .hltb-row { display:flex; justify-content:space-between; align-items:center; font-size:9px; line-height:1.4; }
@@ -316,11 +344,17 @@
       </button>
       <button class="topbar-btn secondary" onclick="openRepoConfig()" style="font-size:11px;padding:5px 10px;">⚙ Repo Config</button>
       <label>Zoom:</label>
-      <input type="range" id="zoom-slider" min="40" max="100" value="100" step="5">
-      <span id="zoom-val">100%</span>
+      <input type="range" id="zoom-slider" min="40" max="100" value="65" step="5">
+      <span id="zoom-val">65%</span>
       <button class="topbar-btn secondary" onclick="exportJSON()">📤</button>
       <button class="topbar-btn secondary" onclick="importJSON()">📥</button>
       <input type="file" id="import-file-input" accept=".json" style="display:none" onchange="handleImportFile(this)">
+    </div>
+    <div id="title-search-wrap" style="position:relative;flex-shrink:0;">
+      <input id="title-search" type="text" placeholder="🔍 Buscar título…"
+        style="background:#2a2a2a;border:1px solid #444;color:#fff;font-size:11px;padding:5px 10px 5px 28px;border-radius:4px;width:160px;font-family:'DM Sans',sans-serif;outline:none;"
+        oninput="filterTitleSearch(this.value)" onfocus="this.style.borderColor='#888'" onblur="this.style.borderColor='#444'">
+      <span style="position:absolute;left:9px;top:50%;transform:translateY(-50%);font-size:11px;color:#666;pointer-events:none">🔍</span>
     </div>
     <div id="sync-status" class="sync-status" title="Estado sincronización Supabase">
       <span id="sync-dot" class="sync-dot"></span>
@@ -340,8 +374,8 @@
     </div>
     <div class="drawer-row">
       <label>Zoom:</label>
-      <input type="range" id="zoom-slider2" min="40" max="100" value="100" step="5">
-      <span id="zoom-val2">100%</span>
+      <input type="range" id="zoom-slider2" min="40" max="100" value="65" step="5">
+      <span id="zoom-val2">65%</span>
       <button class="topbar-btn secondary" onclick="exportJSON()">📤 Exportar</button>
       <button class="topbar-btn secondary" onclick="importJSON()">📥 Importar</button>
     </div>
@@ -909,6 +943,8 @@ let activeFilters = { duration: null, genres: new Set() };
 const DURATION_FILTERS = [
   { id:'game',  label:'Juegos',       test: c => c.mediaType==='game' },
   { id:'series',label:'Series',       test: c => c.mediaType==='tv' },
+  { id:'ended', label:'Terminadas',    test: c => c.mediaType==='tv'&&c.ended===true },
+  { id:'ongoing',label:'En emisión',   test: c => c.mediaType==='tv'&&!c.ended },
   { id:'lt30',  label:'Hasta 30 min', test: c => c.runtime&&c.runtime<=30 },
   { id:'lt60',  label:'Hasta 60 min', test: c => c.runtime&&c.runtime<=60 },
   { id:'lt90',  label:'Hasta 90 min', test: c => c.runtime&&c.runtime<=90 },
@@ -994,7 +1030,7 @@ async function fetchDetails(tmdbId, mediaType){
     if(!r.ok) return null;
     const d=await r.json();
     const genres=(d.genres||[]).map(g=>g.name);
-    if(mediaType==='tv') return { seasons:d.number_of_seasons||null, genres };
+    if(mediaType==='tv') return { seasons:d.number_of_seasons||null, genres, ended: d.status==='Ended'||d.status==='Canceled' };
     else return { runtime:d.runtime||null, genres };
   }catch{return null;}
 }
@@ -1145,6 +1181,7 @@ async function pickResult(colId,sectionId,idx,inTop10){
   const card={id:uid(),title,year,poster,platforms,tmdbId:r.id,mediaType:r.media_type,pending:false,genres:[]};
   if(details){
     if(r.media_type==='tv'&&details.seasons) card.seasons=details.seasons;
+    if(r.media_type==='tv'&&details.ended!==undefined) card.ended=details.ended;
     if(r.media_type==='movie'&&details.runtime) card.runtime=details.runtime;
     if(details.genres) card.genres=details.genres;
   }
@@ -1348,7 +1385,9 @@ function renderCard(card,colId,sectionId,inTop10,rank){
     else if(card.seasons) metaStr+=` · ${card.seasons} temp.`;
   }
 
-  const typeBadge=card.mediaType==='game'?'<span class="card-type-badge game">JUEGO</span>':'';
+  let typeBadge='';
+  if(card.mediaType==='game') typeBadge='<span class="card-type-badge game">JUEGO</span>';
+  else if(card.ended) typeBadge='<span class="card-type-badge" style="background:#555">FIN</span>';
   const rankHtml=inTop10?`<div class="rank-num">${rank+1}</div>`:'';
   const pendingOverlay=card.pending?`<div class="pending-label">PENDIENTE</div>`:'';
   const pendingCls=card.pending?'pending':'';
@@ -1357,6 +1396,7 @@ function renderCard(card,colId,sectionId,inTop10,rank){
   return `<div class="media-card ${cardCls}" draggable="true"
     data-card-id="${card.id}" data-col="${colId}" data-sec="${secId}" data-top10="${top10f}">
     <button class="delete-btn" onclick="event.stopPropagation();showInlineDelete(this,'${colId}','${secId}','${card.id}',${top10f})">✕</button>
+    <button class="card-menu-btn" onclick="event.stopPropagation();openCardMenu(event,'${colId}','${secId}','${card.id}',${top10f})"><span></span><span></span><span></span></button>
     <div class="card-img-wrap">
       <img src="${escHtml(card.poster)}" alt="${escHtml(card.title)}" loading="lazy">
       ${rankHtml}
@@ -1372,6 +1412,17 @@ function renderCard(card,colId,sectionId,inTop10,rank){
   </div>`;
 }
 
+
+function filterTitleSearch(query){
+  const q=query.toLowerCase().trim();
+  document.querySelectorAll('.media-card').forEach(el=>{
+    const title=el.querySelector('.card-title')?.textContent?.toLowerCase()||'';
+    if(!q){ el.classList.remove('filter-dim'); return; }
+    if(title.includes(q)) el.classList.remove('filter-dim');
+    else el.classList.add('filter-dim');
+  });
+}
+
 function chunkArray(arr,size){
   const out=[];
   for(let i=0;i<arr.length;i+=size) out.push(arr.slice(i,i+size));
@@ -1385,11 +1436,149 @@ async function reloadMeta(colId,secId,cardId,inTop10){
   const details=await fetchDetails(card.tmdbId,card.mediaType);
   if(details){
     if(card.mediaType==='tv'&&details.seasons) card.seasons=details.seasons;
+    if(card.mediaType==='tv'&&details.ended!==undefined) card.ended=details.ended;
     if(card.mediaType==='movie'&&details.runtime) card.runtime=details.runtime;
     if(details.genres) card.genres=details.genres;
   }
   renderAll();
 }
+
+// ── CARD CONTEXT MENU ─────────────────────────────────────────────────────
+let _ctxMenu=null;
+function closeCardMenu(){ if(_ctxMenu){_ctxMenu.remove();_ctxMenu=null;} }
+document.addEventListener('click', closeCardMenu);
+
+function openCardMenu(e, colId, secId, cardId, inTop10){
+  closeCardMenu();
+  const card=getCard(colId,secId,cardId,inTop10); if(!card) return;
+
+  // Build "Move to" submenu from all sections
+  const sections=[];
+  state.columns.forEach(col=>{
+    col.sections.forEach(sec=>{
+      const isCurrent=!inTop10&&sec.id===secId&&col.id===colId;
+      if(!isCurrent) sections.push({colId:col.id,secId:sec.id,label:`${col.name}`});
+    });
+  });
+  const moveItems=sections.map(s=>
+    `<div class="card-ctx-sub-item" onclick="closeCardMenu();moveCardTo('${colId}','${secId}','${cardId}',${inTop10},'${s.colId}','${s.secId}')">${escHtml(s.label)}</div>`
+  ).join('');
+
+  const menu=document.createElement('div');
+  menu.className='card-context-menu';
+  menu.innerHTML=`
+    <div class="card-ctx-item" onclick="closeCardMenu();openMoveMenu(this,'${colId}','${secId}','${cardId}',${inTop10})">
+      <span class="ctx-icon">↪</span> Mover a…
+    </div>
+    <div class="card-ctx-sep"></div>
+    <div class="card-ctx-item" onclick="closeCardMenu();duplicateCard('${colId}','${secId}','${cardId}',${inTop10})">
+      <span class="ctx-icon">⧉</span> Duplicar
+    </div>
+    <div class="card-ctx-sep"></div>
+    <div class="card-ctx-item" onclick="closeCardMenu();showCardInfo('${colId}','${secId}','${cardId}',${inTop10})">
+      <span class="ctx-icon">ℹ</span> Info
+    </div>
+  `;
+  document.body.appendChild(menu);
+  _ctxMenu=menu;
+
+  // Position near button
+  const rect=e.currentTarget.getBoundingClientRect();
+  let left=rect.right+4, top=rect.top;
+  if(left+170>window.innerWidth) left=rect.left-174;
+  if(top+120>window.innerHeight) top=window.innerHeight-130;
+  menu.style.left=left+'px'; menu.style.top=top+'px';
+  e.stopPropagation();
+}
+
+function openMoveMenu(triggerEl, colId, secId, cardId, inTop10){
+  // Replace menu with section list
+  if(!_ctxMenu) return;
+  const sections=[];
+  state.columns.forEach(col=>{
+    col.sections.forEach(sec=>{
+      const isCurrent=!inTop10&&sec.id===secId&&col.id===colId;
+      sections.push({colId:col.id,secId:sec.id,label:col.name,current:isCurrent});
+    });
+    // Also allow moving to top10
+    sections.push({colId:col.id,secId:'__top10__',label:col.name+' (Top 10)',current:inTop10&&col.id===colId});
+  });
+  _ctxMenu.innerHTML=`
+    <div class="card-ctx-item" style="color:#888;font-size:11px;cursor:default">Mover a sección:</div>
+    <div class="card-ctx-sep"></div>
+    ${sections.filter(s=>!s.current).map(s=>
+      `<div class="card-ctx-sub-item" onclick="closeCardMenu();moveCardTo('${colId}','${secId}','${cardId}',${inTop10},'${s.colId}','${s.secId}')">${escHtml(s.label)}</div>`
+    ).join('')}
+  `;
+}
+
+function moveCardTo(srcColId, srcSecId, cardId, inTop10, tgtColId, tgtSecId){
+  const srcCol=state.columns.find(c=>c.id===srcColId); if(!srcCol) return;
+  let card;
+  if(inTop10){ card=srcCol.top10.find(x=>x.id===cardId); srcCol.top10=srcCol.top10.filter(x=>x.id!==cardId); }
+  else { const s=srcCol.sections.find(s=>s.id===srcSecId); if(!s) return; card=s.cards.find(x=>x.id===cardId); s.cards=s.cards.filter(x=>x.id!==cardId); }
+  if(!card) return;
+  const tgtCol=state.columns.find(c=>c.id===tgtColId); if(!tgtCol) return;
+  if(tgtSecId==='__top10__'){
+    if(tgtCol.top10.length<10) tgtCol.top10.push(card); else { showToast('Top 10 lleno'); return; }
+  } else {
+    const tgtSec=tgtCol.sections.find(s=>s.id===tgtSecId); if(tgtSec) tgtSec.cards.push(card);
+  }
+  renderAll(); showToast('Movido ✓');
+}
+
+function duplicateCard(colId, secId, cardId, inTop10){
+  const card=getCard(colId,secId,cardId,inTop10); if(!card) return;
+  const copy={...JSON.parse(JSON.stringify(card)), id:uid()};
+  const col=state.columns.find(c=>c.id===colId); if(!col) return;
+  if(inTop10){
+    const idx=col.top10.findIndex(x=>x.id===cardId);
+    col.top10.splice(idx+1,0,copy);
+  } else {
+    const sec=col.sections.find(s=>s.id===secId); if(!sec) return;
+    const idx=sec.cards.findIndex(x=>x.id===cardId);
+    sec.cards.splice(idx+1,0,copy);
+  }
+  renderAll(); showToast('Duplicado ✓');
+}
+
+async function showCardInfo(colId, secId, cardId, inTop10){
+  const card=getCard(colId,secId,cardId,inTop10); if(!card||!card.tmdbId) { showToast('Sin datos TMDB'); return; }
+  showModal('<button class="modal-close-x" onclick="closeModal()">✕</button><h2>Cargando info…</h2><div class="spinner" style="margin:20px auto;display:block"></div>');
+  const key=getKey(); if(!key) return;
+  try{
+    const type=card.mediaType==='tv'?'tv':'movie';
+    const r=await fetch(`${TMDB_BASE}/${type}/${card.tmdbId}/credits?api_key=${key}&language=es-ES`);
+    const d=await r.json();
+    const cast=(d.cast||[]).slice(0,8).map(a=>`
+      <div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f0ede8">
+        ${a.profile_path?`<img src="https://image.tmdb.org/t/p/w45${a.profile_path}" style="width:32px;height:32px;border-radius:50%;object-fit:cover">`:
+          '<div style="width:32px;height:32px;border-radius:50%;background:#eee;flex-shrink:0"></div>'}
+        <div>
+          <div style="font-size:12px;font-weight:600">${escHtml(a.name)}</div>
+          <div style="font-size:10px;color:#888">${escHtml(a.character||'')}</div>
+        </div>
+      </div>`).join('');
+    // Director or showrunner
+    const crew=d.crew||[];
+    const dir=crew.filter(x=>x.job==='Director'||x.job==='Executive Producer'||x.job==='Series Director').slice(0,3);
+    const dirHtml=dir.length?`<div style="font-size:12px;margin-bottom:12px"><strong>${card.mediaType==='tv'?'Showrunner / Creador':'Director'}:</strong> ${dir.map(x=>escHtml(x.name)).join(', ')}</div>`:'';
+    showModal(`
+      <button class="modal-close-x" onclick="closeModal()">✕</button>
+      <div style="display:flex;gap:14px;margin-bottom:14px">
+        <img src="${escHtml(card.poster)}" style="width:60px;height:90px;object-fit:cover;border-radius:6px;flex-shrink:0">
+        <div>
+          <h2 style="font-size:18px;margin-bottom:4px">${escHtml(card.title)}</h2>
+          <div style="font-size:12px;color:#888">${escHtml(card.year)}${card.runtime?' · '+card.runtime+' min':''}${card.seasons?' · '+card.seasons+' temp.':''}</div>
+        </div>
+      </div>
+      ${dirHtml}
+      <div style="font-size:12px;font-weight:700;margin-bottom:6px;color:#888;text-transform:uppercase;letter-spacing:.5px">Reparto principal</div>
+      ${cast||'<p style="color:#888;font-size:12px">Sin datos de reparto</p>'}
+    `);
+  }catch(e){ showToast('❌ Error cargando info: '+e.message); }
+}
+
 function escHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 // ── DRAG & DROP ───────────────────────────────────────────────────────────
@@ -1576,6 +1765,7 @@ function handleImportFile(input){
 }
 // ── INIT ──────────────────────────────────────────────────────────────────
 window.onload=async ()=>{
+  document.getElementById('canvas-wrapper').style.transform='scale(0.65)';
   updateDots();
   // Load from Supabase (falls back to localStorage if offline)
   await loadFromSupabase();
