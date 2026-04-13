@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
@@ -106,7 +106,7 @@
   .genre-column.dragging-col { opacity:.4; pointer-events:none; }
   .col-header { display:flex; align-items:center; justify-content:space-between; padding:0 2px 8px; user-select:none; }
   .col-title-row { display:flex; align-items:center; gap:4px; height:24px; }
-  .col-drag-handle { color:var(--text-muted); font-size:14px; cursor:grab; padding:2px 4px; user-select:none; line-height:1; }
+  .col-drag-handle { color:var(--text-muted); font-size:16px; cursor:grab; padding:4px 6px; user-select:none; line-height:1; touch-action:none; }
   .col-drag-handle:hover { color:var(--text); }
   /* Vertical drop line between columns */
   .col-drop-line { position:fixed !important; width:4px !important; background:#000 !important; opacity:.55 !important; border-radius:2px !important; pointer-events:none !important; z-index:9999 !important; animation:none !important; }
@@ -393,6 +393,123 @@
   .hltb-val { font-weight:700; color:var(--text); }
   .card-type-badge { display:inline-block; font-size:8px; font-weight:700; letter-spacing:.5px; padding:1px 5px; border-radius:3px; margin-bottom:3px; background:#1a1a1a; color:#fff; }
   .card-type-badge.game { background:#2d6a4f; }
+
+  /* ══════════════════════════════════════════════
+     MOBILE / TOUCH RESPONSIVE — Phase 1
+     ══════════════════════════════════════════════ */
+
+  /* Detect touch device — show hidden buttons always */
+  @media (hover:none) and (pointer:coarse) {
+
+    /* Delete button always visible on touch */
+    .media-card .delete-btn {
+      opacity:1 !important;
+      top:-5px; right:-5px;
+      width:24px; height:24px;
+      font-size:12px;
+    }
+
+    /* Card menu button always visible */
+    .card-menu-btn {
+      opacity:1 !important;
+      background:rgba(0,0,0,.7) !important;
+      width:28px; height:22px;
+      bottom:5px; right:4px;
+    }
+
+    /* Section rename/delete buttons always visible */
+    .sec-actions { opacity:1 !important; }
+    .sec-rename-btn, .sec-delete-btn { font-size:14px; padding:4px 7px; }
+
+    /* Column rename button always visible */
+    .col-rename-btn { opacity:1 !important; font-size:14px; }
+
+    /* Larger touch targets on pills */
+    .platform-pill { padding:3px 7px; font-size:10px; }
+    .platform-pill img { width:13px; height:13px; }
+    .add-platform-pill { padding:3px 8px; font-size:10px; }
+    .pending-btn { width:22px; height:22px; }
+    .pending-btn svg { width:13px; height:13px; }
+
+    /* Filter chips bigger tap targets */
+    .filter-chip { padding:5px 14px; font-size:12px; }
+    .filter-toggle-btn { padding:5px 14px; font-size:12px; }
+    .filter-clear { padding:5px 16px; font-size:12px; }
+
+    /* Topbar — always show all buttons, no hamburger */
+    #topbar-controls { display:flex !important; flex-wrap:wrap; gap:6px; }
+    #topbar-menu-btn { display:none !important; }
+    #topbar-main { height:auto; padding:8px 12px; flex-wrap:wrap; gap:6px; }
+    #topbar h1 { font-size:20px; }
+
+    /* Topbar buttons bigger */
+    .topbar-key-btn { font-size:12px; padding:7px 12px; }
+    .topbar-btn { font-size:12px; padding:7px 12px; }
+
+    /* Filter bar wraps */
+    #filter-bar { flex-wrap:wrap; gap:6px; padding:8px 12px; }
+
+    /* Modal — full screen on mobile */
+    .modal-overlay { padding:0; align-items:flex-end; }
+    .modal-box {
+      border-radius:16px 16px 0 0 !important;
+      max-width:100% !important;
+      width:100% !important;
+      max-height:85vh !important;
+      overflow-y:auto !important;
+      padding:24px 20px 32px;
+    }
+    .modal-box.wide { max-width:100% !important; }
+    /* Swipe-down handle */
+    .modal-box::before {
+      content:'';
+      display:block;
+      width:40px; height:4px;
+      background:#ddd; border-radius:2px;
+      margin:0 auto 16px;
+    }
+
+    /* Search results scrollable */
+    .search-results { max-height:45vh; }
+
+    /* Add card bigger tap target */
+    .add-card { font-size:26px; }
+    .add-section-btn { padding:12px; font-size:13px; }
+
+    /* Context menu — full bottom sheet */
+    .card-context-menu {
+      position:fixed !important;
+      left:0 !important; right:0 !important; bottom:0 !important;
+      top:auto !important;
+      width:100% !important;
+      border-radius:16px 16px 0 0;
+      min-width:unset;
+      padding-bottom:env(safe-area-inset-bottom, 16px);
+    }
+    .card-ctx-item { padding:14px 20px; font-size:14px; }
+    .card-ctx-sep { margin:4px 0; }
+
+    /* Move modal options bigger */
+    .move-option { padding:14px 16px; font-size:14px; }
+
+    /* Zoom slider hidden on mobile (use pinch) */
+    #topbar label[for="zoom-slider"],
+    #zoom-slider, #zoom-val { display:none !important; }
+  }
+
+  /* Small screens general */
+  @media (max-width:600px) {
+    #topbar h1 { font-size:18px; }
+    .topbar-key-btn span:not(.dot) { display:none; } /* hide text, keep dot */
+    .topbar-key-btn { padding:7px 10px; min-width:32px; justify-content:center; }
+    #title-search { width:120px; }
+  }
+
+
+  button, .filter-chip, .platform-pill, .add-card, .add-section-btn, .media-card .delete-btn {
+    touch-action:manipulation;
+  }
+
   ::-webkit-scrollbar { width:6px; height:6px; }
   ::-webkit-scrollbar-track { background:var(--bg2); }
   ::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
@@ -1997,6 +2114,35 @@ function doDeleteSection(colId, secId){
   col.sections=col.sections.filter(s=>s.id!==secId);
   closeModal(); renderAll();
 }
+
+
+// ── LONG PRESS → card menu on touch ──────────────────────────────────────
+let _lpTimer=null, _lpCard=null;
+document.addEventListener('touchstart',e=>{
+  const btn=e.target.closest('.card-menu-btn');
+  if(btn){
+    // Normal tap on menu btn — handled by onclick
+    return;
+  }
+  const card=e.target.closest('.media-card');
+  if(!card) return;
+  _lpCard=card;
+  _lpTimer=setTimeout(()=>{
+    if(!_lpCard) return;
+    const menuBtn=_lpCard.querySelector('.card-menu-btn');
+    if(menuBtn){
+      // Simulate click with touch position
+      const touch=e.touches[0];
+      const fakeEvent={currentTarget:menuBtn, clientX:touch.clientX, clientY:touch.clientY, stopPropagation:()=>{}};
+      const colId=_lpCard.dataset.col, secId=_lpCard.dataset.sec||'';
+      const cardId=_lpCard.dataset.cardId, inTop10=_lpCard.dataset.top10==='true';
+      openCardMenu(fakeEvent,colId,secId,cardId,inTop10);
+    }
+    _lpCard=null;
+  },500);
+},{passive:true});
+document.addEventListener('touchend',()=>{ clearTimeout(_lpTimer); _lpCard=null; },{passive:true});
+document.addEventListener('touchmove',()=>{ clearTimeout(_lpTimer); _lpCard=null; },{passive:true});
 
 function escHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
