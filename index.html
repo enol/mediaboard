@@ -285,7 +285,7 @@
   /* Section color picker */
   .color-picker-row { display:flex; gap:8px; flex-wrap:wrap; margin:12px 0; }
   .color-swatch {
-    width:28px; height:28px; border-radius:50%; cursor:pointer;
+    width:24px; height:24px; border-radius:50%; cursor:pointer;
     border:2px solid transparent; transition:transform .15s, border-color .15s;
     flex-shrink:0; box-shadow:0 1px 4px rgba(0,0,0,.15);
   }
@@ -371,7 +371,8 @@
 
 
   /* Multi-section support */
-  .sec-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .sec-header { display:flex; align-items:center; gap:6px; justify-content:space-between; margin-bottom:10px; user-select:none; }
+  .sec-drag-handle { color:var(--text-muted); font-size:12px; cursor:grab; padding:2px 2px; flex-shrink:0; }
   .sec-title { font-family:'Bebas Neue',sans-serif; font-size:14px; letter-spacing:1px; color:var(--text-muted); }
   .sec-actions { display:flex; gap:4px; opacity:0; transition:opacity .15s; }
   .genre-section:hover .sec-actions { opacity:1; }
@@ -379,6 +380,7 @@
   .sec-rename-btn:hover { color:var(--text); background:var(--bg2); }
   .sec-delete-btn:hover { color:var(--accent); }
   .sec-divider { height:2px; background:#c8c3bb; margin:0; display:block; width:100%; }
+  .genre-section.sec-drop-target { outline:2px dashed var(--accent2); outline-offset:-2px; border-radius:4px; }
   .add-section-row { padding:10px 14px 14px; }
   .add-section-btn {
     width:100%; padding:7px; border:2px dashed var(--border); border-radius:6px;
@@ -1558,25 +1560,45 @@ function renameColumn(colId){
     <label class="key-field-label" style="margin-top:14px">Color de fondo</label>
     <div class="color-picker-row" id="color-picker-row">
       <div class="color-swatch none-swatch" style="background:" title="Sin color" data-color="" onclick="selectSectionColor(this)"></div>
-<div class="color-swatch" style="background:#dbeafe" title="Azul" data-color="#dbeafe" onclick="selectSectionColor(this)"></div>
-<div class="color-swatch" style="background:#bfdbfe" title="Azul medio" data-color="#bfdbfe" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#dbeafe" title="Azul claro" data-color="#dbeafe" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#bfdbfe" title="Azul" data-color="#bfdbfe" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#93c5fd" title="Azul medio" data-color="#93c5fd" onclick="selectSectionColor(this)"></div>
 <div class="color-swatch" style="background:#e0e7ff" title="Índigo" data-color="#e0e7ff" onclick="selectSectionColor(this)"></div>
 <div class="color-swatch" style="background:#ede9fe" title="Violeta" data-color="#ede9fe" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#f3e8ff" title="Lavanda" data-color="#f3e8ff" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#fae8ff" title="Malva" data-color="#fae8ff" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#fdf2f8" title="Blush" data-color="#fdf2f8" onclick="selectSectionColor(this)"></div>
 <div class="color-swatch" style="background:#fce7f3" title="Rosa" data-color="#fce7f3" onclick="selectSectionColor(this)"></div>
 <div class="color-swatch" style="background:#fecdd3" title="Coral" data-color="#fecdd3" onclick="selectSectionColor(this)"></div>
 <div class="color-swatch" style="background:#ffedd5" title="Naranja" data-color="#ffedd5" onclick="selectSectionColor(this)"></div>
 <div class="color-swatch" style="background:#fde68a" title="Ámbar" data-color="#fde68a" onclick="selectSectionColor(this)"></div>
 <div class="color-swatch" style="background:#fef9c3" title="Amarillo" data-color="#fef9c3" onclick="selectSectionColor(this)"></div>
-<div class="color-swatch" style="background:#d9f99d" title="Lima" data-color="#d9f99d" onclick="selectSectionColor(this)"></div>
-<div class="color-swatch" style="background:#dcfce7" title="Verde" data-color="#dcfce7" onclick="selectSectionColor(this)"></div>
-<div class="color-swatch" style="background:#a7f3d0" title="Menta" data-color="#a7f3d0" onclick="selectSectionColor(this)"></div>
-<div class="color-swatch" style="background:#ccfbf1" title="Teal" data-color="#ccfbf1" onclick="selectSectionColor(this)"></div>
-<div class="color-swatch" style="background:#bae6fd" title="Cielo" data-color="#bae6fd" onclick="selectSectionColor(this)"></div>
-<div class="color-swatch" style="background:#e5e7eb" title="Gris claro" data-color="#e5e7eb" onclick="selectSectionColor(this)"></div>
-<div class="color-swatch" style="background:#f3e8ff" title="Lavanda" data-color="#f3e8ff" onclick="selectSectionColor(this)"></div>
-<div class="color-swatch" style="background:#fdf2f8" title="Blush" data-color="#fdf2f8" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#fefce8" title="Crema" data-color="#fefce8" onclick="selectSectionColor(this)"></div>
 <div class="color-swatch" style="background:#ecfdf5" title="Menta claro" data-color="#ecfdf5" onclick="selectSectionColor(this)"></div>
-<div class="color-swatch" style="background:#6b7280" title="Gris" data-color="#6b7280" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#a7f3d0" title="Menta" data-color="#a7f3d0" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#dcfce7" title="Verde claro" data-color="#dcfce7" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#d9f99d" title="Lima" data-color="#d9f99d" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#ccfbf1" title="Teal claro" data-color="#ccfbf1" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#99f6e4" title="Teal" data-color="#99f6e4" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#bae6fd" title="Cielo" data-color="#bae6fd" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#fff7ed" title="Melocotón" data-color="#fff7ed" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#fef3c7" title="Mantequilla" data-color="#fef3c7" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#f0fdf4" title="Espuma" data-color="#f0fdf4" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#f0f9ff" title="Hielo" data-color="#f0f9ff" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#fafafa" title="Blanco hueso" data-color="#fafafa" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#fdf4ff" title="Orquídea" data-color="#fdf4ff" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#fffbeb" title="Vainilla" data-color="#fffbeb" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#f9fafb" title="Gris 1" data-color="#f9fafb" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#f3f4f6" title="Gris 2" data-color="#f3f4f6" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#e5e7eb" title="Gris 3" data-color="#e5e7eb" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#d1d5db" title="Gris 4" data-color="#d1d5db" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#9ca3af" title="Gris 5" data-color="#9ca3af" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#6b7280" title="Gris 6" data-color="#6b7280" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#4b5563" title="Gris 7" data-color="#4b5563" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#374151" title="Gris 8" data-color="#374151" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#1f2937" title="Gris 9" data-color="#1f2937" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#111827" title="Gris 10" data-color="#111827" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#030712" title="Gris 11" data-color="#030712" onclick="selectSectionColor(this)"></div>
     </div>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
@@ -1621,31 +1643,30 @@ function openSearchModal(colId,sectionId,inTop10){
   showModal(`
     <button class="modal-close-x" onclick="closeModal()">✕</button>
     <h2>${inTop10?'Añadir al Top 10':'Buscar título'}</h2>
-    <div style="display:flex;gap:8px;margin-bottom:12px">
-      <button class="btn-primary" style="flex:1;font-size:12px;padding:6px" onclick="switchSearchMode('movie')">🎬 Película / Serie</button>
-      <button class="btn-secondary" style="flex:1;font-size:12px;padding:6px" onclick="switchSearchMode('game')">🎮 Videojuego</button>
-      <button class="btn-secondary" style="flex:1;font-size:12px;padding:6px" onclick="switchSearchMode('manual')">✏️ Manual</button>
+    <div style="display:flex;gap:6px;margin-bottom:12px">
+      <button class="btn-primary" id="mode-all" style="flex:1;font-size:11px;padding:5px" onclick="switchSearchMode('all')">🔍 Buscar todo</button>
+      <button class="btn-secondary" id="mode-manual" style="flex:1;font-size:11px;padding:5px" onclick="switchSearchMode('manual')">✏️ Manual</button>
     </div>
-    <input class="modal-input" id="search-inp" placeholder="Escribe el nombre…">
+    <input class="modal-input" id="search-inp" placeholder="Película, serie o videojuego…">
     <div id="search-results-area"></div>
     <div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">Cancelar</button></div>`);
-  window._searchMode='movie';
+  window._searchMode='all';
   window._searchColId=colId; window._searchSecId=sectionId; window._searchInTop10=inTop10;
   const inp=document.getElementById('search-inp');
   let db;
   inp?.addEventListener('input',()=>{
     clearTimeout(db);
-    db=setTimeout(()=>{
-      if(window._searchMode==='game') doGameSearch(inp.value,window._searchColId,window._searchSecId,window._searchInTop10);
-      else doSearch(inp.value,window._searchColId,window._searchSecId,window._searchInTop10);
-    },420);
+    db=setTimeout(()=>doUnifiedSearch(inp.value),420);
   });
   setTimeout(()=>inp?.focus(),50);
 }
+
 function switchSearchMode(mode){
   window._searchMode=mode;
-  const btns=document.querySelectorAll('.modal-box button[onclick^="switchSearchMode"]');
-  btns.forEach(b=>{ b.className=b.getAttribute('onclick').includes(mode)?'btn-primary':'btn-secondary'; b.style.flex='1'; b.style.fontSize='12px'; b.style.padding='6px'; });
+  document.getElementById('mode-all')?.classList.toggle('btn-primary', mode==='all');
+  document.getElementById('mode-all')?.classList.toggle('btn-secondary', mode!=='all');
+  document.getElementById('mode-manual')?.classList.toggle('btn-primary', mode==='manual');
+  document.getElementById('mode-manual')?.classList.toggle('btn-secondary', mode!=='manual');
   const area=document.getElementById('search-results-area');
   const inp=document.getElementById('search-inp');
   if(mode==='manual'){
@@ -1660,9 +1681,73 @@ function switchSearchMode(mode){
       </div>`;
     setTimeout(()=>document.getElementById('manual-title')?.focus(),50);
   } else {
-    if(inp){ inp.style.display=''; inp.value=''; inp.placeholder=mode==='game'?'Nombre del juego…':'Escribe el nombre…'; inp.focus(); }
+    if(inp){ inp.style.display=''; inp.placeholder='Película, serie o videojuego…'; inp.focus(); }
     if(area) area.innerHTML='';
+    if(inp&&inp.value.trim()) setTimeout(()=>doUnifiedSearch(inp.value),100);
   }
+}
+
+async function doUnifiedSearch(query){
+  const area=document.getElementById('search-results-area');
+  if(!area||!query.trim()) return;
+  area.innerHTML='<p class="no-results">Buscando <span class="spinner"></span></p>';
+  const colId=window._searchColId, secId=window._searchSecId, inTop10=window._searchInTop10;
+  // Run TMDB and IGDB in parallel
+  const hasIGDB=!!(getIGDBClientId()&&getIGDBSecret());
+  const [tmdbResults, igdbResults]=await Promise.all([
+    tmdbSearch(query).catch(()=>[]),
+    hasIGDB ? igdbSearch(query).catch(()=>[]) : Promise.resolve([])
+  ]);
+  if(!document.getElementById('search-results-area')) return;
+  // Merge: TMDB first, then IGDB, max 10 total
+  const allResults=[];
+  // Map TMDB results
+  (tmdbResults||[]).slice(0,6).forEach((r,i)=>{
+    allResults.push({type:'tmdb', data:r, idx:i});
+  });
+  // Map IGDB results
+  (igdbResults||[]).filter(r=>r?.name).slice(0,4).forEach((r,i)=>{
+    allResults.push({type:'igdb', data:r, idx:i});
+  });
+  if(!allResults.length){
+    area.innerHTML='<p class="no-results">Sin resultados</p>';
+    return;
+  }
+  window._searchResults=tmdbResults||[];
+  window._gameResults=igdbResults||[];
+  area.innerHTML='<div class="search-results">'+allResults.map((item,i)=>{
+    if(item.type==='tmdb'){
+      const r=item.data;
+      const title=r.title||r.name||'?';
+      const year=(r.release_date||r.first_air_date||'').slice(0,4);
+      const icon=r.media_type==='movie'?'🎬':'📺';
+      const poster=r.poster_path?IMG_BASE+r.poster_path:'';
+      const typeBadge=r.media_type==='movie'
+        ?`<span style="background:#e63946;color:#fff;font-size:8px;font-weight:700;padding:1px 5px;border-radius:3px;letter-spacing:.3px;flex-shrink:0">PELÍCULA</span>`
+        :`<span style="background:#1a1a1a;color:#fff;font-size:8px;font-weight:700;padding:1px 5px;border-radius:3px;letter-spacing:.3px;flex-shrink:0">SERIE</span>`;
+      return `<div class="search-result-item" onclick="pickResult('${colId}','${secId}',${item.idx},${inTop10})">
+        <img src="${poster}" alt="">
+        <div>
+          <div class="result-title" style="display:flex;align-items:center;gap:5px">${typeBadge} ${escHtml(title)}</div>
+          <div class="result-meta">${year}</div>
+        </div></div>`;
+    } else {
+      const r=item.data;
+      const title=r.name||'?';
+      const year=r.first_release_date?new Date(r.first_release_date*1000).getFullYear():'';
+      const cover=r.cover?.image_id?igdbCover(r.cover.image_id):'';
+      const plats=(r.platforms||[]).slice(0,2).map(p=>p.name).join(', ');
+      return `<div class="search-result-item" onclick="pickGame('${colId}','${secId}',${item.idx},${inTop10})">
+        <img src="${cover}" alt="">
+        <div>
+          <div class="result-title" style="display:flex;align-items:center;gap:5px">
+            <span style="background:#2d6a4f;color:#fff;font-size:8px;font-weight:700;padding:1px 5px;border-radius:3px;letter-spacing:.3px;flex-shrink:0">JUEGO</span>
+            ${escHtml(title)}
+          </div>
+          <div class="result-meta">${year}${plats?' · '+escHtml(plats):''}</div>
+        </div></div>`;
+    }
+  }).join('')+'</div>';
 }
 
 function addManualCard(){
@@ -1908,7 +1993,14 @@ function renderSection(sec,colId){
     }
   }
   return `<div class="genre-section" data-sec="${sec.id}" style="background:${sec.bgColor||'transparent'}">
-    <div class="sec-header">
+    <div class="sec-header" draggable="true"
+      data-sec-drag="${sec.id}" data-sec-col="${colId}"
+      ondragstart="onSecDragStart(event,'${colId}','${sec.id}')"
+      ondragover="onSecDragOver(event,'${colId}','${sec.id}')"
+      ondrop="onSecDrop(event,'${colId}','${sec.id}')"
+      ondragleave="onSecDragLeave(event)"
+      style="cursor:grab">
+      <span class="sec-drag-handle" title="Arrastrar para reordenar">⠿</span>
       <span class="sec-title">${escHtml(sec.name)}</span>
       <div class="sec-actions">
         <button class="sec-rename-btn" onclick="renameSection('${colId}','${sec.id}')" title="Renombrar / color">✎</button>
@@ -2083,6 +2175,11 @@ function openCardMenu(e, colId, secId, cardId, inTop10){
     <div class="card-ctx-sep"></div>
     <div class="card-ctx-item" onclick="closeCardMenu();editGameTimes('${colId}','${secId}','${cardId}',${inTop10})">
       <span class="ctx-icon">⏱</span> Tiempos HLTB
+    </div>`:''}
+    ${card.isManual||card.mediaType==='game'?`
+    <div class="card-ctx-sep"></div>
+    <div class="card-ctx-item" onclick="closeCardMenu();editCardMeta('${colId}','${secId}','${cardId}',${inTop10})">
+      <span class="ctx-icon">✎</span> Editar título / año
     </div>`:''}
     <div class="card-ctx-sep"></div>
     <div class="card-ctx-item" onclick="closeCardMenu();showCardInfo('${colId}','${secId}','${cardId}',${inTop10})">
@@ -2277,13 +2374,7 @@ function renameSection(colId, secId){
   const curBg=sec.bgColor||'';
 
   const COLORS=[
-    {hex:'',label:'Sin color'},{hex:'#dbeafe',label:'Azul'},{hex:'#bfdbfe',label:'Azul medio'},
-    {hex:'#e0e7ff',label:'Índigo'},{hex:'#ede9fe',label:'Violeta'},{hex:'#fce7f3',label:'Rosa'},
-    {hex:'#fecdd3',label:'Coral'},{hex:'#ffedd5',label:'Naranja'},{hex:'#fde68a',label:'Ámbar'},
-    {hex:'#fef9c3',label:'Amarillo'},{hex:'#d9f99d',label:'Lima'},{hex:'#dcfce7',label:'Verde'},
-    {hex:'#a7f3d0',label:'Menta'},{hex:'#ccfbf1',label:'Teal'},{hex:'#bae6fd',label:'Cielo'},
-    {hex:'#e5e7eb',label:'Gris claro'},{hex:'#f3e8ff',label:'Lavanda'},{hex:'#fdf2f8',label:'Blush'},
-    {hex:'#ecfdf5',label:'Menta claro'},{hex:'#6b7280',label:'Gris'},
+    {hex:'',label:'Sin color'},{hex:'#dbeafe',label:'Azul claro'},{hex:'#bfdbfe',label:'Azul'},{hex:'#93c5fd',label:'Azul medio'},{hex:'#e0e7ff',label:'Índigo'},{hex:'#ede9fe',label:'Violeta'},{hex:'#f3e8ff',label:'Lavanda'},{hex:'#fae8ff',label:'Malva'},{hex:'#fdf2f8',label:'Blush'},{hex:'#fce7f3',label:'Rosa'},{hex:'#fecdd3',label:'Coral'},{hex:'#ffedd5',label:'Naranja'},{hex:'#fde68a',label:'Ámbar'},{hex:'#fef9c3',label:'Amarillo'},{hex:'#fefce8',label:'Crema'},{hex:'#ecfdf5',label:'Menta claro'},{hex:'#a7f3d0',label:'Menta'},{hex:'#dcfce7',label:'Verde claro'},{hex:'#d9f99d',label:'Lima'},{hex:'#ccfbf1',label:'Teal claro'},{hex:'#99f6e4',label:'Teal'},{hex:'#bae6fd',label:'Cielo'},{hex:'#fff7ed',label:'Melocotón'},{hex:'#fef3c7',label:'Mantequilla'},{hex:'#f0fdf4',label:'Espuma'},{hex:'#f0f9ff',label:'Hielo'},{hex:'#fafafa',label:'Blanco hueso'},{hex:'#fdf4ff',label:'Orquídea'},{hex:'#fffbeb',label:'Vainilla'},{hex:'#f9fafb',label:'Gris 1'},{hex:'#f3f4f6',label:'Gris 2'},{hex:'#e5e7eb',label:'Gris 3'},{hex:'#d1d5db',label:'Gris 4'},{hex:'#9ca3af',label:'Gris 5'},{hex:'#6b7280',label:'Gris 6'},{hex:'#4b5563',label:'Gris 7'},{hex:'#374151',label:'Gris 8'},{hex:'#1f2937',label:'Gris 9'},{hex:'#111827',label:'Gris 10'},{hex:'#030712',label:'Gris 11'}
   ];
   const swatches=COLORS.map(col=>`
     <div class="color-swatch ${!col.hex?'none-swatch':''}" style="background:${col.hex}" title="${col.label}" data-color="${col.hex}" onclick="selectSectionColor(this)"></div>
@@ -2469,6 +2560,31 @@ function showAllPlatforms(colId,secId,cardId,inTop10){
 }
 
 
+
+function editCardMeta(colId, secId, cardId, inTop10){
+  const card=getCard(colId,secId,cardId,inTop10); if(!card) return;
+  showModal(`
+    <button class="modal-close-x" onclick="closeModal()">✕</button>
+    <h2>✎ Editar</h2>
+    <label class="key-field-label">Título</label>
+    <input class="modal-input" id="edit-title-inp" value="${escHtml(card.title)}" style="margin-bottom:10px">
+    <label class="key-field-label">Año</label>
+    <input class="modal-input" id="edit-year-inp" value="${escHtml(card.year||'')}" placeholder="2024">
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-primary" onclick="saveCardMeta('${colId}','${secId}','${cardId}',${inTop10})">Guardar</button>
+    </div>`);
+  setTimeout(()=>document.getElementById('edit-title-inp')?.focus(),50);
+}
+function saveCardMeta(colId, secId, cardId, inTop10){
+  const card=getCard(colId,secId,cardId,inTop10); if(!card) return;
+  const t=document.getElementById('edit-title-inp')?.value.trim();
+  const y=document.getElementById('edit-year-inp')?.value.trim();
+  if(t) card.title=t;
+  if(y!==undefined) card.year=y;
+  closeModal(); renderAll(); showToast('Guardado ✓');
+}
+
 function editGameTimes(colId, secId, cardId, inTop10){
   const card=getCard(colId,secId,cardId,inTop10); if(!card) return;
   const fh=s=>s?Math.round(s/3600*10)/10:'';
@@ -2496,6 +2612,51 @@ function saveGameTimes(colId, secId, cardId, inTop10){
   card.ttbMainSides=toSec(document.getElementById('ttb-sides')?.value);
   card.ttbComplete=toSec(document.getElementById('ttb-comp')?.value);
   closeModal(); renderAll(); showToast('Tiempos guardados ✓');
+}
+
+
+// ── SECTION DRAG & DROP ───────────────────────────────────────────────────
+let _secDragColId=null, _secDragSecId=null;
+
+function onSecDragStart(e, colId, secId){
+  _secDragColId=colId; _secDragSecId=secId;
+  e.stopPropagation();
+  e.dataTransfer.effectAllowed='move';
+  setTimeout(()=>e.target.closest('.genre-section')?.classList.add('dragging-col'),0);
+}
+function onSecDragOver(e, colId, secId){
+  if(!_secDragSecId) return;
+  e.preventDefault(); e.stopPropagation();
+  e.dataTransfer.dropEffect='move';
+  document.querySelectorAll('.genre-section').forEach(el=>el.classList.remove('sec-drop-target'));
+  e.target.closest('.genre-section')?.classList.add('sec-drop-target');
+}
+function onSecDragLeave(e){
+  e.target.closest('.genre-section')?.classList.remove('sec-drop-target');
+}
+function onSecDrop(e, colId, secId){
+  e.preventDefault(); e.stopPropagation();
+  document.querySelectorAll('.genre-section').forEach(el=>el.classList.remove('sec-drop-target','dragging-col'));
+  if(!_secDragSecId||_secDragSecId===secId) return;
+
+  const srcCol=state.columns.find(c=>c.id===_secDragColId);
+  const tgtCol=state.columns.find(c=>c.id===colId);
+  if(!srcCol||!tgtCol) return;
+
+  const fromIdx=srcCol.sections.findIndex(s=>s.id===_secDragSecId);
+  if(fromIdx<0) return;
+  const [moved]=srcCol.sections.splice(fromIdx,1);
+
+  // Ensure source col always has at least one section
+  if(srcCol.sections.length===0){
+    srcCol.sections.push({id:uid(),name:srcCol.name,cards:[],bgColor:''});
+  }
+
+  const toIdx=tgtCol.sections.findIndex(s=>s.id===secId);
+  tgtCol.sections.splice(toIdx>=0?toIdx:tgtCol.sections.length, 0, moved);
+
+  _secDragColId=null; _secDragSecId=null;
+  renderAll();
 }
 
 function escHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
