@@ -1168,10 +1168,30 @@ async function igdbQuery(endpoint, body){
 }
 
 async function igdbSearch(query){
-  const results=await igdbQuery('games',
-    `search "${query.replace(/"/g,"'")}"; fields id,name,cover.image_id,first_release_date,genres.name,platforms.name; limit 8;`
+  const q=query.replace(/"/g,"'").trim();
+  // Primary: search operator (best for normal names)
+  const r1=await igdbQuery('games',
+    `search "${q}"; fields id,name,cover.image_id,first_release_date,genres.name,platforms.name; limit 8;`
   );
-  return results||[];
+  if(r1&&r1.length&&r1[0]?.name) return r1;
+
+  // Fallback: where name ~ (case-insensitive contains) — handles special chars, accents
+  const escaped=q.replace(/\\/g,'\\\\').replace(/"/g,'\\"');
+  const r2=await igdbQuery('games',
+    `where name ~ *"${escaped}"*; fields id,name,cover.image_id,first_release_date,genres.name,platforms.name; sort rating desc; limit 8;`
+  );
+  if(r2&&r2.length&&r2[0]?.name) return r2;
+
+  // Fallback 2: normalize diacritics and search again
+  const normalized=q.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  if(normalized!==q){
+    const r3=await igdbQuery('games',
+      `search "${normalized}"; fields id,name,cover.image_id,first_release_date,genres.name,platforms.name; limit 8;`
+    );
+    if(r3&&r3.length&&r3[0]?.name) return r3;
+  }
+
+  return [];
 }
 
 async function igdbDetails(igdbId){
