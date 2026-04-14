@@ -953,7 +953,8 @@ CREATE POLICY IF NOT EXISTS "allow_all" ON mediaboard FOR ALL USING (true) WITH 
 }
 
 function sanitizeState(s){
-  // Ensure state always has valid structure
+  // Handle case where data is the columns array directly
+  if(Array.isArray(s)) s={columns:s};
   if(!s||typeof s!=='object') return {columns:[]};
   if(!Array.isArray(s.columns)) s.columns=[];
   s.columns=s.columns.map(col=>{
