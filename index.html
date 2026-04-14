@@ -952,31 +952,50 @@ CREATE POLICY IF NOT EXISTS "allow_all" ON mediaboard FOR ALL USING (true) WITH 
   }
 }
 
+function sanitizeState(s){
+  // Ensure state always has valid structure
+  if(!s||typeof s!=='object') return {columns:[]};
+  if(!Array.isArray(s.columns)) s.columns=[];
+  s.columns=s.columns.map(col=>{
+    if(!col.id) col.id='_'+Math.random().toString(36).slice(2,7);
+    if(!col.name) col.name='Sin nombre';
+    if(!Array.isArray(col.top10)) col.top10=[];
+    if(!Array.isArray(col.sections)) col.sections=[{id:'_'+Math.random().toString(36).slice(2,7),name:col.name,cards:[],bgColor:''}];
+    col.sections=col.sections.map(sec=>{
+      if(!sec.id) sec.id='_'+Math.random().toString(36).slice(2,7);
+      if(!sec.name) sec.name='';
+      if(!Array.isArray(sec.cards)) sec.cards=[];
+      return sec;
+    });
+    return col;
+  });
+  return s;
+}
+
 async function loadFromSupabase(){
   setSyncStatus('syncing','Cargando…');
   try{
     const r=await sbFetch('/rest/v1/mediaboard?id=eq.'+SB_BOARD_ID+'&select=data');
     if(!r.ok){
-      // Fall back to localStorage
       const s=localStorage.getItem('mediaboard_state');
-      if(s) state=JSON.parse(s);
+      if(s) state=sanitizeState(JSON.parse(s));
       setSyncStatus('error','Usando datos locales');
       return;
     }
     const rows=await r.json();
     if(rows&&rows.length>0&&rows[0].data){
-      state=rows[0].data;
+      state=sanitizeState(rows[0].data);
       localStorage.setItem('mediaboard_state',JSON.stringify(state));
       setSyncStatus('synced','Sincronizado ✓');
     } else {
-      // No remote data — try localStorage
       const s=localStorage.getItem('mediaboard_state');
-      if(s){ state=JSON.parse(s); await saveToSupabase(); }
-      else setSyncStatus('synced','Listo');
+      if(s){ state=sanitizeState(JSON.parse(s)); await saveToSupabase(); }
+      else { state={columns:[]}; setSyncStatus('synced','Listo'); }
     }
   } catch(e){
     const s=localStorage.getItem('mediaboard_state');
-    if(s) state=JSON.parse(s);
+    if(s) state=sanitizeState(JSON.parse(s));
+    else state={columns:[]};
     setSyncStatus('error','Sin conexión');
   }
 }
