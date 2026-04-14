@@ -376,7 +376,7 @@
   .sec-rename-btn, .sec-delete-btn { background:none; border:none; cursor:pointer; color:var(--text-muted); font-size:12px; padding:2px 5px; border-radius:3px; }
   .sec-rename-btn:hover { color:var(--text); background:var(--bg2); }
   .sec-delete-btn:hover { color:var(--accent); }
-  .sec-divider { height:1px; background:var(--divider); margin:8px 14px; }
+  .sec-divider { height:2px; background:var(--divider); margin:0; }
   .add-section-row { padding:10px 14px 14px; }
   .add-section-btn {
     width:100%; padding:7px; border:2px dashed var(--border); border-radius:6px;
@@ -1727,10 +1727,10 @@ function renderColumn(col){
         </div>
         <div class="card-divider"></div>
         ${col.sections.map((sec,si)=>`
-          ${si>0?'<div class="sec-divider"></div>':''}
+          ${si>0?`<div class="sec-divider" style="background:${sec.bgColor||'var(--divider)'}"></div>`:''}
           ${renderSection(sec,col.id)}
         `).join('')}
-        <div class="add-section-row">
+        <div class="add-section-row" style="background:${col.sections[col.sections.length-1]?.bgColor||'transparent'}">
           <button class="add-section-btn" onclick="addSection('${col.id}')">+ Nueva subsección</button>
         </div>
       </div>
@@ -1919,6 +1919,12 @@ function openCardMenu(e, colId, secId, cardId, inTop10){
     <div class="card-ctx-item" onclick="closeCardMenu();insertEmptySlot('${colId}','${secId}','${cardId}',${inTop10})">
       <span class="ctx-icon">▭</span> Añadir hueco a la derecha
     </div>
+    <div class="card-ctx-sep"></div>
+    ${card.mediaType==='game'?`
+    <div class="card-ctx-sep"></div>
+    <div class="card-ctx-item" onclick="closeCardMenu();editGameTimes('${colId}','${secId}','${cardId}',${inTop10})">
+      <span class="ctx-icon">⏱</span> Tiempos HLTB
+    </div>`:''}
     <div class="card-ctx-sep"></div>
     <div class="card-ctx-item" onclick="closeCardMenu();showCardInfo('${colId}','${secId}','${cardId}',${inTop10})">
       <span class="ctx-icon">ℹ</span> Info
@@ -2285,6 +2291,36 @@ function showAllPlatforms(colId,secId,cardId,inTop10){
     </div>
     <div class="modal-actions"><button class="btn-primary" onclick="closeModal()">Cerrar</button></div>
   `);
+}
+
+
+function editGameTimes(colId, secId, cardId, inTop10){
+  const card=getCard(colId,secId,cardId,inTop10); if(!card) return;
+  const fh=s=>s?Math.round(s/3600*10)/10:'';
+  showModal(`
+    <button class="modal-close-x" onclick="closeModal()">✕</button>
+    <h2>⏱ Tiempos HLTB</h2>
+    <p style="font-size:12px;color:#888;margin-bottom:14px">Introduce los tiempos en horas desde <a href="https://howlongtobeat.com/game/${card.igdbId||''}" target="_blank" style="color:var(--accent2)">HowLongToBeat</a>. Puedes dejarlo en blanco.</p>
+    <label class="key-field-label">Main Story (horas)</label>
+    <input class="modal-input" id="ttb-main" type="number" step="0.5" min="0" placeholder="ej. 12.5" value="${card.ttbMain?Math.round(card.ttbMain/3600*10)/10:''}">
+    <label class="key-field-label" style="margin-top:10px">Main + Sides (horas)</label>
+    <input class="modal-input" id="ttb-sides" type="number" step="0.5" min="0" placeholder="ej. 20" value="${card.ttbMainSides?Math.round(card.ttbMainSides/3600*10)/10:''}">
+    <label class="key-field-label" style="margin-top:10px">Completionist (horas)</label>
+    <input class="modal-input" id="ttb-comp" type="number" step="0.5" min="0" placeholder="ej. 35" value="${card.ttbComplete?Math.round(card.ttbComplete/3600*10)/10:''}">
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-primary" onclick="saveGameTimes('${colId}','${secId}','${cardId}',${inTop10})">Guardar</button>
+    </div>
+  `);
+}
+
+function saveGameTimes(colId, secId, cardId, inTop10){
+  const card=getCard(colId,secId,cardId,inTop10); if(!card) return;
+  const toSec=v=>{ const n=parseFloat(v); return isNaN(n)||n<=0?null:Math.round(n*3600); };
+  card.ttbMain=toSec(document.getElementById('ttb-main')?.value);
+  card.ttbMainSides=toSec(document.getElementById('ttb-sides')?.value);
+  card.ttbComplete=toSec(document.getElementById('ttb-comp')?.value);
+  closeModal(); renderAll(); showToast('Tiempos guardados ✓');
 }
 
 function escHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
