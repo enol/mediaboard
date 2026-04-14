@@ -376,9 +376,7 @@
   .sec-rename-btn, .sec-delete-btn { background:none; border:none; cursor:pointer; color:var(--text-muted); font-size:12px; padding:2px 5px; border-radius:3px; }
   .sec-rename-btn:hover { color:var(--text); background:var(--bg2); }
   .sec-delete-btn:hover { color:var(--accent); }
-  .sec-divider { display:flex; align-items:center; margin:8px 0 0; padding:0 14px; gap:8px; }
-  .sec-divider::before, .sec-divider::after { content:''; flex:1; height:2px; background:#c8c3bb; }
-  .sec-divider-label { font-family:'Bebas Neue',sans-serif; font-size:12px; letter-spacing:1.5px; color:#b0aba3; white-space:nowrap; flex-shrink:0; }
+  .sec-divider { height:2px; background:#c8c3bb; margin:8px 0 0; }
   .add-section-row { padding:10px 14px 14px; }
   .add-section-btn {
     width:100%; padding:7px; border:2px dashed var(--border); border-radius:6px;
@@ -1089,14 +1087,14 @@ async function igdbQuery(endpoint, body){
 
 async function igdbSearch(query){
   const results=await igdbQuery('games',
-    `search "${query.replace(/"/g,"'")}"; fields id,name,cover.image_id,first_release_date,genres.name,platforms.name,time_to_beat; limit 8;`
+    `search "${query.replace(/"/g,"'")}"; fields id,name,cover.image_id,first_release_date,genres.name,platforms.name,time_to_beat.normally,time_to_beat.hastily,time_to_beat.completely; limit 8;`
   );
   return results||[];
 }
 
 async function igdbDetails(igdbId){
   const results=await igdbQuery('games',
-    `where id=${igdbId}; fields id,name,cover.image_id,first_release_date,genres.name,platforms.name,summary,time_to_beat; limit 1;`
+    `where id=${igdbId}; fields id,name,cover.image_id,first_release_date,genres.name,platforms.name,summary,time_to_beat.normally,time_to_beat.hastily,time_to_beat.completely; limit 1;`
   );
   return results?.[0]||null;
 }
@@ -1729,10 +1727,10 @@ function renderColumn(col){
         </div>
         <div class="card-divider"></div>
         ${col.sections.map((sec,si)=>`
-          ${si>0?`<div class="sec-divider"><span class="sec-divider-label">${escHtml(sec.name).toUpperCase()}</span></div>`:''}
+          ${si>0?'<div class="sec-divider"></div>':''}
           ${renderSection(sec,col.id)}
         `).join('')}
-        <div class="add-section-row" style="background:${col.sections[col.sections.length-1]?.bgColor||'transparent'}">
+        <div class="add-section-row" style="background:${col.sections[col.sections.length-1]?.bgColor||'transparent'};padding-top:0">
           <button class="add-section-btn" onclick="addSection('${col.id}')">+ Nueva subsección</button>
         </div>
       </div>
@@ -1794,7 +1792,7 @@ function renderCard(card,colId,sectionId,inTop10,rank){
     const extraG=allGplats.length-3;
     const abbrev=p=>p.replace('Family Computer Disk System','FDS').replace('Family Computer','Famicom').replace('Nintendo Entertainment System','NES').replace('Super Nintendo Entertainment System','SNES').replace('Nintendo 64','N64').replace('Nintendo Switch','Switch').replace('Nintendo 3DS','3DS').replace('Nintendo DS','DS').replace('Game Boy Advance','GBA').replace('Game Boy Color','GBC').replace('PlayStation 5','PS5').replace('PlayStation 4','PS4').replace('PlayStation 3','PS3').replace('PlayStation 2','PS2').replace('PlayStation Portable','PSP').replace('Xbox Series X|S','Xbox SX').replace('PC (Microsoft Windows)','PC');
     if(gplats.length){
-      const morePill=extraG>0?`<span class="platform-pill platform-pill-more" style="cursor:pointer;border-style:dashed" title="${escHtml(allGplats.slice(3).map(abbrev).join(', '))}" onclick="event.stopPropagation();showAllPlatforms('${colId}','${secId}','${card.id}',${top10f})">+${extraG}</span>`:'';
+      const morePill=extraG>0?`<span class="platform-pill platform-pill-more" style="cursor:pointer;border-style:dashed;background:#d1cdc7;color:#333;font-weight:700" title="${escHtml(allGplats.slice(3).map(abbrev).join(', '))}" onclick="event.stopPropagation();showAllPlatforms('${colId}','${secId}','${card.id}',${top10f})">+${extraG}</span>`:'';
       platHtml=gplats.map(p=>`<span class="platform-pill" style="cursor:default" title="${escHtml(p)}"><span>${escHtml(abbrev(p))}</span></span>`).join('')+morePill+clockBtn;
     } else {
       platHtml=clockBtn;
