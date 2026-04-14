@@ -388,6 +388,10 @@
   }
   .add-section-btn:hover { border-color:var(--accent); color:var(--accent); background:#fff5f5; }
 
+
+  /* RAWG key modal */
+  .rawg-note { font-size:11px; color:#888; margin-top:6px; line-height:1.5; }
+
   /* GAME CARD extras */
   .hltb-times { display:flex; flex-direction:column; gap:1px; margin-top:3px; }
   .hltb-row { display:flex; justify-content:space-between; align-items:center; font-size:9px; line-height:1.4; }
@@ -528,6 +532,9 @@
       </button>
       <button class="topbar-key-btn" id="igdb-btn" onclick="openKeyModal('igdb')">
         <span class="dot" id="igdb-dot"></span> IGDB
+      </button>
+      <button class="topbar-key-btn" id="rawg-btn" onclick="openKeyModal('rawg')">
+        <span class="dot" id="rawg-dot"></span> RAWG
       </button>
       <button class="topbar-btn secondary" onclick="testIGDB()" style="font-size:11px;padding:5px 8px;" title="Probar conexión IGDB">🔧 Test IGDB</button>
       <button class="topbar-btn secondary" onclick="openRepoConfig()" style="font-size:11px;padding:5px 10px;">⚙ Repo Config</button>
@@ -806,10 +813,16 @@ function updateDots(){
   const igdbDot=document.getElementById('igdb-dot'), igdbBtn=document.getElementById('igdb-btn');
   if(igdbDot) igdbDot.style.background=hasIgdb?'#4caf50':'#555';
   if(igdbBtn) igdbBtn.classList.toggle('active',hasIgdb);
+  // RAWG
+  const hasRawg=!!localStorage.getItem('mediaboard_key_rawg');
+  const rawgDot=document.getElementById('rawg-dot'), rawgBtn=document.getElementById('rawg-btn');
+  if(rawgDot) rawgDot.style.background=hasRawg?'#4caf50':'#555';
+  if(rawgBtn) rawgBtn.classList.toggle('active',hasRawg);
 }
 
 function openKeyModal(type='tmdb'){
   if(type==='igdb') { openIGDBModal(); return; }
+  if(type==='rawg') { openRAWGModal(); return; }
   // TMDB modal
   const currentKey=getKey('tmdb');
   showModal(`
@@ -834,6 +847,46 @@ function saveTMDBKey(){
   const v=document.getElementById('key-inp')?.value.trim();
   if(v){ setKey('tmdb',v); showToast('TMDB Key guardada ✓'); }
   closeModal();
+}
+
+
+function openRAWGModal(){
+  const cur=localStorage.getItem('mediaboard_key_rawg')||'';
+  showModal(`
+    <button class="modal-close-x" onclick="closeModal()">✕</button>
+    <h2>🎮 RAWG API Key</h2>
+    <div class="key-steps">
+      <div class="key-step"><span class="key-step-num">1</span><div class="key-step-body">Ve a <a href="https://rawg.io/apidocs" target="_blank">rawg.io/apidocs</a> y pulsa <strong>"Get API Key"</strong>.</div></div>
+      <div class="key-step"><span class="key-step-num">2</span><div class="key-step-body">Regístrate con email o Google. Es gratuito.</div></div>
+      <div class="key-step"><span class="key-step-num">3</span><div class="key-step-body">Copia tu API key y pégala aquí:</div></div>
+    </div>
+    <input class="modal-input key-visible" id="rawg-key-inp" type="text" placeholder="Tu RAWG API key…" value="${escHtml(cur)}">
+    <p class="rawg-note">RAWG proporciona el tiempo medio de juego de la comunidad. Aparecerá automáticamente en las cards de juegos.</p>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cerrar</button>
+      <button class="btn-primary" onclick="saveRAWGKey()">Guardar</button>
+    </div>`);
+  setTimeout(()=>document.getElementById('rawg-key-inp')?.focus(),50);
+}
+function saveRAWGKey(){
+  const v=document.getElementById('rawg-key-inp')?.value.trim();
+  if(v){ localStorage.setItem('mediaboard_key_rawg',v); updateDots(); showToast('RAWG Key guardada ✓'); }
+  closeModal();
+}
+
+async function fetchRAWGPlaytime(gameName){
+  const key=localStorage.getItem('mediaboard_key_rawg'); if(!key) return null;
+  try{
+    const ctrl=new AbortController(); setTimeout(()=>ctrl.abort(),5000);
+    const r=await fetch(`https://api.rawg.io/api/games?key=${key}&search=${encodeURIComponent(gameName)}&page_size=3`,{signal:ctrl.signal});
+    if(!r.ok) return null;
+    const d=await r.json();
+    // Find best match by name similarity
+    const results=d.results||[];
+    const best=results.find(g=>g.name.toLowerCase()===gameName.toLowerCase())||results[0];
+    if(best&&best.playtime>0) return best.playtime; // hours
+    return null;
+  }catch{return null;}
 }
 
 function openIGDBModal(){
@@ -1212,6 +1265,15 @@ async function pickGame(colId,sectionId,idx,inTop10){
     const sec=col.sections.find(s=>s.id===sectionId); if(sec) sec.cards.push(card);
   }
   closeModal(); renderAll();
+  // Async: fetch RAWG playtime and update card
+  if(localStorage.getItem('mediaboard_key_rawg')){
+    fetchRAWGPlaytime(title).then(hours=>{
+      if(hours){
+        const c2=getCard(colId,sectionId,card.id,inTop10);
+        if(c2){ c2.ttbMain=hours*3600; renderAll(); }
+      }
+    });
+  }
 }
 
 
@@ -1542,6 +1604,7 @@ function openSearchModal(colId,sectionId,inTop10){
     <div style="display:flex;gap:8px;margin-bottom:12px">
       <button class="btn-primary" style="flex:1;font-size:12px;padding:6px" onclick="switchSearchMode('movie')">🎬 Película / Serie</button>
       <button class="btn-secondary" style="flex:1;font-size:12px;padding:6px" onclick="switchSearchMode('game')">🎮 Videojuego</button>
+      <button class="btn-secondary" style="flex:1;font-size:12px;padding:6px" onclick="switchSearchMode('manual')">✏️ Manual</button>
     </div>
     <input class="modal-input" id="search-inp" placeholder="Escribe el nombre…">
     <div id="search-results-area"></div>
@@ -1563,9 +1626,42 @@ function switchSearchMode(mode){
   window._searchMode=mode;
   const btns=document.querySelectorAll('.modal-box button[onclick^="switchSearchMode"]');
   btns.forEach(b=>{ b.className=b.getAttribute('onclick').includes(mode)?'btn-primary':'btn-secondary'; b.style.flex='1'; b.style.fontSize='12px'; b.style.padding='6px'; });
-  document.getElementById('search-results-area').innerHTML='';
+  const area=document.getElementById('search-results-area');
   const inp=document.getElementById('search-inp');
-  if(inp){inp.value='';inp.placeholder=mode==='game'?'Nombre del juego…':'Escribe el nombre…';inp.focus();}
+  if(mode==='manual'){
+    if(inp){ inp.value=''; inp.style.display='none'; }
+    if(area) area.innerHTML=`
+      <div style="margin-top:8px">
+        <label class="key-field-label">Título</label>
+        <input class="modal-input" id="manual-title" placeholder="Nombre del título…" style="margin-bottom:8px">
+        <label class="key-field-label">Año (opcional)</label>
+        <input class="modal-input" id="manual-year" placeholder="2024" style="margin-bottom:8px">
+        <button class="btn-primary" style="width:100%" onclick="addManualCard()">Añadir</button>
+      </div>`;
+    setTimeout(()=>document.getElementById('manual-title')?.focus(),50);
+  } else {
+    if(inp){ inp.style.display=''; inp.value=''; inp.placeholder=mode==='game'?'Nombre del juego…':'Escribe el nombre…'; inp.focus(); }
+    if(area) area.innerHTML='';
+  }
+}
+
+function addManualCard(){
+  const title=document.getElementById('manual-title')?.value.trim();
+  if(!title){ showToast('Escribe un título'); return; }
+  const year=document.getElementById('manual-year')?.value.trim()||'';
+  const colId=window._searchColId, secId=window._searchSecId, inTop10=window._searchInTop10;
+  const card={
+    id:uid(), title, year, poster:'', platforms:[], genres:[],
+    pending:false, mediaType:'manual', isManual:true
+  };
+  const col=state.columns.find(c=>c.id===colId); if(!col) return;
+  if(inTop10){
+    if(col.top10.length>=10){showToast('Top 10 lleno');return;}
+    col.top10.push(card);
+  } else {
+    const sec=col.sections.find(s=>s.id===secId); if(sec) sec.cards.push(card);
+  }
+  closeModal(); renderAll(); showToast('Añadido ✓');
 }
 async function doSearch(query,colId,sectionId,inTop10){
   const area=document.getElementById('search-results-area');
@@ -1633,6 +1729,15 @@ async function pickResult(colId,sectionId,idx,inTop10){
     const sec=col.sections.find(s=>s.id===sectionId); if(sec) sec.cards.push(card);
   }
   closeModal(); renderAll();
+  // Async: fetch RAWG playtime and update card
+  if(localStorage.getItem('mediaboard_key_rawg')){
+    fetchRAWGPlaytime(title).then(hours=>{
+      if(hours){
+        const c2=getCard(colId,sectionId,card.id,inTop10);
+        if(c2){ c2.ttbMain=hours*3600; renderAll(); }
+      }
+    });
+  }
 }
 
 // ── DELETE — inline overlay on the card ──────────────────────────────────
@@ -1859,7 +1964,7 @@ function renderCard(card,colId,sectionId,inTop10,rank){
 
   let typeBadge='';
   if(card.mediaType==='game') typeBadge='<span class="card-type-badge game">JUEGO</span>';
-  else if(card.ended) typeBadge='<span class="card-type-badge" style="background:#555">FIN</span>';
+  // FIN badge removed — use filter 'Terminadas' instead
   const rankHtml=inTop10?`<div class="rank-num">${rank+1}</div>`:'';
   const pendingOverlay=card.pending?`<div class="pending-label">PENDIENTE</div>`:'';
   const pendingCls=card.pending?'pending':'';
@@ -1869,7 +1974,12 @@ function renderCard(card,colId,sectionId,inTop10,rank){
     data-card-id="${card.id}" data-col="${colId}" data-sec="${secId}" data-top10="${top10f}">
     <button class="delete-btn" onclick="event.stopPropagation();showInlineDelete(this,'${colId}','${secId}','${card.id}',${top10f})">✕</button>
     <div class="card-img-wrap">
-      <img src="${escHtml(card.poster)}" alt="${escHtml(card.title)}" loading="lazy">
+      ${card.poster
+        ? `<img src="${escHtml(card.poster)}" alt="${escHtml(card.title)}" loading="lazy">`
+        : `<div style="width:100%;height:100%;background:#d1cdc7;border-radius:6px;display:flex;align-items:center;justify-content:center;padding:8px;text-align:center">
+            <span style="font-size:11px;font-weight:700;color:#555;line-height:1.3;word-break:break-word">${escHtml(card.title)}</span>
+           </div>`
+      }
       ${rankHtml}
       ${pendingOverlay}
       ${showRatings&&card.rating!=null?`<div class="card-rating"><svg width="13" height="13" viewBox="0 0 24 24" fill="#f59e0b" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>${card.rating}</div>`:''}
