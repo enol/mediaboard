@@ -123,7 +123,9 @@
   .top10-title { font-family:'Bebas Neue',sans-serif; font-size:20px; letter-spacing:1px; color:var(--text); margin-bottom:14px; display:flex; align-items:center; gap:8px; }
   .top10-title .badge { background:var(--accent); color:#fff; font-size:10px; padding:2px 7px; border-radius:3px; letter-spacing:1px; font-family:'DM Sans',sans-serif; font-weight:700; }
   .card-divider { height:2px; background:#c8c3bb; margin:0; }
-  .genre-section { padding:14px 14px 16px; border-radius:0 0 10px 10px; transition:background .2s; }
+  .genre-section { padding:0 14px 16px; border-radius:0 0 10px 10px; transition:background .2s; }
+  .genre-section:first-of-type { padding-top:14px; }
+  .sec-header { padding-top:14px; }
   .genre-section-title { font-family:'Bebas Neue',sans-serif; font-size:14px; letter-spacing:1px; color:var(--text-muted); margin-bottom:10px; }
 
   /* Card grid — strict 5-col, add-btn always on its own row */
@@ -376,7 +378,7 @@
   .sec-rename-btn, .sec-delete-btn { background:none; border:none; cursor:pointer; color:var(--text-muted); font-size:12px; padding:2px 5px; border-radius:3px; }
   .sec-rename-btn:hover { color:var(--text); background:var(--bg2); }
   .sec-delete-btn:hover { color:var(--accent); }
-  .sec-divider { height:2px; background:#c8c3bb; margin:8px 0 0; }
+  .sec-divider { height:2px; background:#c8c3bb; margin:0; display:block; width:100%; }
   .add-section-row { padding:10px 14px 14px; }
   .add-section-btn {
     width:100%; padding:7px; border:2px dashed var(--border); border-radius:6px;
@@ -1812,7 +1814,7 @@ function renderCard(card,colId,sectionId,inTop10,rank){
     const extraG=allGplats.length-3;
     const abbrev=p=>p.replace('Family Computer Disk System','FDS').replace('Family Computer','Famicom').replace('Nintendo Entertainment System','NES').replace('Super Nintendo Entertainment System','SNES').replace('Nintendo 64','N64').replace('Nintendo Switch','Switch').replace('Nintendo 3DS','3DS').replace('Nintendo DS','DS').replace('Game Boy Advance','GBA').replace('Game Boy Color','GBC').replace('PlayStation 5','PS5').replace('PlayStation 4','PS4').replace('PlayStation 3','PS3').replace('PlayStation 2','PS2').replace('PlayStation Portable','PSP').replace('Xbox Series X|S','Xbox SX').replace('PC (Microsoft Windows)','PC');
     if(gplats.length){
-      const morePill=extraG>0?`<span class="platform-pill platform-pill-more" style="cursor:pointer;border-style:dashed;background:#d1cdc7;color:#333;font-weight:700" title="${escHtml(allGplats.slice(3).map(abbrev).join(', '))}" onclick="event.stopPropagation();showAllPlatforms('${colId}','${secId}','${card.id}',${top10f})">+${extraG}</span>`:'';
+      const morePill=extraG>0?`<span class="platform-pill platform-pill-more" style="cursor:pointer;background:#6b7280;color:#fff;font-weight:700;border-color:#6b7280" title="${escHtml(allGplats.slice(3).map(abbrev).join(', '))}" onclick="event.stopPropagation();showAllPlatforms('${colId}','${secId}','${card.id}',${top10f})">+${extraG}</span>`:'';
       platHtml=gplats.map(p=>`<span class="platform-pill" style="cursor:default" title="${escHtml(p)}"><span>${escHtml(abbrev(p))}</span></span>`).join('')+morePill+clockBtn;
     } else {
       platHtml=clockBtn;
