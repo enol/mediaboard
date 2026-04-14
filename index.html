@@ -123,7 +123,7 @@
   .top10-title { font-family:'Bebas Neue',sans-serif; font-size:20px; letter-spacing:1px; color:var(--text); margin-bottom:14px; display:flex; align-items:center; gap:8px; }
   .top10-title .badge { background:var(--accent); color:#fff; font-size:10px; padding:2px 7px; border-radius:3px; letter-spacing:1px; font-family:'DM Sans',sans-serif; font-weight:700; }
   .card-divider { height:2px; background:#c8c3bb; margin:0; }
-  .genre-section { padding:22px 14px 16px; border-radius:0 0 10px 10px; transition:background .2s; }
+  .genre-section { padding:14px 14px 16px; border-radius:0 0 10px 10px; transition:background .2s; }
   .genre-section-title { font-family:'Bebas Neue',sans-serif; font-size:14px; letter-spacing:1px; color:var(--text-muted); margin-bottom:10px; }
 
   /* Card grid — strict 5-col, add-btn always on its own row */
@@ -376,7 +376,9 @@
   .sec-rename-btn, .sec-delete-btn { background:none; border:none; cursor:pointer; color:var(--text-muted); font-size:12px; padding:2px 5px; border-radius:3px; }
   .sec-rename-btn:hover { color:var(--text); background:var(--bg2); }
   .sec-delete-btn:hover { color:var(--accent); }
-  .sec-divider { height:2px; background:var(--divider); margin:0; }
+  .sec-divider { display:flex; align-items:center; margin:8px 0 0; padding:0 14px; gap:8px; }
+  .sec-divider::before, .sec-divider::after { content:''; flex:1; height:2px; background:#c8c3bb; }
+  .sec-divider-label { font-family:'Bebas Neue',sans-serif; font-size:12px; letter-spacing:1.5px; color:#b0aba3; white-space:nowrap; flex-shrink:0; }
   .add-section-row { padding:10px 14px 14px; }
   .add-section-btn {
     width:100%; padding:7px; border:2px dashed var(--border); border-radius:6px;
@@ -1087,14 +1089,14 @@ async function igdbQuery(endpoint, body){
 
 async function igdbSearch(query){
   const results=await igdbQuery('games',
-    `search "${query.replace(/"/g,"'")}"; fields id,name,cover.image_id,first_release_date,genres.name,platforms.name; limit 8;`
+    `search "${query.replace(/"/g,"'")}"; fields id,name,cover.image_id,first_release_date,genres.name,platforms.name,time_to_beat; limit 8;`
   );
   return results||[];
 }
 
 async function igdbDetails(igdbId){
   const results=await igdbQuery('games',
-    `where id=${igdbId}; fields id,name,cover.image_id,first_release_date,genres.name,platforms.name,summary; limit 1;`
+    `where id=${igdbId}; fields id,name,cover.image_id,first_release_date,genres.name,platforms.name,summary,time_to_beat; limit 1;`
   );
   return results?.[0]||null;
 }
@@ -1170,9 +1172,9 @@ async function pickGame(colId,sectionId,idx,inTop10){
     id:uid(), title, year:String(year), poster,
     platforms:[], genres, pending:false,
     mediaType:'game', igdbId:r.id,
-    ttbMain: null,
-    ttbMainSides: null,
-    ttbComplete: null,
+    ttbMain: (full.time_to_beat?.normally||r.time_to_beat?.normally||null),
+    ttbMainSides: (full.time_to_beat?.hastily||r.time_to_beat?.hastily||null),
+    ttbComplete: (full.time_to_beat?.completely||r.time_to_beat?.completely||null),
     gamePlatforms: platforms,
   };
   const col=state.columns.find(c=>c.id===colId); if(!col) return;
@@ -1727,7 +1729,7 @@ function renderColumn(col){
         </div>
         <div class="card-divider"></div>
         ${col.sections.map((sec,si)=>`
-          ${si>0?`<div class="sec-divider" style="background:${sec.bgColor||'var(--divider)'}"></div>`:''}
+          ${si>0?`<div class="sec-divider"><span class="sec-divider-label">${escHtml(sec.name).toUpperCase()}</span></div>`:''}
           ${renderSection(sec,col.id)}
         `).join('')}
         <div class="add-section-row" style="background:${col.sections[col.sections.length-1]?.bgColor||'transparent'}">
