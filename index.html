@@ -2016,9 +2016,13 @@ function renderCard(card,colId,sectionId,inTop10,rank){
 
   // Empty slot — functional add card that replaces itself when filled
   if(card.isEmpty){
-    return `<div class="media-card" data-card-id="${card.id}" data-col="${colId}" data-sec="${secId}" data-top10="${top10f}" draggable="true">
+    return `<div class="media-card" data-card-id="${card.id}" data-col="${colId}" data-sec="${secId}" data-top10="${top10f}" draggable="true" style="cursor:grab">
       <button class="delete-btn" onclick="event.stopPropagation();showInlineDelete(this,'${colId}','${secId}','${card.id}',${top10f})">✕</button>
-      <div class="add-card" onclick="event.stopPropagation();fillEmptySlot('${colId}','${secId}','${card.id}',${top10f})" style="height:var(--th);">+<span>Añadir</span></div>
+      <div class="card-img-wrap" style="border:2px dashed var(--border);border-radius:6px;background:#f8f6f3;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;pointer-events:none">
+        <span style="font-size:22px;color:#ccc;line-height:1;pointer-events:none">+</span>
+        <span style="font-size:9px;font-weight:600;color:#bbb;pointer-events:none">Añadir</span>
+      </div>
+      <div style="position:absolute;inset:0;cursor:pointer;border-radius:6px" onclick="event.stopPropagation();fillEmptySlot('${colId}','${secId}','${card.id}',${top10f})"></div>
     </div>`;
   }
 
@@ -2170,7 +2174,6 @@ function openCardMenu(e, colId, secId, cardId, inTop10){
     <div class="card-ctx-item" onclick="closeCardMenu();insertEmptySlot('${colId}','${secId}','${cardId}',${inTop10})">
       <span class="ctx-icon">▭</span> Añadir hueco a la derecha
     </div>
-    <div class="card-ctx-sep"></div>
     ${card.mediaType==='game'?`
     <div class="card-ctx-sep"></div>
     <div class="card-ctx-item" onclick="closeCardMenu();editGameTimes('${colId}','${secId}','${cardId}',${inTop10})">
