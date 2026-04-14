@@ -3,778 +3,2519 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>MediaBoard Pro</title>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>MediaBoard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-  /* ── VARIABLES & RESET ── */
   :root {
-    --bg: #f0ede8; --bg2: #e8e4de; --card-bg: #fff;
-    --text: #1a1a1a; --text-muted: #6b7280;
-    --accent: #e63946; --accent-hover: #c1121f;
-    --accent2: #457b9d; --success: #10b981; --warning: #f59e0b;
-    --border: #d1d5db; --divider: #e5e7eb;
-    --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
-    --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
-    --shadow-lg: 0 10px 25px rgba(0,0,0,0.15);
-    --tw: 108px; --th: 161px; --gap: 12px;
-    --cols: 5;
-    --col-w: calc(var(--cols) * var(--tw) + (var(--cols) - 1) * var(--gap) + 28px);
-    --transition: all 0.2s ease-in-out;
+    --bg:#f0ede8; --bg2:#e8e4de; --card-bg:#fff;
+    --text:#1a1a1a; --text-muted:#888;
+    --accent:#e63946; --accent2:#457b9d;
+    --border:#d5d0c9; --divider:#e8e4de;
+    --shadow:0 2px 12px rgba(0,0,0,.10); --shadow-lg:0 8px 32px rgba(0,0,0,.16);
+    --tw:108px; --th:161px; --gap:10px;
+    --cols:5;
+    --col-w:calc(var(--cols)*var(--tw) + (var(--cols) - 1)*var(--gap) + 2*14px);
   }
-  
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--bg); font-family: 'DM Sans', sans-serif; color: var(--text); min-height: 100vh; overflow: hidden; }
-  button, input { font-family: inherit; }
-  
-  /* ── LAYOUT SUPERIOR ── */
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); font-family:'DM Sans',sans-serif; color:var(--text); min-height:100vh; }
+
+  /* TOPBAR */
   #topbar {
-    position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
-    background: #111827; border-bottom: 3px solid var(--accent);
-    display: flex; flex-direction: column; box-shadow: var(--shadow-md);
+    position:fixed; top:0; left:0; right:0; z-index:1000;
+    background:#1a1a1a; border-bottom:2px solid var(--accent);
+    display:flex; flex-direction:column;
   }
   #topbar-main {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 0 20px; height: 56px;
+    display:flex; align-items:center; gap:10px;
+    padding:0 16px; height:52px; white-space:nowrap; overflow:hidden;
   }
-  #topbar h1 { font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: #f9fafb; letter-spacing: 1.5px; margin: 0;}
-  
-  .topbar-controls { display: flex; align-items: center; gap: 10px; }
-  
-  .btn {
-    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-    border: none; border-radius: 6px; font-size: 13px; font-weight: 600;
-    cursor: pointer; transition: var(--transition); padding: 8px 14px;
-    user-select: none;
+  #topbar h1 { font-family:'Bebas Neue',sans-serif; font-size:26px; color:#fff; letter-spacing:2px; flex-shrink:0; }
+  #topbar-controls {
+    display:flex; align-items:center; gap:8px; flex-wrap:nowrap;
+    overflow:hidden; flex:1;
   }
-  .btn-primary { background: var(--accent); color: white; }
-  .btn-primary:hover { background: var(--accent-hover); transform: translateY(-1px); }
-  .btn-secondary { background: #374151; color: white; border: 1px solid #4b5563; }
-  .btn-secondary:hover { background: #4b5563; }
-  .btn-ghost { background: transparent; color: var(--text); border: 1px solid var(--border); }
-  .btn-ghost:hover { background: var(--bg2); }
+  /* Hamburger for small screens */
+  #topbar-menu-btn {
+    display:none; background:none; border:none; color:#aaa;
+    font-size:20px; cursor:pointer; padding:4px 6px; margin-left:auto; flex-shrink:0;
+  }
+  /* Drawer for small screens */
+  #topbar-drawer {
+    display:none; flex-direction:column; gap:8px;
+    background:#1a1a1a; padding:10px 16px 14px;
+    border-top:1px solid #2a2a2a;
+  }
+  #topbar-drawer.open { display:flex; }
+  .drawer-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  #topbar label { color:#aaa; font-size:12px; flex-shrink:0; }
+  #zoom-slider { -webkit-appearance:none; width:100px; height:4px; border-radius:2px; background:#444; outline:none; cursor:pointer; flex-shrink:0; }
+  #zoom-slider::-webkit-slider-thumb { -webkit-appearance:none; width:14px; height:14px; border-radius:50%; background:var(--accent); cursor:pointer; }
+  #zoom-val { color:#aaa; font-size:11px; min-width:34px; flex-shrink:0; }
+  .topbar-key-btn {
+    background:#2a2a2a; border:1px solid #555; color:#ccc; font-size:11px;
+    padding:5px 10px; border-radius:4px; cursor:pointer; font-family:'DM Sans',sans-serif;
+    display:flex; align-items:center; gap:5px; transition:background .15s; flex-shrink:0;
+  }
+  .topbar-key-btn:hover { background:#383838; }
+  .topbar-key-btn .dot { width:7px; height:7px; border-radius:50%; background:#555; flex-shrink:0; }
+  .topbar-key-btn.active .dot { background:#4caf50; }
+  .topbar-btn { background:var(--accent); color:#fff; border:none; padding:6px 12px; border-radius:4px; font-size:12px; font-family:'DM Sans',sans-serif; font-weight:600; cursor:pointer; flex-shrink:0; transition:background .2s; }
+  .topbar-btn:hover { background:#c1121f; }
+  .topbar-btn.secondary { background:#2a2a2a; border:1px solid #444; }
+  .topbar-btn.secondary:hover { background:#3a3a3a; }
+  /* Responsive breakpoint */
+  @media (max-width:900px){
+    #topbar-controls { display:none; }
+    #topbar-menu-btn { display:block; }
+  }
+  @media (min-width:901px){
+    #topbar-drawer { display:none !important; }
+  }
 
-  .search-input {
-    background: #1f2937; border: 1px solid #374151; color: white;
-    font-size: 13px; padding: 8px 14px; border-radius: 6px;
-    width: 200px; outline: none; transition: var(--transition);
-  }
-  .search-input:focus { border-color: var(--accent2); width: 240px; box-shadow: 0 0 0 2px rgba(69, 123, 157, 0.3); }
-
-  /* ── FILTER BAR ── */
-  #filter-bar {
-    position: fixed; top: 56px; left: 0; right: 0; z-index: 999;
-    background: #1f2937; border-bottom: 1px solid #374151; padding: 10px 20px;
-    display: flex; align-items: center; gap: 12px; flex-wrap: wrap; min-height: 48px;
-    box-shadow: var(--shadow-sm);
-  }
-  .sync-status { display: flex; align-items: center; gap: 6px; color: #9ca3af; font-size: 11px; margin-left: auto; }
-  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #6b7280; }
-  .status-dot.synced { background: var(--success); box-shadow: 0 0 8px rgba(16, 185, 129, 0.5); }
-  .status-dot.syncing { background: var(--warning); animation: pulse 1s infinite alternate; }
-  .status-dot.error { background: var(--accent); }
-  @keyframes pulse { from { opacity: 0.5; } to { opacity: 1; } }
-
-  /* ── MOTOR CANVAS ── */
+  /* CANVAS — Figma-style infinite pan/zoom */
   #canvas-viewport {
-    position: fixed; inset: 0; padding-top: 104px;
-    overflow: hidden; cursor: grab; background: var(--bg);
+    position:fixed; inset:0; overflow:hidden;
+    cursor:default;
   }
-  #canvas-viewport:active, #canvas-viewport.panning-active { cursor: grabbing; }
+  #canvas-viewport.panning { cursor:grab; }
+  #canvas-viewport.panning-active { cursor:grabbing !important; }
   #canvas-wrapper {
-    position: absolute; top: 120px; left: 60px;
-    transform-origin: 0 0; will-change: transform;
-    user-select: none; display: flex; gap: 32px; align-items: flex-start;
-    padding-bottom: 300px; padding-right: 300px;
+    position:absolute; top:0; left:0;
+    padding:120px 60px 200px;
+    transform-origin:0 0;
+    will-change:transform;
+    user-select:none;
+    -webkit-user-select:none;
+  }
+  #columns-container { display:flex; gap:24px; align-items:flex-start; min-height:80vh; }
+  #add-col-btn {
+    width:160px; min-width:160px; height:100px; border:2px dashed var(--border); border-radius:10px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    cursor:pointer; color:var(--text-muted); font-size:24px; background:rgba(255,255,255,.5);
+    transition:all .15s; flex-shrink:0; align-self:flex-start; margin-top:32px;
+  }
+  #add-col-btn:hover { border-color:var(--accent); background:#fff5f5; color:var(--accent); }
+  #add-col-btn small { font-size:11px; margin-top:4px; font-weight:600; }
+
+  /* COLUMN */
+  .genre-column { width:var(--col-w); min-width:var(--col-w); flex-shrink:0; position:relative; }
+  .genre-column.dragging-col { opacity:.4; pointer-events:none; }
+  .col-header { display:flex; align-items:center; justify-content:space-between; padding:0 2px 8px; user-select:none; }
+  .col-title-row { display:flex; align-items:center; gap:4px; height:24px; }
+  .col-drag-handle { color:var(--text-muted); font-size:16px; cursor:grab; padding:4px 6px; user-select:none; line-height:1; touch-action:none; }
+  .col-drag-handle:hover { color:var(--text); }
+  /* Vertical drop line between columns */
+  .col-drop-line { position:fixed !important; width:4px !important; background:#000 !important; opacity:.55 !important; border-radius:2px !important; pointer-events:none !important; z-index:9999 !important; animation:none !important; }
+  .col-title { font-family:'Bebas Neue',sans-serif; font-size:13px; letter-spacing:2px; color:var(--text-muted); cursor:default; line-height:1; display:flex; align-items:center; }
+  .col-rename-btn { background:none; border:none; color:var(--text-muted); font-size:11px; cursor:pointer; padding:1px 4px; border-radius:3px; opacity:0; transition:opacity .15s; line-height:1; }
+  .col-title-row:hover .col-rename-btn { opacity:1; }
+  .col-rename-btn:hover { background:var(--bg2); color:var(--text); }
+  .col-delete-btn { background:none; border:none; color:var(--text-muted); font-size:16px; cursor:pointer; padding:2px 6px; border-radius:4px; transition:color .15s; }
+  .col-delete-btn:hover { color:var(--accent); }
+
+  /* COMBINED CARD */
+  .combined-card { background:var(--card-bg); border-radius:10px; box-shadow:var(--shadow); border:1px solid var(--border); overflow:hidden; }
+  .top10-section { padding:16px 14px 20px; }
+  .top10-title { font-family:'Bebas Neue',sans-serif; font-size:20px; letter-spacing:1px; color:var(--text); margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+  .top10-title .badge { background:var(--accent); color:#fff; font-size:10px; padding:2px 7px; border-radius:3px; letter-spacing:1px; font-family:'DM Sans',sans-serif; font-weight:700; }
+  .card-divider { height:2px; background:#c8c3bb; margin:0; }
+  .genre-section { padding:14px 14px 16px; border-radius:0 0 10px 10px; transition:background .2s; }
+  .genre-section-title { font-family:'Bebas Neue',sans-serif; font-size:14px; letter-spacing:1px; color:var(--text-muted); margin-bottom:10px; }
+
+  /* Card grid — strict 5-col, add-btn always on its own row */
+  .card-row { display:flex; gap:var(--gap); flex-wrap:nowrap; align-items:flex-start; overflow:visible; }
+  .card-row + .card-row { margin-top:var(--gap); }
+  /* The add-btn row is always a separate element with just the + */
+  .add-row { margin-top:var(--gap); }
+
+
+  /* Inline delete overlay */
+  .delete-overlay { position:absolute; inset:0; background:rgba(220,30,30,.55); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:5px; z-index:20; }
+  .delete-ov-label { color:#fff; font-size:10px; font-weight:700; letter-spacing:.3px; text-shadow:0 1px 3px rgba(0,0,0,.5); }
+  .delete-ov-yes { background:#fff; color:#e63946; border:1.5px solid #e63946; border-radius:4px; padding:3px 12px; font-size:10px; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif; width:44px; }
+  .delete-ov-yes:hover { background:#fff0f1; }
+  .delete-ov-no  { background:#1a1a1a; color:#fff; border:none; border-radius:4px; padding:3px 12px; font-size:10px; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif; width:44px; }
+  .delete-ov-no:hover { background:#333; }
+  /* DROP LINE */
+  .drop-line { width:3px; height:var(--th); border-radius:99px; background:rgba(0,0,0,.6); flex-shrink:0; pointer-events:none; align-self:center; }
+  @keyframes pulse-line { from{opacity:.7} to{opacity:1} }
+
+  /* MEDIA CARD */
+  .media-card { position:relative; width:var(--tw); flex-shrink:0; cursor:grab; user-select:none; }
+  .media-card.dragging { opacity:.35; cursor:grabbing; }
+  .media-card.pending { opacity:.5; }
+  .card-img-wrap { position:relative; width:var(--tw); height:var(--th); }
+  .card-img-wrap img { width:100%; height:100%; object-fit:cover; border-radius:6px; display:block; background:var(--bg2); }
+  .rank-num { position:absolute; bottom:4px; left:5px; font-family:'Bebas Neue',sans-serif; font-size:40px; color:rgba(255,255,255,.92); text-shadow:0 2px 10px rgba(0,0,0,.8),0 0 2px rgba(0,0,0,.6); line-height:1; pointer-events:none; z-index:2; }
+  .pending-label { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); text-align:center; font-size:9px; font-weight:700; color:#1a1a1a; background:rgba(255,255,255,.88); padding:3px 7px; border-radius:4px; letter-spacing:.5px; pointer-events:none; white-space:nowrap; }
+  .media-card .card-info { margin-top:6px; }
+  .media-card .card-title { font-size:13px; font-weight:700; line-height:1.3; color:var(--text); word-break:break-word; white-space:normal; }
+  .media-card .card-meta { font-size:12px; color:var(--text); font-weight:400; margin-bottom:4px; }
+
+  /* Platform pills */
+  .card-platforms { display:flex; flex-wrap:wrap; gap:2px; align-items:center; width:var(--tw); overflow:hidden; }
+  .platform-pill { display:inline-flex; align-items:center; gap:2px; background:#f2efea; border:1px solid var(--border); border-radius:3px; padding:1px 4px; font-size:9px; font-weight:600; color:#555; cursor:pointer; transition:background .1s; max-width:calc(var(--tw) - 4px); overflow:hidden; flex-shrink:1; min-width:0; }
+  .platform-pill img { width:11px; height:11px; object-fit:contain; flex-shrink:0; }
+  .platform-pill span { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .platform-pill:hover { background:#e8e4de; }
+  .add-platform-pill { display:inline-flex; align-items:center; background:none; border:1px dashed var(--border); border-radius:3px; padding:1px 5px; font-size:9px; color:var(--text-muted); cursor:pointer; transition:border-color .1s,color .1s; }
+  .add-platform-pill:hover { border-color:var(--accent2); color:var(--accent2); }
+  .pending-btn { display:inline-flex; align-items:center; justify-content:center; width:16px; height:16px; border-radius:50%; background:#ddd; cursor:pointer; border:none; flex-shrink:0; padding:0; transition:background .15s; }
+  .pending-btn:hover { background:#bbb; }
+  .pending-btn.active { background:#aaa; }
+  .pending-btn svg { width:10px; height:10px; display:block; }
+
+  /* Delete btn */
+  .media-card .delete-btn { position:absolute; top:-6px; right:-6px; width:20px; height:20px; background:#fff; border:1.5px solid var(--border); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:10px; color:#333; cursor:pointer; box-shadow:0 1px 4px rgba(0,0,0,.18); transition:background .15s,color .15s; z-index:10; }
+  .media-card .delete-btn:hover { background:var(--accent); color:#fff; border-color:var(--accent); }
+
+  /* Add card */
+  .add-card { width:var(--tw); height:var(--th); border:2px dashed var(--border); border-radius:6px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; color:var(--text-muted); font-size:20px; flex-shrink:0; transition:border-color .15s,background .15s; user-select:none; }
+  .add-card:hover { border-color:var(--accent); background:#fff5f5; color:var(--accent); }
+  .add-card span { font-size:9px; margin-top:3px; font-weight:600; }
+
+  /* MODALS */
+  .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:2000; display:flex; align-items:center; justify-content:center; padding:16px; }
+  .modal-box { background:#fff; border-radius:12px; padding:24px; width:100%; max-width:440px; box-shadow:var(--shadow-lg); animation:modalIn .18s ease; position:relative; }
+  @keyframes modalIn { from{transform:scale(.92);opacity:0} to{transform:scale(1);opacity:1} }
+  .modal-box h2 { font-family:'Bebas Neue',sans-serif; font-size:22px; letter-spacing:1px; margin-bottom:14px; }
+  .modal-close-x { position:absolute; top:14px; right:16px; background:none; border:none; font-size:20px; color:var(--text-muted); cursor:pointer; }
+  .modal-close-x:hover { color:var(--text); }
+  .modal-input { width:100%; border:1.5px solid var(--border); border-radius:6px; padding:9px 12px; font-size:14px; font-family:'DM Sans',sans-serif; outline:none; }
+  .modal-input:focus { border-color:var(--accent2); }
+  .search-results { margin-top:10px; max-height:280px; overflow-y:auto; display:flex; flex-direction:column; gap:6px; }
+  .search-result-item { display:flex; align-items:center; gap:10px; padding:7px 10px; border-radius:6px; border:1.5px solid var(--border); cursor:pointer; transition:background .1s,border-color .1s; }
+  .search-result-item:hover { background:#f5f0eb; border-color:var(--accent2); }
+  .search-result-item img { width:36px; height:54px; object-fit:cover; border-radius:4px; background:var(--bg2); flex-shrink:0; }
+  .result-title { font-weight:600; font-size:13px; }
+  .result-meta { font-size:11px; color:var(--text-muted); }
+  .streaming-picker { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+  .streaming-option { display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer; padding:6px 8px; border-radius:6px; border:2px solid transparent; transition:border-color .15s,background .15s; }
+  .streaming-option.selected { border-color:var(--accent2); background:#f0f6ff; }
+  .streaming-option img { width:28px; height:28px; object-fit:contain; border-radius:4px; }
+  .streaming-option span { font-size:9px; font-weight:600; color:var(--text-muted); text-align:center; }
+  .modal-actions { display:flex; gap:8px; margin-top:16px; justify-content:flex-end; }
+  .btn-primary { background:var(--accent); color:#fff; border:none; padding:8px 20px; border-radius:6px; font-size:13px; font-family:'DM Sans',sans-serif; font-weight:700; cursor:pointer; }
+  .btn-primary:hover { background:#c1121f; }
+  .btn-secondary { background:#1a1a1a; color:#fff; border:none; padding:8px 20px; border-radius:6px; font-size:13px; font-family:'DM Sans',sans-serif; font-weight:700; cursor:pointer; }
+  .btn-secondary:hover { background:#333; }
+  .btn-cancel { background:none; border:1.5px solid var(--border); color:var(--text); padding:8px 16px; border-radius:6px; font-size:13px; font-family:'DM Sans',sans-serif; cursor:pointer; }
+  .btn-cancel:hover { background:var(--bg2); }
+  .confirm-modal { text-align:center; }
+  .confirm-modal p { margin-bottom:16px; font-size:15px; }
+  .spinner { display:inline-block; width:16px; height:16px; border:2px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin .7s linear infinite; margin-left:8px; vertical-align:middle; }
+  @keyframes spin { to{transform:rotate(360deg)} }
+  .no-results { color:var(--text-muted); font-size:13px; text-align:center; padding:12px 0; }
+  .key-modal-hint { font-size:12px; color:var(--text-muted); margin-top:6px; line-height:1.5; }
+  .key-modal-hint a { color:var(--accent2); }
+
+  /* FILTER BAR */
+  #filter-bar { position:fixed; top:52px; /* adjusted by JS */ left:0; right:0; z-index:999; background:#1a1a1a; border-bottom:1px solid #2a2a2a; padding:6px 20px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; min-height:40px; }
+  .filter-group { display:flex; align-items:center; gap:5px; }
+  .filter-icon { display:flex; align-items:center; flex-shrink:0; opacity:.85; }
+
+  .filter-toggle-btn {
+    display:inline-flex; align-items:center; gap:5px;
+    padding:3px 10px; border-radius:20px; font-size:11px;
+    font-family:'DM Sans',sans-serif; cursor:pointer; transition:all .15s;
+    border:1.5px solid #444; background:#2a2a2a; color:#888; flex-shrink:0;
+  }
+  .filter-toggle-btn.on  { border-color:#4caf50; color:#4caf50; background:#1a2a1a; }
+  .filter-toggle-btn.off { border-color:#444;    color:#666;    background:#2a2a2a; }
+  .filter-toggle-btn:hover { border-color:#777; color:#ccc; }
+
+  .filter-chip {
+    background:#2a2a2a; color:#aaa; border:1px solid #3a3a3a;
+    padding:3px 10px; border-radius:20px; font-size:11px; font-family:'DM Sans',sans-serif;
+    cursor:pointer; transition:all .15s; white-space:nowrap;
+  }
+  .filter-chip:hover { background:#333; color:#ddd; }
+  .filter-chip.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+  .filter-clear {
+    background:#fff; color:var(--accent); border:1.5px solid var(--accent);
+    padding:3px 12px; border-radius:20px; font-size:11px; font-family:'DM Sans',sans-serif;
+    font-weight:700; cursor:pointer; transition:all .15s; margin-left:auto; white-space:nowrap;
+  }
+  .filter-clear:hover { background:#fff0f1; }
+  /* Dimmed cards when filter active */
+  .media-card.filter-dim { opacity:.10; pointer-events:none; }
+
+
+
+  /* Supabase sync indicator */
+  .sync-status { display:flex; align-items:center; gap:5px; flex-shrink:0; margin-left:6px; }
+  .sync-dot { width:8px; height:8px; border-radius:50%; background:#555; flex-shrink:0; transition:background .3s; }
+  .sync-dot.synced  { background:#4caf50; }
+  .sync-dot.syncing { background:#f59e0b; animation:pulse-sync .8s ease-in-out infinite alternate; }
+  .sync-dot.error   { background:#e63946; }
+  #sync-label { color:#888; font-size:11px; }
+  @keyframes pulse-sync { from{opacity:.5} to{opacity:1} }
+
+  /* Key modal steps */
+  .key-steps { margin-bottom:16px; display:flex; flex-direction:column; }
+  .key-step {
+    font-size:12px; color:#333; line-height:1.6;
+    display:flex; gap:12px; align-items:flex-start;
+    padding:10px 0; border-bottom:1px solid #eee; text-align:left;
+  }
+  .key-step:last-child { border-bottom:none; }
+  .key-step-num {
+    background:var(--accent); color:#fff; border-radius:50%;
+    width:20px; height:20px; min-width:20px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:10px; font-weight:700; flex-shrink:0; margin-top:2px;
+  }
+  .key-step-body { flex:1; }
+  .key-step a { color:var(--accent2); text-decoration:underline; }
+  .key-step code { background:#f0ede8; padding:1px 6px; border-radius:3px; font-size:11px; font-family:monospace; }
+  .key-field-label { display:block; font-size:11px; font-weight:700; color:var(--text-muted); margin-bottom:5px; letter-spacing:.5px; text-transform:uppercase; }
+  .key-field-label + .modal-input { margin-bottom:10px; }
+  .key-visible { font-family:monospace; font-size:12px; letter-spacing:.3px; }
+  /* Wide modal for key setup — no scroll */
+  .modal-box.wide { max-width:600px; }
+  .modal-box { max-height:none; overflow-y:visible; }
+
+
+  /* Section color picker */
+  .color-picker-row { display:flex; gap:8px; flex-wrap:wrap; margin:12px 0; }
+  .color-swatch {
+    width:28px; height:28px; border-radius:50%; cursor:pointer;
+    border:2px solid transparent; transition:transform .15s, border-color .15s;
+    flex-shrink:0; box-shadow:0 1px 4px rgba(0,0,0,.15);
+  }
+  .color-swatch:hover { transform:scale(1.15); }
+  .color-swatch.selected { border-color:#1a1a1a; transform:scale(1.1); }
+  .color-swatch.none-swatch {
+    background: linear-gradient(135deg, #fff 45%, #e63946 45%, #e63946 55%, #fff 55%);
+    border:1.5px solid #ddd;
   }
 
-  /* ── COLUMNAS Y SECCIONES ── */
-  .genre-column { width: var(--col-w); flex-shrink: 0; display: flex; flex-direction: column; gap: 16px; position: relative; }
-  .genre-column.dragging-col { opacity: 0.4; pointer-events: none; }
-  .col-header {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 10px 16px; background: var(--card-bg); border-radius: 12px;
-    box-shadow: var(--shadow-sm); border: 1px solid var(--border); cursor: grab;
-  }
-  .col-title { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 1px; color: var(--text); }
-  
-  .combined-card {
-    background: var(--card-bg); border-radius: 16px;
-    box-shadow: var(--shadow-md); border: 1px solid var(--border);
-    overflow: hidden; display: flex; flex-direction: column;
-  }
-  .top10-section { padding: 20px; }
-  .top10-title {
-    font-family: 'Bebas Neue', sans-serif; font-size: 24px; color: var(--text);
-    margin-bottom: 16px; display: flex; align-items: center; gap: 10px;
-  }
-  .badge-top { background: var(--accent); color: white; font-size: 11px; padding: 4px 8px; border-radius: 4px; font-family: 'DM Sans', sans-serif; font-weight: bold; }
-  
-  .genre-section { padding: 20px; border-top: 2px solid var(--divider); transition: background 0.3s; }
-  .sec-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-  .sec-title { font-family: 'Bebas Neue', sans-serif; font-size: 18px; color: var(--text-muted); }
-  
-  .card-row { display: flex; gap: var(--gap); margin-bottom: var(--gap); min-height: var(--th); flex-wrap: wrap; position: relative; }
-  .card-row:last-child { margin-bottom: 0; }
 
-  /* ── CARDS Y DRAG & DROP ── */
-  .media-card { position: relative; width: var(--tw); flex-shrink: 0; cursor: grab; transition: transform 0.1s; }
-  .media-card:hover { transform: translateY(-4px); }
-  .media-card.dragging { opacity: 0.5; cursor: grabbing; transform: scale(1.05); z-index: 100; }
-  .media-card.dimmed { opacity: 0.15; pointer-events: none; }
-  
-  .card-img-wrap {
-    position: relative; width: var(--tw); height: var(--th);
-    border-radius: 8px; overflow: hidden; box-shadow: var(--shadow-sm);
-    background: var(--bg2); border: 1px solid rgba(0,0,0,0.05);
+  /* Repo config modal */
+  .repo-tabs { display:flex; gap:0; margin-bottom:20px; border-bottom:2px solid var(--border); }
+  .repo-tab {
+    padding:8px 20px; font-size:13px; font-weight:600; font-family:'DM Sans',sans-serif;
+    cursor:pointer; border:none; background:none; color:var(--text-muted);
+    border-bottom:2px solid transparent; margin-bottom:-2px; transition:all .15s;
   }
-  .card-img-wrap img { width: 100%; height: 100%; object-fit: cover; }
-  
-  .rank-num {
-    position: absolute; bottom: 4px; left: 6px;
-    font-family: 'Bebas Neue', sans-serif; font-size: 48px; color: white;
-    text-shadow: 0 4px 12px rgba(0,0,0,0.9); line-height: 0.8; z-index: 2;
+  .repo-tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+  .repo-tab-content { display:none; }
+  .repo-tab-content.active { display:block; }
+  .repo-section-title { font-family:'Bebas Neue',sans-serif; font-size:16px; letter-spacing:1px; margin-bottom:12px; color:var(--text); }
+  .sql-block {
+    background:#1a1a1a; color:#a8ff78; font-family:monospace; font-size:11px;
+    padding:12px 14px; border-radius:6px; margin:8px 0 12px;
+    white-space:pre; overflow-x:auto; line-height:1.6;
   }
-  
-  .card-info { margin-top: 8px; display: flex; flex-direction: column; gap: 4px; }
-  .card-title { font-size: 13px; font-weight: 700; color: var(--text); line-height: 1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  .card-meta { font-size: 11px; color: var(--text-muted); }
+  .copy-btn {
+    background:#2a2a2a; color:#aaa; border:1px solid #444; border-radius:4px;
+    padding:3px 10px; font-size:11px; cursor:pointer; font-family:'DM Sans',sans-serif;
+    transition:background .15s; float:right; margin-top:-4px;
+  }
+  .copy-btn:hover { background:#3a3a3a; color:#fff; }
 
-  /* Botón Menú Contextual en Tarjeta */
+
+  /* Card context menu */
   .card-menu-btn {
-    position: absolute; top: 6px; right: 6px; background: rgba(0,0,0,0.6);
-    border: none; color: white; width: 24px; height: 24px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center; cursor: pointer;
-    opacity: 0; transition: var(--transition); z-index: 10;
+    position:absolute; bottom:6px; right:5px; z-index:10;
+    width:24px; height:18px; background:rgba(0,0,0,.55); border:none;
+    border-radius:4px; cursor:pointer; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:3px; padding:2px 4px;
+    opacity:.45; transition:opacity .15s, background .15s;
   }
-  .media-card:hover .card-menu-btn { opacity: 1; }
-  .card-menu-btn:hover { background: var(--accent); }
+  .card-menu-btn span { display:block; width:13px; height:1.5px; background:#fff; border-radius:1px; }
+  .card-menu-btn:hover, .media-card:hover .card-menu-btn { opacity:1; background:rgba(0,0,0,.82); }
+  .card-context-menu {
+    position:fixed; z-index:3000; background:#1a1a1a; border:1px solid #333;
+    border-radius:8px; box-shadow:0 4px 20px rgba(0,0,0,.4); min-width:160px;
+    overflow:hidden;
+  }
+  .card-ctx-item {
+    display:flex; align-items:center; gap:8px; padding:9px 14px;
+    color:#ddd; font-size:12px; font-family:'DM Sans',sans-serif;
+    cursor:pointer; transition:background .1s; user-select:none;
+  }
+  .card-ctx-item:hover { background:#2a2a2a; color:#fff; }
+  .card-ctx-item .ctx-icon { font-size:13px; width:16px; text-align:center; flex-shrink:0; }
 
-  .add-card {
-    width: var(--tw); height: var(--th); border: 2px dashed #9ca3af;
-    border-radius: 8px; display: flex; flex-direction: column; align-items: center;
-    justify-content: center; cursor: pointer; color: #9ca3af; font-size: 24px;
-    transition: var(--transition); background: rgba(255,255,255,0.5);
+  .move-option {
+    padding:9px 12px; font-size:12px; border-radius:6px; cursor:pointer;
+    border:1px solid var(--border); margin-bottom:4px; color:var(--text);
+    transition:background .1s, border-color .1s;
+    font-family:'DM Sans',sans-serif;
   }
-  .add-card:hover { border-color: var(--accent); color: var(--accent); background: #fff1f2; }
-  .add-card span { font-size: 11px; font-weight: 600; margin-top: 4px; text-transform: uppercase; }
+  .move-option:hover { background:#f5f0eb; border-color:var(--accent2); }
 
-  /* Indicadores Drag and Drop */
-  .drop-line { width: 4px; height: var(--th); border-radius: 2px; background: var(--accent); flex-shrink: 0; pointer-events: none; margin: 0 4px; }
+  .card-ctx-sep { height:1px; background:#2a2a2a; margin:2px 0; }
+  .card-ctx-submenu { background:#222; padding:4px 0; }
+  .card-ctx-sub-item { padding:7px 14px 7px 38px; color:#aaa; font-size:11px; font-family:'DM Sans',sans-serif; cursor:pointer; transition:background .1s; }
+  .card-ctx-sub-item:hover { background:#2a2a2a; color:#fff; }
 
-  /* ── MENÚ CONTEXTUAL ── */
-  .context-menu {
-    position: fixed; z-index: 3000; background: white; border: 1px solid var(--border);
-    border-radius: 8px; box-shadow: var(--shadow-lg); min-width: 160px;
-    overflow: hidden; padding: 4px 0; font-size: 13px;
-  }
-  .context-item {
-    padding: 8px 16px; cursor: pointer; transition: background 0.1s;
-    display: flex; align-items: center; gap: 8px; color: var(--text);
-  }
-  .context-item:hover { background: #f3f4f6; color: var(--accent); }
-  .context-sep { height: 1px; background: var(--divider); margin: 4px 0; }
 
-  /* ── MODALES ── */
-  .modal-overlay {
-    position: fixed; inset: 0; background: rgba(17, 24, 39, 0.75);
-    backdrop-filter: blur(4px); z-index: 2000;
-    display: flex; align-items: center; justify-content: center;
-    opacity: 0; pointer-events: none; transition: opacity 0.2s ease;
+  /* Rating overlay on card */
+  .card-rating {
+    position:absolute; top:6px; left:6px; z-index:3;
+    background:rgba(0,0,0,.78); color:#fff;
+    font-size:13px; font-weight:700; font-family:'DM Sans',sans-serif;
+    padding:3px 8px; border-radius:5px;
+    display:flex; align-items:center; gap:4px;
+    line-height:1;
   }
-  .modal-overlay.active { opacity: 1; pointer-events: auto; }
-  
-  .modal-box {
-    background: white; border-radius: 16px; width: 100%; max-width: 500px;
-    max-height: 90vh; overflow-y: auto; padding: 32px;
-    box-shadow: var(--shadow-lg); transform: translateY(20px) scale(0.95);
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative;
-  }
-  .modal-overlay.active .modal-box { transform: translateY(0) scale(1); }
-  
-  .modal-close {
-    position: absolute; top: 20px; right: 20px; background: #f3f4f6;
-    border: none; width: 32px; height: 32px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer; color: var(--text-muted); transition: var(--transition);
-  }
-  .modal-close:hover { background: #e5e7eb; color: var(--accent); transform: rotate(90deg); }
+  .card-rating svg { flex-shrink:0; width:13px; height:13px; }
 
-  .modal-title { font-family: 'Bebas Neue', sans-serif; font-size: 28px; margin-bottom: 20px; color: var(--text); }
-  
-  .form-group { margin-bottom: 16px; }
-  .form-label { display: block; font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; }
-  .form-input {
-    width: 100%; padding: 12px 16px; border: 2px solid var(--border);
-    border-radius: 8px; font-size: 15px; font-family: inherit;
-    transition: var(--transition); outline: none;
+
+  /* Multi-section support */
+  .sec-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .sec-title { font-family:'Bebas Neue',sans-serif; font-size:14px; letter-spacing:1px; color:var(--text-muted); }
+  .sec-actions { display:flex; gap:4px; opacity:0; transition:opacity .15s; }
+  .genre-section:hover .sec-actions { opacity:1; }
+  .sec-rename-btn, .sec-delete-btn { background:none; border:none; cursor:pointer; color:var(--text-muted); font-size:12px; padding:2px 5px; border-radius:3px; }
+  .sec-rename-btn:hover { color:var(--text); background:var(--bg2); }
+  .sec-delete-btn:hover { color:var(--accent); }
+  .sec-divider { height:2px; background:#c8c3bb; margin:8px 0 0; }
+  .add-section-row { padding:10px 14px 14px; }
+  .add-section-btn {
+    width:100%; padding:7px; border:2px dashed var(--border); border-radius:6px;
+    background:none; color:var(--text-muted); font-size:11px; font-weight:600;
+    font-family:'DM Sans',sans-serif; cursor:pointer; transition:all .15s;
+    letter-spacing:.3px;
   }
-  .form-input:focus { border-color: var(--accent2); box-shadow: 0 0 0 3px rgba(69, 123, 157, 0.15); }
-  .modal-footer { display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--divider); }
+  .add-section-btn:hover { border-color:var(--accent); color:var(--accent); background:#fff5f5; }
 
-  /* ── RESULTADOS DE BÚSQUEDA ── */
-  .search-results-container { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; max-height: 300px; overflow-y: auto; padding-right: 8px; }
-  .search-item {
-    display: flex; gap: 12px; padding: 10px; border: 1px solid var(--border);
-    border-radius: 10px; cursor: pointer; transition: var(--transition);
-    align-items: center; background: white;
+  /* GAME CARD extras */
+  .hltb-times { display:flex; flex-direction:column; gap:1px; margin-top:3px; }
+  .hltb-row { display:flex; justify-content:space-between; align-items:center; font-size:9px; line-height:1.4; }
+  .hltb-label { color:var(--text-muted); }
+  .hltb-val { font-weight:700; color:var(--text); }
+  .card-type-badge { display:inline-block; font-size:8px; font-weight:700; letter-spacing:.5px; padding:1px 5px; border-radius:3px; margin-bottom:3px; background:#1a1a1a; color:#fff; }
+  .card-type-badge.game { background:#2d6a4f; }
+
+  /* ══════════════════════════════════════════════
+     MOBILE / TOUCH RESPONSIVE — Phase 1
+     ══════════════════════════════════════════════ */
+
+  /* Detect touch device — show hidden buttons always */
+  @media (hover:none) and (pointer:coarse) {
+
+    /* Delete button always visible on touch */
+    .media-card .delete-btn {
+      opacity:1 !important;
+      top:-5px; right:-5px;
+      width:24px; height:24px;
+      font-size:12px;
+    }
+
+    /* Card menu button always visible */
+    .card-menu-btn {
+      opacity:1 !important;
+      background:rgba(0,0,0,.7) !important;
+      width:28px; height:22px;
+      bottom:5px; right:4px;
+    }
+
+    /* Section rename/delete buttons always visible */
+    .sec-actions { opacity:1 !important; }
+    .sec-rename-btn, .sec-delete-btn { font-size:14px; padding:4px 7px; }
+
+    /* Column rename button always visible */
+    .col-rename-btn { opacity:1 !important; font-size:14px; }
+
+    /* Larger touch targets on pills */
+    .platform-pill { padding:3px 7px; font-size:10px; }
+    .platform-pill img { width:13px; height:13px; }
+    .add-platform-pill { padding:3px 8px; font-size:10px; }
+    .pending-btn { width:22px; height:22px; }
+    .pending-btn svg { width:13px; height:13px; }
+
+    /* Filter chips bigger tap targets */
+    .filter-chip { padding:5px 14px; font-size:12px; }
+    .filter-toggle-btn { padding:5px 14px; font-size:12px; }
+    .filter-clear { padding:5px 16px; font-size:12px; }
+
+    /* Topbar — always show all buttons, no hamburger */
+    #topbar-controls { display:flex !important; flex-wrap:wrap; gap:6px; }
+    #topbar-menu-btn { display:none !important; }
+    #topbar-main { height:auto; padding:8px 12px; flex-wrap:wrap; gap:6px; }
+    #topbar h1 { font-size:20px; }
+
+    /* Topbar buttons bigger */
+    .topbar-key-btn { font-size:12px; padding:7px 12px; }
+    .topbar-btn { font-size:12px; padding:7px 12px; }
+
+    /* Filter bar wraps */
+    #filter-bar { flex-wrap:wrap; gap:6px; padding:8px 12px; }
+
+    /* Modal — full screen on mobile */
+    .modal-overlay { padding:0; align-items:flex-end; }
+    .modal-box {
+      border-radius:16px 16px 0 0 !important;
+      max-width:100% !important;
+      width:100% !important;
+      max-height:85vh !important;
+      overflow-y:auto !important;
+      padding:24px 20px 32px;
+    }
+    .modal-box.wide { max-width:100% !important; }
+    /* Swipe-down handle */
+    .modal-box::before {
+      content:'';
+      display:block;
+      width:40px; height:4px;
+      background:#ddd; border-radius:2px;
+      margin:0 auto 16px;
+    }
+
+    /* Search results scrollable */
+    .search-results { max-height:45vh; }
+
+    /* Add card bigger tap target */
+    .add-card { font-size:26px; }
+    .add-section-btn { padding:12px; font-size:13px; }
+
+    /* Context menu — full bottom sheet */
+    .card-context-menu {
+      position:fixed !important;
+      left:0 !important; right:0 !important; bottom:0 !important;
+      top:auto !important;
+      width:100% !important;
+      border-radius:16px 16px 0 0;
+      min-width:unset;
+      padding-bottom:env(safe-area-inset-bottom, 16px);
+    }
+    .card-ctx-item { padding:14px 20px; font-size:14px; }
+    .card-ctx-sep { margin:4px 0; }
+
+    /* Move modal options bigger */
+    .move-option { padding:14px 16px; font-size:14px; }
+
+    /* Zoom slider hidden on mobile (use pinch) */
+    #topbar label[for="zoom-slider"],
+    #zoom-slider, #zoom-val { display:none !important; }
   }
-  .search-item:hover { border-color: var(--accent2); background: #f8fafc; transform: translateX(4px); }
-  .search-item img { width: 44px; height: 66px; border-radius: 6px; object-fit: cover; background: var(--bg2); }
-  .search-item-info { flex: 1; display: flex; flex-direction: column; gap: 4px; }
-  .search-item-title { font-weight: 700; font-size: 15px; color: var(--text); }
-  .search-item-meta { font-size: 12px; color: var(--text-muted); }
 
-  /* ── COLOR PICKER ── */
-  .color-picker-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
-  .color-swatch { width: 32px; height: 32px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: transform 0.15s; }
-  .color-swatch:hover { transform: scale(1.15); }
-  .color-swatch.selected { border-color: #1a1a1a; transform: scale(1.1); box-shadow: 0 0 0 2px white inset; }
-
-  /* ── TOASTS ── */
-  #toast-container { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
-  .toast {
-    background: #1f2937; color: white; padding: 12px 24px; border-radius: 30px;
-    font-size: 14px; font-weight: 500; box-shadow: var(--shadow-lg);
-    animation: toastIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; display: flex; align-items: center; gap: 8px;
+  /* Small screens general */
+  @media (max-width:600px) {
+    #topbar h1 { font-size:18px; }
+    .topbar-key-btn span:not(.dot) { display:none; } /* hide text, keep dot */
+    .topbar-key-btn { padding:7px 10px; min-width:32px; justify-content:center; }
+    #title-search { width:120px; }
   }
-  @keyframes toastIn { from { opacity: 0; transform: translateY(20px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
-  .toast.fadeOut { animation: toastOut 0.3s ease forwards; }
-  @keyframes toastOut { to { opacity: 0; transform: translateY(-10px) scale(0.95); } }
 
-  ::-webkit-scrollbar { width: 8px; height: 8px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
+
+  button, .filter-chip, .platform-pill, .add-card, .add-section-btn, .media-card .delete-btn {
+    touch-action:manipulation;
+  }
+
+  ::-webkit-scrollbar { width:6px; height:6px; }
+  ::-webkit-scrollbar-track { background:var(--bg2); }
+  ::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
 </style>
 </head>
 <body>
-
-<!-- TOPBAR -->
 <div id="topbar">
   <div id="topbar-main">
-    <h1>📺 MediaBoard Pro</h1>
-    <div class="topbar-controls">
-      <button class="btn btn-secondary" onclick="App.API.reloadAllMeta()" title="Recargar metadatos">↻ Refrescar Datos</button>
-      <input type="text" class="search-input" placeholder="🔍 Buscar en tu tablero..." oninput="App.UI.filterBoard(this.value)">
+    <h1>📺 MediaBoard</h1>
+    <span id="pan-hint" style="font-size:10px;color:#555;flex-shrink:0;display:none">Espacio + arrastrar para mover</span>
+    <div id="topbar-controls">
+      <button class="topbar-key-btn" id="tmdb-btn" onclick="openKeyModal('tmdb')">
+        <span class="dot" id="tmdb-dot"></span> TMDB
+      </button>
+      <button class="topbar-key-btn" id="igdb-btn" onclick="openKeyModal('igdb')">
+        <span class="dot" id="igdb-dot"></span> IGDB
+      </button>
+      <button class="topbar-btn secondary" onclick="testIGDB()" style="font-size:11px;padding:5px 8px;" title="Probar conexión IGDB">🔧 Test IGDB</button>
+      <button class="topbar-btn secondary" onclick="openRepoConfig()" style="font-size:11px;padding:5px 10px;">⚙ Repo Config</button>
+      <label>Zoom:</label>
+      <input type="range" id="zoom-slider" min="40" max="100" value="65" step="5">
+      <span id="zoom-val">65%</span>
+      <button class="topbar-btn secondary" onclick="reloadAllMeta()" title="Recargar duración, nota y géneros de todos los títulos">↻ Todo</button>
+      <button class="topbar-btn secondary" onclick="exportJSON()">📤</button>
+      <button class="topbar-btn secondary" onclick="importJSON()">📥</button>
+      <input type="file" id="import-file-input" accept=".json" style="display:none" onchange="handleImportFile(this)">
+    </div>
+    <div id="title-search-wrap" style="position:relative;flex-shrink:0;">
+      <input id="title-search" type="text" placeholder="Buscar título…"
+        style="background:#2a2a2a;border:1px solid #444;color:#fff;font-size:11px;padding:5px 10px;border-radius:4px;width:150px;font-family:'DM Sans',sans-serif;outline:none;"
+        oninput="filterTitleSearch(this.value)" onfocus="this.style.borderColor='#888'" onblur="this.style.borderColor='#444'">
+    </div>
+    <div id="sync-status" class="sync-status" title="Estado sincronización Supabase">
+      <span id="sync-dot" class="sync-dot"></span>
+      <span id="sync-label">…</span>
+    </div>
+    <button id="topbar-menu-btn" onclick="toggleTopbarDrawer()">☰</button>
+  </div>
+  <div id="topbar-drawer">
+    <div class="drawer-row">
+      <button class="topbar-key-btn" onclick="openKeyModal('tmdb')">
+        <span class="dot" id="tmdb-dot2"></span> TMDB
+      </button>
+      <button class="topbar-key-btn" onclick="openKeyModal('igdb')">
+        <span class="dot" id="igdb-dot2"></span> IGDB
+      </button>
+      <button class="topbar-btn secondary" onclick="openRepoConfig()" style="font-size:11px;padding:5px 10px;">⚙ Repo Config</button>
+    </div>
+    <div class="drawer-row">
+      <label>Zoom:</label>
+      <input type="range" id="zoom-slider2" min="40" max="100" value="65" step="5">
+      <span id="zoom-val2">65%</span>
+      <button class="topbar-btn secondary" onclick="exportJSON()">📤 Exportar</button>
+      <button class="topbar-btn secondary" onclick="importJSON()">📥 Importar</button>
     </div>
   </div>
 </div>
-
-<div id="filter-bar">
-  <span style="color:#9ca3af; font-size:11px;">Mover: Trackpad o Click+Arrastrar - Zoom: Ctrl+Rueda</span>
-  <div class="sync-status" id="sync-status">
-    <div class="status-dot" id="sync-dot"></div> <span id="sync-label">Conectando...</span>
-  </div>
-</div>
-
-<!-- CANVAS INFINITO -->
+<div id="filter-bar"></div>
 <div id="canvas-viewport">
-  <div id="canvas-wrapper" id="columns-container">
-    <!-- Tablero Inyectado -->
+  <div id="canvas-wrapper">
+    <div id="columns-container">
+      <div id="add-col-btn" onclick="promptAddColumn()">+<small>Nueva sección</small></div>
+    </div>
   </div>
 </div>
-
-<!-- MODALES & TOASTS -->
-<div id="modal-container" class="modal-overlay">
-  <div class="modal-box" id="modal-content"></div>
-</div>
-<div id="toast-container"></div>
+<div id="modal-container"></div>
 
 <script>
-/**
- * MEDIABOARD PRO - "Plug & Play" con Retrocompatibilidad de Datos Viejos
- */
-const App = {
-  // ── 1. CONFIGURACIÓN DEL DEVELOPER (BACKEND ) ──
-  Config: {
-    TMDB_API_KEY: '871c001796972e43934371a1cc7af534', 
-    IGDB_CLIENT_ID: 'pj0on52a5zdcnb960tozw9k04wpav7',
-    IGDB_SECRET: 'on4i5b9p76h9xtjzv7y2c9rbz9u9p4',
-    
-    // Configuración de Supabase (Opcional, si no, usa LocalStorage)
-    SB_URL: 'https://sxpbsekgijvanylhqyaf.supabase.co', // Pon tu URL real de Supabase aquí
-    SB_KEY: 'sb_publishable_f8802PsMYs0GnHGzPxYRUA__hoXXtwN', // Pon tu Anon Key aquí
-    SB_BOARD_ID: 'default',
-    
-    // Constantes
-    TMDB_BASE: 'https://api.themoviedb.org/3',
-    IMG_BASE: 'https://image.tmdb.org/t/p/w185',
-    LIMIT_X: 3000, LIMIT_Y: 3000
-  },
+// ── STATE ──────────────────────────────────────────────────────────────────
+let state = { columns: [] };
+const TMDB_BASE = 'https://api.themoviedb.org/3';
+const IMG_BASE  = 'https://image.tmdb.org/t/p/w185';
 
-  State: {
-    columns: [],
-    zoom: 0.8, panX: 60, panY: 120,
-    isPanning: false,
-    saveTimer: null, saving: false,
-    dragState: { card: null, dropLine: null, dropTarget: null, dropIdx: null }
-  },
+// Provider map — deduplicated. Apple TV (id=2) and Apple TV+ (id=350) → same entry.
+// Amazon with Ads → merged into Prime. Movistar (id=149) → same as Movistar+ (id=1773 in some regions).
+// Logo strategy: use TMDB's own provider logo endpoint — always available since we're already hitting TMDB.
+// Format: https://image.tmdb.org/t/p/original/{logo_path}
+// We store the logo_path from the API response directly, avoiding hotlink-blocked CDNs.
+const PROVIDER_MAP = {
+  8:    { id:'netflix',  name:'Netflix',      tmdbLogo:'/t2yyOv40HZeVlLjYsCsPHnWLk4W.jpg' },
+  119:  { id:'prime',    name:'Prime Video',  tmdbLogo:'/dQeAar5H991VYporEjUspolDarG.jpg' },
+  9:    { id:'prime',    name:'Prime Video',  tmdbLogo:'/dQeAar5H991VYporEjUspolDarG.jpg' },
+  337:  { id:'disney',   name:'Disney+',      tmdbLogo:'/7rwgEs15tFwyR9NPQ5vpzxTj19Q.jpg' },
+  384:  { id:'max',      name:'Max',          tmdbLogo:'/Ajqyt5aNxNvaG0maqS5YpZA7GR2.jpg' },
+  350:  { id:'apple',    name:'Apple TV+',    tmdbLogo:'/peURlLlr8jggOwK53fJ5wdQl05y.jpg' },
+  2:    { id:'apple',    name:'Apple TV+',    tmdbLogo:'/peURlLlr8jggOwK53fJ5wdQl05y.jpg' },
+  1773: { id:'skyshow',  name:'SkyShowtime',  tmdbLogo:'/dUFUaFPkDEarjJNFRGJuX2dGD0m.jpg' },
+  149:  { id:'mplus',    name:'Movistar+',    tmdbLogo:'/iNRmKLo5YSBOdUOtECaYfjeUBqL.jpg' },
+  567:  { id:'mplus',    name:'Movistar+',    tmdbLogo:'/iNRmKLo5YSBOdUOtECaYfjeUBqL.jpg' },
+  63:   { id:'filmin',   name:'Filmin',       tmdbLogo:'/2Me8rEfFKYMCGzjz4pjePRo6bqR.jpg' },
+  1985: { id:'atres',    name:'Atresplayer',  tmdbLogo:'/hFkiWuBbPLiI2MWKDM2dRvRrFCR.jpg' },
+  62:   { id:'mubi',     name:'MUBI',         tmdbLogo:'/bVR4Z1LCHY7gidXAQF3Q5SZYEIq.jpg' },
+  2239: { id:'rtve',     name:'RTVE Play',    tmdbLogo:'/pq8p1umEnFCdV9hEUCYQxE5UCGR.jpg' },
+  // RTVE alternate IDs sometimes seen
+  541:  { id:'rtve',     name:'RTVE Play',    tmdbLogo:'/pq8p1umEnFCdV9hEUCYQxE5UCGR.jpg' },
+};
+// Build logos using TMDB image base
+function providerLogo(p){ return p.tmdbLogo ? 'https://image.tmdb.org/t/p/w45'+p.tmdbLogo : ''; }
+// Unique list for the picker (deduplicated by id), with resolved logo URLs
+const PICKER_PLATFORMS = Object.values(
+  Object.values(PROVIDER_MAP).reduce((acc,p)=>{ acc[p.id]={...p,logo:providerLogo(p)}; return acc; }, {})
+);
 
-  Utils: {
-    uid: () => '_' + Math.random().toString(36).slice(2, 9),
-    escapeHtml: (str) => String(str||'').replace(/[&<>"']/g, m => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[m])),
-    chunkArray: (arr, size) => Array.from({ length: Math.ceil(arr.length / size) }, (v, i) => arr.slice(i * size, i * size + size))
-  },
-
-  Toast: {
-    show: (message, type = 'info') => {
-      const container = document.getElementById('toast-container');
-      const toast = document.createElement('div');
-      toast.className = `toast toast-${type}`;
-      const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
-      toast.innerHTML = `<span>${icon}</span> <span>${message}</span>`;
-      container.appendChild(toast);
-      setTimeout(() => { toast.classList.add('fadeOut'); setTimeout(() => toast.remove(), 300); }, 3000);
-    }
-  },
-
-  // ── GESTIÓN DE DATOS CON RETROCOMPATIBILIDAD (EL FIX DE LOS ERRORES) ──
-  Data: {
-    scheduleSave: () => {
-      clearTimeout(App.State.saveTimer);
-      App.State.saveTimer = setTimeout(App.Data.saveToSupabase, 1200);
-    },
-    saveToSupabase: async () => {
-      if (App.State.saving) return;
-      App.State.saving = true;
-      const dot = document.getElementById('sync-dot'); const label = document.getElementById('sync-label');
-      dot.className = 'status-dot syncing'; label.textContent = 'Guardando...';
-
-      try {
-        localStorage.setItem('mediaboard_state', JSON.stringify(App.State.columns));
-        if(App.Config.SB_URL && App.Config.SB_URL.includes('supabase.co')) {
-          await fetch(`${App.Config.SB_URL}/rest/v1/mediaboard`, {
-            method: 'POST',
-            headers: { 'apikey': App.Config.SB_KEY, 'Authorization': `Bearer ${App.Config.SB_KEY}`, 'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates' },
-            body: JSON.stringify({ id: App.Config.SB_BOARD_ID, data: App.State.columns, updated_at: new Date().toISOString() })
-          });
-        }
-        dot.className = 'status-dot synced'; label.textContent = 'Guardado en la Nube ✓';
-      } catch(e) {
-        dot.className = 'status-dot error'; label.textContent = 'Guardado Local (Offline)';
-      } finally { App.State.saving = false; }
-    },
-
-    loadFromSupabase: async () => {
-      try {
-        // 1. Cargar de LocalStorage y arreglar si es el formato viejo ({columns: []})
-        const local = localStorage.getItem('mediaboard_state');
-        if (local) {
-          const parsed = JSON.parse(local);
-          App.State.columns = Array.isArray(parsed) ? parsed : (parsed.columns || []);
-        }
-
-        // 2. Cargar de Supabase y arreglar si es el formato viejo
-        if(App.Config.SB_URL && App.Config.SB_URL.includes('supabase.co')) {
-           const r = await fetch(`${App.Config.SB_URL}/rest/v1/mediaboard?id=eq.${App.Config.SB_BOARD_ID}&select=data`, {
-             headers: { 'apikey': App.Config.SB_KEY, 'Authorization': `Bearer ${App.Config.SB_KEY}` }
-           });
-           if(r.ok) {
-             const rows = await r.json();
-             if (rows && rows.length > 0) {
-               const parsedDB = rows[0].data;
-               App.State.columns = Array.isArray(parsedDB) ? parsedDB : (parsedDB.columns || []);
-               localStorage.setItem('mediaboard_state', JSON.stringify(App.State.columns));
-               document.getElementById('sync-dot').className = 'status-dot synced';
-               document.getElementById('sync-label').textContent = 'Sincronizado con Supabase ✓';
-             }
-           }
-        }
-      } catch(e) { 
-        console.warn("Fallo Supabase, usando LocalStorage", e); 
-        document.getElementById('sync-dot').className = 'status-dot error';
-        document.getElementById('sync-label').textContent = 'Modo Local';
-      }
-    }
-  },
-
-  API: {
-    searchTMDB: async (query) => {
-      if(App.Config.TMDB_API_KEY === 'TU_TMDB_API_KEY_AQUI') {
-        App.Toast.show('Falta configurar tu TMDB_API_KEY en el código', 'warning');
-        return [
-          { id: 149, title: "Akira (Demo)", release_date: "1988-07-16", poster_path: "/neZ0ykEsPqxamsX6o5QNnFHNiEm.jpg", media_type: "movie" }
-        ].filter(x => (x.title||x.name).toLowerCase().includes(query.toLowerCase()));
-      }
-      try {
-        const r = await fetch(`${App.Config.TMDB_BASE}/search/multi?api_key=${App.Config.TMDB_API_KEY}&query=${encodeURIComponent(query)}&language=es-ES`);
-        if (!r.ok) throw new Error();
-        const d = await r.json();
-        return (d.results || []).filter(x => x.poster_path && (x.media_type === 'movie' || x.media_type === 'tv')).slice(0, 8);
-      } catch { App.Toast.show('Error de conexión a TMDB', 'error'); return []; }
-    },
-    
-    getDetails: async (tmdbId, mediaType) => {
-      if(App.Config.TMDB_API_KEY === 'TU_TMDB_API_KEY_AQUI') return { genres: ["Demo"], rating: 8.5, runtime: 120 };
-      try {
-        const type = mediaType === 'tv' ? 'tv' : 'movie';
-        const r = await fetch(`${App.Config.TMDB_BASE}/${type}/${tmdbId}?api_key=${App.Config.TMDB_API_KEY}&language=es-ES`);
-        const d = await r.json();
-        return {
-          genres: (d.genres || []).map(g => g.name),
-          rating: d.vote_average ? Math.round(d.vote_average * 10) / 10 : null,
-          runtime: d.runtime || null,
-          seasons: d.number_of_seasons || null,
-          ended: d.status === 'Ended' || d.status === 'Canceled'
-        };
-      } catch { return null; }
-    },
-
-    reloadAllMeta: async () => {
-      if (!Array.isArray(App.State.columns)) return; // Seguro anti-fallos
-      
-      App.Toast.show('Recargando datos de TMDB...', 'info');
-      let count = 0;
-      for (const col of App.State.columns) {
-        const allCards = [...(col.top10||[]), ...(col.sections||[]).flatMap(s => s.cards||[])];
-        for (const card of allCards) {
-          if (card.tmdbId && card.mediaType !== 'game') {
-            const details = await App.API.getDetails(card.tmdbId, card.mediaType);
-            if(details) { Object.assign(card, details); count++; }
-          }
-        }
-      }
-      App.UI.renderBoard(); App.Data.scheduleSave();
-      App.Toast.show(`Actualizados ${count} títulos`, 'success');
-    }
-  },
-
-  Canvas: {
-    init: () => {
-      const vp = document.getElementById('canvas-viewport');
-      let startX, startY, origX, origY;
-      const updateTransform = () => {
-        App.State.panX = Math.min(Math.max(App.State.panX, -App.Config.LIMIT_X), App.Config.LIMIT_X);
-        App.State.panY = Math.min(Math.max(App.State.panY, -App.Config.LIMIT_Y), App.Config.LIMIT_Y);
-        document.getElementById('canvas-wrapper').style.transform = `translate(${App.State.panX}px, ${App.State.panY}px) scale(${App.State.zoom})`;
-      };
-
-      vp.addEventListener('mousedown', (e) => {
-        if (e.target.closest('.media-card') || e.target.closest('.btn') || e.target.closest('.add-card') || e.target.closest('.col-header') || e.target.closest('.color-swatch')) return;
-        App.State.isPanning = true; startX = e.clientX; startY = e.clientY;
-        origX = App.State.panX; origY = App.State.panY; vp.classList.add('panning-active');
-      });
-      window.addEventListener('mousemove', (e) => {
-        if (!App.State.isPanning) return;
-        App.State.panX = origX + (e.clientX - startX); App.State.panY = origY + (e.clientY - startY);
-        updateTransform();
-      });
-      window.addEventListener('mouseup', () => { App.State.isPanning = false; vp.classList.remove('panning-active'); });
-      vp.addEventListener('wheel', (e) => {
-        if (e.ctrlKey || e.metaKey) { e.preventDefault(); App.State.zoom = Math.min(Math.max(App.State.zoom * (e.deltaY > 0 ? 0.9 : 1.1), 0.2), 2); } 
-        else { App.State.panX -= e.deltaX; App.State.panY -= e.deltaY; }
-        updateTransform();
-      }, { passive: false });
-      updateTransform();
-    }
-  },
-
-  DragDrop: {
-    setup: () => {
-      document.querySelectorAll('.media-card').forEach(el => {
-        el.addEventListener('dragstart', App.DragDrop.onCardDragStart);
-        el.addEventListener('dragend', App.DragDrop.onCardDragEnd);
-      });
-      document.querySelectorAll('.card-row').forEach(row => {
-        row.addEventListener('dragover', App.DragDrop.onRowDragOver);
-        row.addEventListener('dragleave', App.DragDrop.onRowDragLeave);
-        row.addEventListener('drop', App.DragDrop.onRowDrop);
-      });
-    },
-    onCardDragStart: (e) => {
-      const el = e.currentTarget;
-      App.State.dragState.card = { colId: el.dataset.col, secId: el.dataset.sec, cardId: el.dataset.id, inTop10: el.dataset.top10 === 'true' };
-      setTimeout(() => el.classList.add('dragging'), 0);
-    },
-    onCardDragEnd: (e) => {
-      e.currentTarget.classList.remove('dragging');
-      App.State.dragState.card = null;
-      if(App.State.dragState.dropLine) App.State.dragState.dropLine.remove();
-    },
-    onRowDragOver: (e) => {
-      if(!App.State.dragState.card) return;
-      e.preventDefault(); e.stopPropagation();
-      const row = e.currentTarget;
-      const cards = [...row.querySelectorAll('.media-card')];
-      let insertIdx = cards.length;
-      for(let i=0; i<cards.length; i++) {
-        const rect = cards[i].getBoundingClientRect();
-        if(e.clientX < rect.left + rect.width / 2) { insertIdx = i; break; }
-      }
-      if(App.State.dragState.dropLine) App.State.dragState.dropLine.remove();
-      const line = document.createElement('div'); line.className = 'drop-line';
-      App.State.dragState.dropLine = line; App.State.dragState.dropTarget = row; App.State.dragState.dropIdx = insertIdx;
-      
-      const targetEl = cards[insertIdx] || row.querySelector('.add-card');
-      if (targetEl) row.insertBefore(line, targetEl); else row.appendChild(line);
-    },
-    onRowDragLeave: (e) => { if(App.State.dragState.dropLine && !e.currentTarget.contains(e.relatedTarget)) App.State.dragState.dropLine.remove(); },
-    onRowDrop: (e) => {
-      e.preventDefault(); e.stopPropagation();
-      const st = App.State.dragState; if(!st.card) return;
-      
-      // Mover Tarjeta
-      const srcCol = App.State.columns.find(c => c.id === st.card.colId);
-      let srcCard;
-      if(st.card.inTop10) { srcCard = srcCol.top10.find(c => c.id === st.card.cardId); srcCol.top10 = srcCol.top10.filter(c => c.id !== st.card.cardId); } 
-      else { const srcSec = srcCol.sections.find(s => s.id === st.card.secId); srcCard = srcSec.cards.find(c => c.id === st.card.cardId); srcSec.cards = srcSec.cards.filter(c => c.id !== st.card.cardId); }
-      
-      const row = st.dropTarget;
-      const tColId = row.dataset.col, tSecId = row.dataset.sec, zone = row.dataset.zone;
-      const tCol = App.State.columns.find(c => c.id === tColId);
-      
-      if(zone.startsWith('top10')) {
-        if(tCol.top10.length >= 10) { App.Toast.show('Top 10 Lleno', 'error'); return; }
-        tCol.top10.splice(st.dropIdx + (zone === 'top10b' ? 5 : 0), 0, srcCard);
-      } else {
-        const tSec = tCol.sections.find(s => s.id === tSecId);
-        const rowIdx = parseInt(row.dataset.rowidx || '0');
-        tSec.cards.splice(rowIdx * 5 + st.dropIdx, 0, srcCard);
-      }
-      
-      App.UI.renderBoard(); App.Data.scheduleSave();
-    }
-  },
-
-  Menus: {
-    openContext: (e, colId, secId, cardId, isTop10) => {
-      e.stopPropagation();
-      const existing = document.querySelector('.context-menu'); if(existing) existing.remove();
-      
-      const menu = document.createElement('div'); menu.className = 'context-menu';
-      menu.innerHTML = `
-        <div class="context-item" onclick="App.Actions.deleteCard('${colId}', '${secId}', '${cardId}', ${isTop10})">🗑 Eliminar Tarjeta</div>
-        <div class="context-sep"></div>
-        <div class="context-item" onclick="App.Menus.openMoveModal('${colId}', '${secId}', '${cardId}', ${isTop10})">↪ Mover a...</div>
-      `;
-      
-      document.body.appendChild(menu);
-      const rect = e.currentTarget.getBoundingClientRect();
-      menu.style.left = `${rect.right + 10}px`; menu.style.top = `${rect.top}px`;
-      
-      setTimeout(() => document.addEventListener('click', () => menu.remove(), {once: true}), 10);
-    },
-    openMoveModal: (colId, secId, cardId, isTop10) => {
-      let options = '';
-      App.State.columns.forEach(c => {
-        options += `<div style="font-weight:bold; margin-top:10px; color:var(--text-muted); font-size:11px; text-transform:uppercase;">${App.Utils.escapeHtml(c.name)}</div>`;
-        options += `<div class="search-item" onclick="App.Actions.moveCard('${colId}', '${secId}', '${cardId}', ${isTop10}, '${c.id}', 'top10')">⭐ Mover a Top 10</div>`;
-        (c.sections||[]).forEach(s => {
-          options += `<div class="search-item" onclick="App.Actions.moveCard('${colId}', '${secId}', '${cardId}', ${isTop10}, '${c.id}', '${s.id}')">📁 ${App.Utils.escapeHtml(s.name)}</div>`;
-        });
-      });
-      App.Modals.open('Mover Tarjeta', `<div class="search-results-container">${options}</div>`, `<button class="btn btn-ghost" onclick="App.Modals.close()">Cancelar</button>`);
-    }
-  },
-
-  Modals: {
-    open: (title, content, footer = '') => {
-      document.getElementById('modal-content').innerHTML = `<button class="modal-close" onclick="App.Modals.close()">✕</button><h2 class="modal-title">${title}</h2><div class="modal-body">${content}</div>${footer ? `<div class="modal-footer">${footer}</div>` : ''}`;
-      document.getElementById('modal-container').classList.add('active');
-    },
-    close: () => document.getElementById('modal-container').classList.remove('active'),
-    
-    colEdit: (colId) => {
-      const col = App.State.columns.find(c => c.id === colId);
-      App.Modals.open('Editar Columna', `<div class="form-group"><label class="form-label">Nombre</label><input type="text" id="edit-col-name" class="form-input" value="${App.Utils.escapeHtml(col.name)}"></div>`,
-        `<button class="btn btn-ghost" onclick="App.Actions.deleteColumn('${colId}')">🗑 Borrar Columna</button><button class="btn btn-primary" onclick="App.Actions.saveColEdit('${colId}')">Guardar</button>`);
-    },
-
-    secEdit: (colId, secId) => {
-      const col = App.State.columns.find(c => c.id === colId);
-      const sec = col.sections.find(s => s.id === secId);
-      const colors = ['transparent', '#dbeafe', '#fce7f3', '#fef9c3', '#dcfce7', '#f3e8ff', '#f3f4f6'];
-      const swatches = colors.map(c => `<div class="color-swatch ${sec.bgColor === c ? 'selected' : ''}" style="background:${c}; border: ${c==='transparent'?'1px dashed #ccc':'none'}" onclick="App.Modals.selectColor(this, '${c}')"></div>`).join('');
-      App.Modals.open('Editar Subsección', `<div class="form-group"><label class="form-label">Nombre</label><input type="text" id="edit-sec-name" class="form-input" value="${App.Utils.escapeHtml(sec.name)}"></div><div class="form-group"><label class="form-label">Color de Fondo</label><div class="color-picker-row" id="sec-color-picker" data-color="${sec.bgColor||'transparent'}">${swatches}</div></div>`,
-        `<button class="btn btn-ghost" onclick="App.Actions.deleteSection('${colId}', '${secId}')">🗑 Borrar</button><button class="btn btn-primary" onclick="App.Actions.saveSecEdit('${colId}', '${secId}')">Guardar</button>`);
-    },
-    selectColor: (el, color) => { document.querySelectorAll('.color-swatch').forEach(sw => sw.classList.remove('selected')); el.classList.add('selected'); document.getElementById('sec-color-picker').dataset.color = color; },
-
-    openSearch: (colId, secId, isTop10) => {
-      App.Modals.open('Añadir Título', `<div class="form-group"><input type="text" id="input-search" class="form-input" placeholder="Buscar Película o Serie en TMDB..." autocomplete="off"></div><div id="search-results-area" class="search-results-container"></div>`, `<button class="btn btn-ghost" onclick="App.Modals.close()">Cancelar</button>`);
-      const input = document.getElementById('input-search'); let debounce;
-      input.addEventListener('input', (e) => {
-        clearTimeout(debounce); debounce = setTimeout(async () => {
-          const resArea = document.getElementById('search-results-area');
-          resArea.innerHTML = '<div style="text-align:center; padding: 20px; color: var(--text-muted);">Buscando... ⏳</div>';
-          const results = await App.API.searchTMDB(e.target.value);
-          if (!results.length) { resArea.innerHTML = '<div style="text-align:center; padding: 20px;">Sin resultados.</div>'; return; }
-          resArea.innerHTML = results.map(item => {
-            const title = App.Utils.escapeHtml(item.title || item.name);
-            const year = (item.release_date || item.first_air_date || '').slice(0, 4);
-            const poster = item.poster_path ? App.Config.IMG_BASE + item.poster_path : '';
-            return `<div class="search-item" onclick="App.Actions.addCard('${colId}', '${secId}', ${isTop10}, '${item.id}', '${title}', '${year}', '${poster}', '${item.media_type}')">
-              <img src="${poster || 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='}"><div class="search-item-info"><div class="search-item-title">${title}</div><div class="search-item-meta">${year} • ${item.media_type === 'movie' ? 'Película' : 'Serie'}</div></div>
-              <button class="btn btn-ghost" style="padding: 6px 12px; font-size:11px;">+ Añadir</button></div>`;
-          }).join('');
-        }, 500);
-      });
-      setTimeout(() => input.focus(), 100);
-    }
-  },
-
-  Actions: {
-    addCard: async (colId, secId, isTop10, tmdbId, title, year, poster, mediaType) => {
-      const col = App.State.columns.find(c => c.id === colId);
-      const details = await App.API.getDetails(tmdbId, mediaType) || {};
-      const newCard = { id: App.Utils.uid(), tmdbId, title, year, poster, mediaType, platforms: [], pending: false, ...details };
-
-      if (isTop10) { if (col.top10.length >= 10) return App.Toast.show('El Top 10 está lleno', 'error'); col.top10.push(newCard); } 
-      else { col.sections.find(s => s.id === secId).cards.push(newCard); }
-      
-      App.Modals.close(); App.UI.renderBoard(); App.Data.scheduleSave(); App.Toast.show('Añadido ✓', 'success');
-    },
-    deleteCard: (colId, secId, cardId, isTop10) => {
-      const col = App.State.columns.find(c => c.id === colId);
-      if (isTop10) col.top10 = col.top10.filter(c => c.id !== cardId);
-      else { const sec = col.sections.find(s => s.id === secId); sec.cards = sec.cards.filter(c => c.id !== cardId); }
-      App.UI.renderBoard(); App.Data.scheduleSave(); App.Toast.show('Eliminado', 'info');
-    },
-    moveCard: (sColId, sSecId, cardId, isTop10, tColId, tSecId) => {
-      const sCol = App.State.columns.find(c => c.id === sColId); let card;
-      if (isTop10) { card = sCol.top10.find(c => c.id === cardId); sCol.top10 = sCol.top10.filter(c => c.id !== cardId); }
-      else { const sSec = sCol.sections.find(s => s.id === sSecId); card = sSec.cards.find(c => c.id === cardId); sSec.cards = sSec.cards.filter(c => c.id !== cardId); }
-      
-      const tCol = App.State.columns.find(c => c.id === tColId);
-      if (tSecId === 'top10') { if(tCol.top10.length >= 10) { App.Toast.show('Top 10 Lleno', 'error'); return; } tCol.top10.push(card); }
-      else { tCol.sections.find(s => s.id === tSecId).cards.push(card); }
-      
-      App.Modals.close(); App.UI.renderBoard(); App.Data.scheduleSave(); App.Toast.show('Movido ✓', 'success');
-    },
-    createColumn: () => {
-      App.State.columns.push({ id: App.Utils.uid(), name: 'Nueva Columna', top10: [], sections: [{ id: App.Utils.uid(), name: 'General', cards: [], bgColor: '' }] });
-      App.UI.renderBoard(); App.Data.scheduleSave();
-    },
-    deleteColumn: (colId) => {
-      if(confirm('¿Borrar columna completa?')) { App.State.columns = App.State.columns.filter(c => c.id !== colId); App.Modals.close(); App.UI.renderBoard(); App.Data.scheduleSave(); }
-    },
-    saveColEdit: (colId) => {
-      App.State.columns.find(c => c.id === colId).name = document.getElementById('edit-col-name').value;
-      App.Modals.close(); App.UI.renderBoard(); App.Data.scheduleSave();
-    },
-    createSection: (colId) => {
-      App.State.columns.find(c => c.id === colId).sections.push({ id: App.Utils.uid(), name: 'Nueva Sección', cards: [], bgColor: '' });
-      App.UI.renderBoard(); App.Data.scheduleSave();
-    },
-    deleteSection: (colId, secId) => {
-      if(confirm('¿Borrar subsección y contenido?')) { App.State.columns.find(c => c.id === colId).sections = App.State.columns.find(c => c.id === colId).sections.filter(s => s.id !== secId); App.Modals.close(); App.UI.renderBoard(); App.Data.scheduleSave(); }
-    },
-    saveSecEdit: (colId, secId) => {
-      const sec = App.State.columns.find(c => c.id === colId).sections.find(s => s.id === secId);
-      sec.name = document.getElementById('edit-sec-name').value; sec.bgColor = document.getElementById('sec-color-picker').dataset.color;
-      App.Modals.close(); App.UI.renderBoard(); App.Data.scheduleSave();
-    }
-  },
-
-  UI: {
-    filterBoard: (query) => {
-      const q = query.toLowerCase();
-      document.querySelectorAll('.media-card').forEach(card => {
-        const title = card.querySelector('.card-title').textContent.toLowerCase();
-        if(title.includes(q) || q === '') card.classList.remove('dimmed'); else card.classList.add('dimmed');
-      });
-    },
-
-    renderCard: (card, colId, secId, isTop10, rank = null) => {
-      let meta = card.year || '';
-      if (card.runtime) meta += ` • ${card.runtime}m`;
-      if (card.seasons) meta += ` • ${card.seasons}T`;
-      
-      return `
-        <div class="media-card" draggable="true" data-id="${card.id}" data-col="${colId}" data-sec="${secId}" data-top10="${isTop10}">
-          <div class="card-img-wrap">
-            <img src="${card.poster || 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='}">
-            ${isTop10 ? `<div class="rank-num">${rank + 1}</div>` : ''}
-            <button class="card-menu-btn" onclick="App.Menus.openContext(event, '${colId}', '${secId}', '${card.id}', ${isTop10})">⋮</button>
-          </div>
-          <div class="card-info">
-            <div class="card-title">${App.Utils.escapeHtml(card.title)}</div>
-            <div class="card-meta">${meta} ${card.rating ? `⭐ ${card.rating}` : ''}</div>
-          </div>
-        </div>`;
-    },
-
-    renderBoard: () => {
-      if (!Array.isArray(App.State.columns)) return; // Failsafe adicional
-
-      const wrapper = document.getElementById('canvas-wrapper'); wrapper.innerHTML = '';
-
-      App.State.columns.forEach(col => {
-        const colDiv = document.createElement('div'); colDiv.className = 'genre-column';
-        
-        // Top 10
-        const tRows = App.Utils.chunkArray(col.top10 || [], 5);
-        let top10Html = '';
-        if ((col.top10||[]).length === 0) { top10Html = `<div class="card-row" data-col="${col.id}" data-zone="top10"><div class="add-card" onclick="App.Modals.openSearch('${col.id}', '', true)">+<span>Añadir</span></div></div>`; } 
-        else {
-          top10Html = tRows.map((row, ri) => `
-            <div class="card-row" data-col="${col.id}" data-zone="${ri===0?'top10':'top10b'}" data-rowidx="${ri}">
-              ${row.map((c, ci) => App.UI.renderCard(c, col.id, '', true, ri*5+ci)).join('')}
-              ${ri === tRows.length - 1 && row.length < 5 && col.top10.length < 10 ? `<div class="add-card" onclick="App.Modals.openSearch('${col.id}', '', true)">+<span>Añadir</span></div>` : ''}
-            </div>`).join('');
-          if (tRows[tRows.length - 1].length === 5 && col.top10.length < 10) { top10Html += `<div class="card-row" data-col="${col.id}" data-zone="${tRows.length===1?'top10':'top10b'}"><div class="add-card" onclick="App.Modals.openSearch('${col.id}', '', true)">+<span>Añadir</span></div></div>`; }
-        }
-
-        // Secciones
-        const secHtml = (col.sections||[]).map(sec => {
-          const sRows = App.Utils.chunkArray(sec.cards || [], 5);
-          let gridHtml = '';
-          if ((sec.cards||[]).length === 0) { gridHtml = `<div class="card-row" data-col="${col.id}" data-sec="${sec.id}" data-zone="grid"><div class="add-card" onclick="App.Modals.openSearch('${col.id}', '${sec.id}', false)">+<span>Añadir</span></div></div>`; }
-          else {
-            gridHtml = sRows.map((row, ri) => `
-              <div class="card-row" data-col="${col.id}" data-sec="${sec.id}" data-zone="grid" data-rowidx="${ri}">
-                ${row.map(c => App.UI.renderCard(c, col.id, sec.id, false)).join('')}
-                ${ri === sRows.length - 1 && row.length < 5 ? `<div class="add-card" onclick="App.Modals.openSearch('${col.id}', '${sec.id}', false)">+<span>Añadir</span></div>` : ''}
-              </div>`).join('');
-            if (sRows[sRows.length - 1].length === 5) { gridHtml += `<div class="card-row" data-col="${col.id}" data-sec="${sec.id}" data-zone="grid" data-rowidx="${sRows.length}"><div class="add-card" onclick="App.Modals.openSearch('${col.id}', '${sec.id}', false)">+<span>Añadir</span></div></div>`; }
-          }
-          return `<div class="genre-section" style="background:${sec.bgColor||'transparent'}">
-            <div class="sec-header">
-              <span class="sec-title">${App.Utils.escapeHtml(sec.name)}</span>
-              <div><button class="btn btn-ghost" style="padding:4px" onclick="App.Modals.secEdit('${col.id}', '${sec.id}')">⚙️</button></div>
-            </div>${gridHtml}</div>`;
-        }).join('');
-
-        colDiv.innerHTML = `
-          <div class="col-header">
-            <span class="col-title">${App.Utils.escapeHtml(col.name)}</span>
-            <button class="btn btn-ghost" style="padding:4px 8px; font-size: 11px;" onclick="App.Modals.colEdit('${col.id}')">⚙️ Editar Columna</button>
-          </div>
-          <div class="combined-card">
-            <div class="top10-section">
-              <div class="top10-title">TOP 10 ${App.Utils.escapeHtml(col.name).toUpperCase()} <span class="badge-top">TO WATCH</span></div>
-              ${top10Html}
-            </div>
-            ${secHtml}
-            <div style="padding: 16px; text-align:center; border-top: 1px solid var(--divider);">
-              <button class="btn btn-ghost" style="width:100%; border: 1px dashed var(--border);" onclick="App.Actions.createSection('${col.id}')">+ Nueva Subsección</button>
-            </div>
-          </div>
-        `;
-        wrapper.appendChild(colDiv);
-      });
-
-      const addBtn = document.createElement('div'); addBtn.className = 'add-card'; addBtn.style.cssText = 'width:200px; height:120px;'; addBtn.innerHTML = '+<span>Nueva Columna</span>'; addBtn.onclick = App.Actions.createColumn;
-      wrapper.appendChild(addBtn);
-      
-      App.DragDrop.setup();
-    }
-  },
-
-  init: async () => {
-    App.Canvas.init();
-    
-    // Si entramos por primera vez
-    if (!localStorage.getItem('mediaboard_state')) {
-      App.State.columns = [{ id: App.Utils.uid(), name: 'Mis Películas', top10: [], sections: [{ id: App.Utils.uid(), name: 'General', cards: [], bgColor: '' }] }];
-    }
-
-    await App.Data.loadFromSupabase();
-    App.UI.renderBoard();
-  }
+const DEMO_DATA = {
+  naruto:   [{id:20,title:'',name:'Naruto',media_type:'tv',poster_path:'/xppeysfvDKVx775MFuH8Z9ex9ik.jpg',first_air_date:'2002-10-03'},{id:32281,title:'',name:'Naruto Shippuden',media_type:'tv',poster_path:'/zAYRe2bJxpnJrzDPBZJNBronTXi.jpg',first_air_date:'2007-02-15'}],
+  akira:    [{id:149,title:'Akira',name:'',media_type:'movie',poster_path:'/neZ0ykEsPqxamsX6o5QNnFHNiEm.jpg',release_date:'1988-07-16'}],
+  inception:[{id:27205,title:'Inception',name:'',media_type:'movie',poster_path:'/oYuLEt3zVCKq57qu2F8dT7NIa6f.jpg',release_date:'2010-07-16'}],
+  breaking: [{id:1396,title:'',name:'Breaking Bad',media_type:'tv',poster_path:'/ggFHVNu6YYI5L9pCfOacjizRGt.jpg',first_air_date:'2008-01-20'}],
+  dune:     [{id:438631,title:'Dune',name:'',media_type:'movie',poster_path:'/d5NXSklXo0qyIYkgV94XAgMIckC.jpg',release_date:'2021-09-15'}],
+  attack:   [{id:1429,title:'',name:'Attack on Titan',media_type:'tv',poster_path:'/hTP1DtLGFamjfu8WqjnuScW1lKc.jpg',first_air_date:'2013-04-07'}],
 };
 
-window.onload = App.init;
+
+// ── TOPBAR RESPONSIVE ─────────────────────────────────────────────────────
+function toggleTopbarDrawer(){
+  document.getElementById('topbar-drawer').classList.toggle('open');
+  adjustFilterBarTop();
+}
+function adjustFilterBarTop(){
+  const tb=document.getElementById('topbar');
+  const h=tb?.getBoundingClientRect().height||52;
+  const fb=document.getElementById('filter-bar');
+  if(fb) fb.style.top=h+'px';
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  window.addEventListener('resize',adjustFilterBarTop);
+  adjustFilterBarTop();
+  // Sync secondary zoom slider with canvas zoom
+  const s2=document.getElementById('zoom-slider2');
+  s2?.addEventListener('input',function(){
+    const v=this.value/100;
+    document.getElementById('zoom-val2').textContent=this.value+'%';
+    document.getElementById('zoom-val').textContent=this.value+'%';
+    document.getElementById('zoom-slider').value=this.value;
+    setCanvasZoom(v);
+  });
+});
+
+// ── FIGMA-STYLE PAN / ZOOM ENGINE ─────────────────────────────────────────
+let _cx=60, _cy=120, _cz=0.65; // translate x,y and scale
+let _panning=false, _panStartX=0, _panStartY=0, _panOriginX=0, _panOriginY=0;
+let _spaceDown=false;
+// Touch pinch
+let _touches=[], _pinchDist0=0, _pinchZ0=0, _pinchCx0=0, _pinchCy0=0;
+
+const MIN_Z=0.15, MAX_Z=2.0;
+
+function applyCanvasTransform(animate=false){
+  const w=document.getElementById('canvas-wrapper');
+  if(!w) return;
+  if(animate) w.style.transition='transform .12s ease';
+  else w.style.transition='none';
+  w.style.transform=`translate(${_cx}px,${_cy}px) scale(${_cz})`;
+  // Update topbar zoom display
+  const pct=Math.round(_cz*100);
+  document.getElementById('zoom-val').textContent=pct+'%';
+  document.getElementById('zoom-slider').value=Math.max(40,Math.min(100,pct));
+}
+
+function setCanvasZoom(newZ, pivotX, pivotY){
+  newZ=Math.max(MIN_Z,Math.min(MAX_Z,newZ));
+  const vp=document.getElementById('canvas-viewport');
+  if(pivotX===undefined){ pivotX=vp.clientWidth/2; pivotY=vp.clientHeight/2; }
+  // Adjust translation so zoom centers on pivot point
+  const dz=newZ/_cz;
+  _cx=pivotX-(pivotX-_cx)*dz;
+  _cy=pivotY-(pivotY-_cy)*dz;
+  _cz=newZ;
+  applyCanvasTransform();
+}
+
+// ── Keyboard ──
+window.addEventListener('keydown',e=>{
+  if(e.code==='Space'&&!e.target.matches('input,textarea')){
+    e.preventDefault(); _spaceDown=true;
+    const vp=document.getElementById('canvas-viewport');
+    if(vp) vp.classList.add('panning');
+  }
+});
+window.addEventListener('keyup',e=>{
+  if(e.code==='Space'){
+    _spaceDown=false;
+    const vp=document.getElementById('canvas-viewport');
+    if(vp) vp.classList.remove('panning','panning-active');
+  }
+});
+
+// ── Mouse wheel — zoom with ctrl, pan otherwise ──
+document.getElementById('canvas-viewport')?.addEventListener('wheel',e=>{
+  e.preventDefault();
+  if(e.ctrlKey||e.metaKey){
+    // Zoom centered on cursor
+    const rect=document.getElementById('canvas-viewport').getBoundingClientRect();
+    const px=e.clientX-rect.left, py=e.clientY-rect.top;
+    const delta=e.deltaY>0?0.9:1.1;
+    setCanvasZoom(_cz*delta, px, py);
+  } else {
+    // Pan
+    _cx-=e.deltaX; _cy-=e.deltaY;
+    applyCanvasTransform();
+  }
+},{passive:false});
+
+// ── Mouse drag — pan with space or middle button ──
+document.getElementById('canvas-viewport')?.addEventListener('mousedown',e=>{
+  if(_spaceDown||e.button===1||e.button===2){
+    e.preventDefault();
+    _panning=true; _panStartX=e.clientX; _panStartY=e.clientY;
+    _panOriginX=_cx; _panOriginY=_cy;
+    const vp=document.getElementById('canvas-viewport');
+    vp?.classList.add('panning-active');
+  }
+});
+window.addEventListener('mousemove',e=>{
+  if(!_panning) return;
+  _cx=_panOriginX+(e.clientX-_panStartX);
+  _cy=_panOriginY+(e.clientY-_panStartY);
+  applyCanvasTransform();
+});
+window.addEventListener('mouseup',e=>{
+  if(_panning){
+    _panning=false;
+    const vp=document.getElementById('canvas-viewport');
+    vp?.classList.remove('panning-active');
+  }
+});
+
+// ── Touch — two-finger pan + pinch zoom ──
+document.getElementById('canvas-viewport')?.addEventListener('touchstart',e=>{
+  _touches=[...e.touches];
+  if(e.touches.length===2){
+    const dx=e.touches[0].clientX-e.touches[1].clientX;
+    const dy=e.touches[0].clientY-e.touches[1].clientY;
+    _pinchDist0=Math.hypot(dx,dy);
+    _pinchZ0=_cz;
+    _pinchCx0=_cx; _pinchCy0=_cy;
+  }
+},{passive:true});
+
+document.getElementById('canvas-viewport')?.addEventListener('touchmove',e=>{
+  if(e.touches.length===2){
+    e.preventDefault();
+    const dx=e.touches[0].clientX-e.touches[1].clientX;
+    const dy=e.touches[0].clientY-e.touches[1].clientY;
+    const dist=Math.hypot(dx,dy);
+    const midX=(e.touches[0].clientX+e.touches[1].clientX)/2;
+    const midY=(e.touches[0].clientY+e.touches[1].clientY)/2;
+    const newZ=Math.max(MIN_Z,Math.min(MAX_Z,_pinchZ0*(dist/_pinchDist0)));
+    // Pan delta from pinch midpoint movement vs start
+    const startMidX=(_touches[0].clientX+_touches[1].clientX)/2;
+    const startMidY=(_touches[0].clientY+_touches[1].clientY)/2;
+    const panDx=midX-startMidX, panDy=midY-startMidY;
+    // Apply zoom around midpoint
+    const dz=newZ/_cz;
+    _cx=midX-(midX-_cx)*dz+panDx*0.3;
+    _cy=midY-(midY-_cy)*dz+panDy*0.3;
+    _cz=newZ;
+    applyCanvasTransform();
+  }
+},{passive:false});
+
+// ── Zoom slider (topbar) ──
+document.getElementById('zoom-slider')?.addEventListener('input',function(){
+  document.getElementById('zoom-val').textContent=this.value+'%';
+  setCanvasZoom(this.value/100);
+});
+
+// Fake adjustCanvasTop for compatibility
+function adjustCanvasTop(){ adjustFilterBarTop(); }
+function scheduleSave_debounce_alias(){ scheduleSave(); }
+// ── KEYS ──────────────────────────────────────────────────────────────────
+function getKey(type='tmdb'){ return localStorage.getItem('mediaboard_key_'+type)||''; }
+function setKey(type,v){ localStorage.setItem('mediaboard_key_'+type,v); updateDots(); }
+function getIGDBClientId(){ return localStorage.getItem('mediaboard_key_igdb_id')||''; }
+function getIGDBSecret(){   return localStorage.getItem('mediaboard_key_igdb_secret')||''; }
+
+function updateDots(){
+  // TMDB
+  const hasTmdb=!!getKey('tmdb');
+  const tmdbDot=document.getElementById('tmdb-dot'), tmdbBtn=document.getElementById('tmdb-btn');
+  if(tmdbDot) tmdbDot.style.background=hasTmdb?'#4caf50':'#555';
+  if(tmdbBtn) tmdbBtn.classList.toggle('active',hasTmdb);
+  // IGDB
+  const hasIgdb=!!(getIGDBClientId()&&getIGDBSecret());
+  const igdbDot=document.getElementById('igdb-dot'), igdbBtn=document.getElementById('igdb-btn');
+  if(igdbDot) igdbDot.style.background=hasIgdb?'#4caf50':'#555';
+  if(igdbBtn) igdbBtn.classList.toggle('active',hasIgdb);
+}
+
+function openKeyModal(type='tmdb'){
+  if(type==='igdb') { openIGDBModal(); return; }
+  // TMDB modal
+  const currentKey=getKey('tmdb');
+  showModal(`
+    <button class="modal-close-x" onclick="closeModal()">✕</button>
+    <h2>🎬 TMDB API Key</h2>
+    <div class="key-steps">
+      <div class="key-step"><span class="key-step-num">1</span><div class="key-step-body">Ve a <a href="https://www.themoviedb.org/signup" target="_blank">themoviedb.org</a> y crea una cuenta gratuita.</div></div>
+      <div class="key-step"><span class="key-step-num">2</span><div class="key-step-body">Confirma tu email desde el enlace que te mandan.</div></div>
+      <div class="key-step"><span class="key-step-num">3</span><div class="key-step-body">Ve a <a href="https://www.themoviedb.org/settings/api" target="_blank">Ajustes → API</a> y solicita una key tipo <strong>Developer</strong>.</div></div>
+      <div class="key-step"><span class="key-step-num">4</span><div class="key-step-body">Rellena el formulario con uso personal y cualquier descripción. Te dan la key al instante.</div></div>
+      <div class="key-step"><span class="key-step-num">5</span><div class="key-step-body">Copia la <strong>API Key (v3 auth)</strong> y pégala abajo.</div></div>
+    </div>
+    <input class="modal-input key-visible" id="key-inp" type="text" placeholder="Pega aquí tu API Key v3…" value="${escHtml(currentKey)}">
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cerrar</button>
+      <button class="btn-primary" onclick="saveTMDBKey()">Guardar</button>
+    </div>`);
+  setTimeout(()=>document.getElementById('key-inp')?.focus(),50);
+}
+
+function saveTMDBKey(){
+  const v=document.getElementById('key-inp')?.value.trim();
+  if(v){ setKey('tmdb',v); showToast('TMDB Key guardada ✓'); }
+  closeModal();
+}
+
+function openIGDBModal(){
+  const curId=getIGDBClientId(), curSecret=getIGDBSecret();
+  showModal(`
+    <button class="modal-close-x" onclick="closeModal()">✕</button>
+    <h2>🎮 IGDB API Keys</h2>
+    <div class="key-steps">
+      <div class="key-step"><span class="key-step-num">1</span><div class="key-step-body">Ve a <a href="https://www.twitch.tv" target="_blank">twitch.tv</a> y crea una cuenta gratuita (o usa la que tengas).</div></div>
+      <div class="key-step"><span class="key-step-num">2</span><div class="key-step-body">Activa la <strong>autenticación de dos factores</strong> en <a href="https://www.twitch.tv/settings/security" target="_blank">Ajustes → Seguridad</a>. Es obligatorio para poder usar la API.</div></div>
+      <div class="key-step"><span class="key-step-num">3</span><div class="key-step-body">Ve a <a href="https://dev.twitch.tv/console" target="_blank">dev.twitch.tv/console</a> e inicia sesión con tu cuenta Twitch.</div></div>
+      <div class="key-step"><span class="key-step-num">4</span><div class="key-step-body">Pulsa <strong>"+ Registrar tu aplicación"</strong>.<br>· Nombre: cualquiera (ej. <em>MediaBoard</em>)<br>· URL de redirección OAuth: <code>http://localhost</code><br>· Tipo: <strong>Confidencial</strong><br>· Categoría: <em>Application Integration</em><br>Acepta y pulsa <strong>Crear</strong>.</div></div>
+      <div class="key-step"><span class="key-step-num">5</span><div class="key-step-body">En la lista pulsa <strong>"Administrar"</strong> junto a tu app.<br>· Copia el <strong>Client ID</strong> que aparece visible.<br>· Pulsa <strong>"New Secret"</strong> → copia el <strong>Client Secret</strong> que aparece (solo se muestra una vez).</div></div>
+      <div class="key-step"><span class="key-step-num">6</span><div class="key-step-body">Pega ambos en los campos de abajo y guarda.</div></div>
+    </div>
+    <label class="key-field-label">Client ID</label>
+    <input class="modal-input key-visible" id="igdb-id-inp" type="text" placeholder="0ck2guf0ky84mjvr0jk9…" value="${escHtml(curId)}">
+    <label class="key-field-label">Client Secret</label>
+    <input class="modal-input key-visible" id="igdb-secret-inp" type="text" placeholder="abc123xyz…" value="${escHtml(curSecret)}">
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cerrar</button>
+      <button class="btn-primary" onclick="saveIGDBKeys()">Guardar</button>
+    </div>`, 'wide');
+  setTimeout(()=>document.getElementById('igdb-id-inp')?.focus(),50);
+}
+
+function saveIGDBKeys(){
+  const id=document.getElementById('igdb-id-inp')?.value.trim();
+  const secret=document.getElementById('igdb-secret-inp')?.value.trim();
+  if(id) localStorage.setItem('mediaboard_key_igdb_id', id);
+  if(secret) localStorage.setItem('mediaboard_key_igdb_secret', secret);
+  // Also store combined for legacy getKey('igdb') compatibility
+  if(id&&secret) setKey('igdb', id+','+secret);
+  updateDots();
+  closeModal();
+  showToast('IGDB Keys guardadas ✓');
+}
+
+// ── ZOOM ──────────────────────────────────────────────────────────────────
+document.getElementById('zoom-slider').addEventListener('input',function(){
+  document.getElementById('zoom-val').textContent=this.value+'%';
+  document.getElementById('canvas-wrapper').style.transform=`scale(${this.value/100})`;
+});
+
+// ── SUPABASE SYNC ─────────────────────────────────────────────────────────
+const SB_URL='https://sxpbsekgijvanylhqyaf.supabase.co';
+const SB_KEY='sb_publishable_f8802PsMYs0GnHGzPxYRUA__hoXXtwN';
+const SB_BOARD_ID='default'; // shared board ID — change to username for multi-user
+let _saveTimer=null, _saving=false;
+
+function setSyncStatus(status, label){
+  const dot=document.getElementById('sync-dot');
+  const lbl=document.getElementById('sync-label');
+  if(dot){ dot.className='sync-dot '+status; }
+  if(lbl) lbl.textContent=label;
+}
+
+async function sbFetch(path, opts={}){
+  const res=await fetch(SB_URL+path, {
+    ...opts,
+    headers:{
+      'apikey': SB_KEY,
+      'Authorization': 'Bearer '+SB_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': opts.prefer||'',
+      ...opts.headers
+    }
+  });
+  return res;
+}
+
+async function saveToSupabase(){
+  if(_saving) return;
+  _saving=true;
+  setSyncStatus('syncing','Guardando…');
+  try{
+    // First ensure table exists via upsert
+    const body=JSON.stringify({
+      id: SB_BOARD_ID,
+      data: state,
+      updated_at: new Date().toISOString()
+    });
+    const r=await sbFetch('/rest/v1/mediaboard',{
+      method:'POST',
+      prefer:'resolution=merge-duplicates',
+      headers:{'Prefer':'resolution=merge-duplicates'},
+      body
+    });
+    if(r.ok||r.status===409){
+      localStorage.setItem('mediaboard_state',JSON.stringify(state));
+      setSyncStatus('synced','Guardado ✓');
+    } else {
+      const err=await r.text();
+      // Table might not exist — try to create it
+      if(r.status===404||r.status===400||err.includes('does not exist')||err.includes('relation')){
+        await createTableAndSave();
+      } else {
+        setSyncStatus('error','Error al guardar');
+        console.error('Supabase save error:',r.status,err);
+      }
+    }
+  } catch(e){
+    setSyncStatus('error','Sin conexión');
+    localStorage.setItem('mediaboard_state',JSON.stringify(state));
+  } finally{ _saving=false; }
+}
+
+async function createTableAndSave(){
+  // Create table via Supabase SQL API
+  setSyncStatus('syncing','Creando tabla…');
+  try{
+    const sql=`CREATE TABLE IF NOT EXISTS mediaboard (id text PRIMARY KEY, data jsonb NOT NULL, updated_at timestamptz DEFAULT now());
+ALTER TABLE mediaboard ENABLE ROW LEVEL SECURITY;
+CREATE POLICY IF NOT EXISTS "allow_all" ON mediaboard FOR ALL USING (true) WITH CHECK (true);`;
+    const r=await sbFetch('/rest/v1/rpc/exec_sql',{
+      method:'POST',
+      body:JSON.stringify({query:sql})
+    });
+    // Try save again regardless
+    await saveToSupabase();
+  } catch(e){
+    setSyncStatus('error','Configura la tabla en Supabase');
+    showToast('⚠️ Necesitas crear la tabla en Supabase. Ver consola.');
+    console.info('Crea esta tabla en Supabase SQL Editor:\nCREATE TABLE mediaboard (id text PRIMARY KEY, data jsonb NOT NULL, updated_at timestamptz DEFAULT now());\nALTER TABLE mediaboard ENABLE ROW LEVEL SECURITY;\nCREATE POLICY "allow_all" ON mediaboard FOR ALL USING (true) WITH CHECK (true);');
+  }
+}
+
+async function loadFromSupabase(){
+  setSyncStatus('syncing','Cargando…');
+  try{
+    const r=await sbFetch('/rest/v1/mediaboard?id=eq.'+SB_BOARD_ID+'&select=data');
+    if(!r.ok){
+      // Fall back to localStorage
+      const s=localStorage.getItem('mediaboard_state');
+      if(s) state=JSON.parse(s);
+      setSyncStatus('error','Usando datos locales');
+      return;
+    }
+    const rows=await r.json();
+    if(rows&&rows.length>0&&rows[0].data){
+      state=rows[0].data;
+      localStorage.setItem('mediaboard_state',JSON.stringify(state));
+      setSyncStatus('synced','Sincronizado ✓');
+    } else {
+      // No remote data — try localStorage
+      const s=localStorage.getItem('mediaboard_state');
+      if(s){ state=JSON.parse(s); await saveToSupabase(); }
+      else setSyncStatus('synced','Listo');
+    }
+  } catch(e){
+    const s=localStorage.getItem('mediaboard_state');
+    if(s) state=JSON.parse(s);
+    setSyncStatus('error','Sin conexión');
+  }
+}
+
+// Auto-save debounced — called after every state change
+function scheduleSave(){
+  clearTimeout(_saveTimer);
+  _saveTimer=setTimeout(saveToSupabase, 1200);
+}
+
+// Legacy local save/load kept for export/import compatibility
+function saveBoard(){ scheduleSave(); }
+function loadBoard(){ loadFromSupabase().then(()=>{ renderAll(); renderFilterBar(); }); }
+
+function showToast(msg){
+  const t=document.createElement('div'); t.textContent=msg;
+  Object.assign(t.style,{position:'fixed',bottom:'20px',left:'50%',transform:'translateX(-50%)',background:'#1a1a1a',color:'#fff',padding:'8px 20px',borderRadius:'20px',fontSize:'13px',zIndex:'9999',transition:'opacity .4s',fontFamily:'DM Sans,sans-serif',whiteSpace:'nowrap'});
+  document.body.appendChild(t);
+  setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),400);},1800);
+}
+
+// ── TMDB SEARCH ───────────────────────────────────────────────────────────
+async function tmdbSearch(query){
+  const key=getKey(); if(!key){openKeyModal();return[];}
+  const demoKey=Object.keys(DEMO_DATA).find(k=>query.toLowerCase().includes(k));
+  try{
+    const ctrl=new AbortController(); setTimeout(()=>ctrl.abort(),5000);
+    const r=await fetch(`${TMDB_BASE}/search/multi?api_key=${key}&query=${encodeURIComponent(query)}&language=es-ES`,{signal:ctrl.signal});
+    if(!r.ok){if(r.status===401)showToast('❌ API key inválida');throw new Error();}
+    const d=await r.json();
+    return(d.results||[]).filter(x=>x.poster_path&&(x.media_type==='movie'||x.media_type==='tv')).slice(0,8);
+  }catch{
+    if(demoKey){showToast('📡 Modo demo');return DEMO_DATA[demoKey];}
+    showToast('📡 Sin conexión. Abre en Chrome.'); return[];
+  }
+}
+
+// ── FETCH PROVIDERS — ES flatrate only, deduplicated ─────────────────────
+async function fetchProviders(tmdbId, mediaType){
+  const key=getKey(); if(!key||!tmdbId) return[];
+  try{
+    const ctrl=new AbortController(); setTimeout(()=>ctrl.abort(),4000);
+    const type=mediaType==='tv'?'tv':'movie';
+    const r=await fetch(`${TMDB_BASE}/${type}/${tmdbId}/watch/providers?api_key=${key}`,{signal:ctrl.signal});
+    if(!r.ok) return[];
+    const d=await r.json();
+    const region=d.results?.ES||{};
+    const out=[], seenIds=new Set();
+    (region.flatrate||[]).forEach(p=>{
+      // Skip anything with "channel", "addon", "with ads" in name (case-insensitive)
+      if(/channel|addon|with ads/i.test(p.provider_name)) return;
+      const mapped=PROVIDER_MAP[p.provider_id];
+      const pid=mapped?.id||('p'+p.provider_id);
+      if(seenIds.has(pid)) return; // deduplicate
+      seenIds.add(pid);
+      // Use live logo_path from API — always most accurate
+      const logo=p.logo_path?'https://image.tmdb.org/t/p/w45'+p.logo_path:(mapped?providerLogo(mapped):'');
+      out.push({ id:pid, name:mapped?.name||p.provider_name, logo });
+    });
+    return out;
+  }catch{return[];}
+}
+
+
+
+// ── IGDB ──────────────────────────────────────────────────────────────────
+// IGDB via Supabase as CORS proxy — reliable from any origin
+let _igdbToken=null, _igdbTokenExpiry=0;
+const SB_IGDB_PROXY = 'https://sxpbsekgijvanylhqyaf.supabase.co/functions/v1/smart-task';
+
+function igdbClientId(){ return getIGDBClientId(); }
+// Token handled server-side by Edge Function — not needed client-side
+async function getIGDBToken(){ return 'edge-fn'; }
+
+// IGDB query — via Supabase Edge Function (no CORS issues)
+async function igdbQuery(endpoint, body){
+  const clientId=getIGDBClientId(), clientSecret=getIGDBSecret();
+  if(!clientId||!clientSecret){ showToast('⚠️ Configura Client ID y Secret de IGDB'); return null; }
+  // Get anon key — stored separately or fall back to SB_KEY
+  const anonKey=localStorage.getItem('mediaboard_sb_anon')||SB_KEY;
+  try{
+    const ctrl=new AbortController(); setTimeout(()=>ctrl.abort(),10000);
+    const r=await fetch(SB_IGDB_PROXY,{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'apikey': anonKey,
+        'Authorization': 'Bearer '+anonKey,
+      },
+      body: JSON.stringify({ endpoint, body, clientId, clientSecret }),
+      signal: ctrl.signal
+    });
+    if(!r.ok){
+      const err=await r.text();
+      if(r.status===401){
+        showToast('❌ Edge Function: necesitas la Anon Key de Supabase. Pulsa ⚙ Repo Config → Supabase.');
+      } else {
+        showToast('❌ IGDB proxy error '+r.status+': '+err.slice(0,60));
+      }
+      return null;
+    }
+    return await r.json();
+  }catch(e){
+    showToast('❌ Error llamando al proxy IGDB: '+e.message);
+    return null;
+  }
+}
+
+async function igdbSearch(query){
+  const results=await igdbQuery('games',
+    `search "${query.replace(/"/g,"'")}"; fields id,name,cover.image_id,first_release_date,genres.name,platforms.name,time_to_beat.normally,time_to_beat.hastily,time_to_beat.completely; limit 8;`
+  );
+  return results||[];
+}
+
+async function igdbDetails(igdbId){
+  const results=await igdbQuery('games',
+    `where id=${igdbId}; fields id,name,cover.image_id,first_release_date,genres.name,platforms.name,summary,time_to_beat.normally,time_to_beat.hastily,time_to_beat.completely; limit 1;`
+  );
+  return results?.[0]||null;
+}
+
+function igdbCover(imageId){
+  return imageId?`https://images.igdb.com/igdb/image/upload/t_cover_big/${imageId}.jpg`:'';
+}
+
+function formatHours(seconds){
+  if(!seconds||seconds<=0) return null;
+  const h=seconds/3600;
+  return h<1?Math.round(h*60)+'min':h%1===0?h+'h':h.toFixed(1).replace('.0','')+'h';
+}
+
+// ── IGDB Search Modal ──────────────────────────────────────────────────────
+function openGameSearchModal(colId, sectionId, inTop10){
+  showModal(`
+    <button class="modal-close-x" onclick="closeModal()">✕</button>
+    <h2>🎮 Buscar juego</h2>
+    <input class="modal-input" id="game-search-inp" placeholder="Nombre del juego…">
+    <div id="game-results-area"></div>
+    <div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">Cancelar</button></div>`);
+  const inp=document.getElementById('game-search-inp');
+  let db;
+  inp?.addEventListener('input',()=>{clearTimeout(db);db=setTimeout(()=>doGameSearch(inp.value,colId,sectionId,inTop10),420);});
+  setTimeout(()=>inp?.focus(),50);
+}
+
+async function doGameSearch(query,colId,sectionId,inTop10){
+  if(!getIGDBClientId()||!getIGDBSecret()){ showToast('⚠️ Configura el Client ID y Secret de IGDB primero'); return; }
+  // Support both the standalone game modal and the combined search modal
+  const area=document.getElementById('game-results-area')||document.getElementById('search-results-area');
+  const areaId=document.getElementById('game-results-area')?'game-results-area':'search-results-area';
+  if(!area||!query.trim()) return;
+  area.innerHTML='<p class="no-results">Buscando <span class="spinner"></span></p>';
+  const results=await igdbSearch(query);
+  if(!document.getElementById(areaId)) return;
+  if(!results||!results.length||!results[0]?.name){area.innerHTML='<p class="no-results">Sin resultados</p>';return;}
+  area.innerHTML='<div class="search-results">'+results.map((r,i)=>{
+    const title=r.name||'?';
+    const year=r.first_release_date?new Date(r.first_release_date*1000).getFullYear():'';
+    const cover=r.cover?.image_id?igdbCover(r.cover.image_id):'';
+    const ttb=r.time_to_beat;
+    const main=ttb?.normally?formatHours(ttb.normally):'';
+    const plats=(r.platforms||[]).slice(0,3).map(p=>p.name).join(', ');
+    // Use _searchColId etc if available (combined modal), else use passed params
+    const _cid=window._searchColId||colId;
+    const _sid=window._searchSecId||sectionId;
+    const _t10=window._searchInTop10!==undefined?window._searchInTop10:inTop10;
+    return `<div class="search-result-item" onclick="pickGame('${_cid}','${_sid}',${i},${_t10})">
+      <img src="${cover}" alt="" style="object-fit:cover">
+      <div>
+        <div class="result-title">🎮 ${escHtml(title)}</div>
+        <div class="result-meta">${year}${main?' · '+main+' main':''}${plats?' · '+escHtml(plats):''}</div>
+      </div></div>`;
+  }).join('')+'</div>';
+  window._gameResults=results;
+}
+
+async function pickGame(colId,sectionId,idx,inTop10){
+  const r=window._gameResults?.[idx]; if(!r) return;
+  const area=document.getElementById('game-results-area')||document.getElementById('search-results-area');
+  if(area) area.innerHTML='<p class="no-results">Cargando detalles… <span class="spinner"></span></p>';
+  // Fetch full details for time_to_beat
+  const full=await igdbDetails(r.id)||r;
+  const ttb=full.time_to_beat||r.time_to_beat||{};
+  const title=full.name||'?';
+  const year=full.first_release_date?new Date(full.first_release_date*1000).getFullYear():'';
+  const poster=full.cover?.image_id?igdbCover(full.cover.image_id):(r.cover?.image_id?igdbCover(r.cover.image_id):'');
+  const genres=(full.genres||r.genres||[]).map(g=>g.name);
+  const platforms=(full.platforms||r.platforms||[]).map(p=>p.name);
+  const card={
+    id:uid(), title, year:String(year), poster,
+    platforms:[], genres, pending:false,
+    mediaType:'game', igdbId:r.id,
+    ttbMain: (full.time_to_beat?.normally||r.time_to_beat?.normally||null),
+    ttbMainSides: (full.time_to_beat?.hastily||r.time_to_beat?.hastily||null),
+    ttbComplete: (full.time_to_beat?.completely||r.time_to_beat?.completely||null),
+    gamePlatforms: platforms,
+  };
+  const col=state.columns.find(c=>c.id===colId); if(!col) return;
+  if(inTop10){
+    if(col.top10.length>=10){showToast('Top 10 lleno');return;}
+    col.top10.push(card);
+  } else {
+    const sec=col.sections.find(s=>s.id===sectionId); if(sec) sec.cards.push(card);
+  }
+  closeModal(); renderAll();
+}
+
+
+// ── REPO CONFIG MODAL ─────────────────────────────────────────────────────
+function openRepoConfig(){
+  showModal(`
+    <button class="modal-close-x" onclick="closeModal()">✕</button>
+    <h2>⚙ Configuración del repositorio</h2>
+    <div class="repo-tabs">
+      <button class="repo-tab active" onclick="switchRepoTab('supabase',this)">🗄 Supabase</button>
+      <button class="repo-tab" onclick="switchRepoTab('github',this)">🐙 GitHub Pages</button>
+    </div>
+
+    <div id="repo-tab-supabase" class="repo-tab-content active">
+      <div class="repo-section-title">1 · Crear cuenta y proyecto</div>
+      <div class="key-steps">
+        <div class="key-step"><span class="key-step-num">1</span><div class="key-step-body">Ve a <a href="https://supabase.com" target="_blank">supabase.com</a> → <strong>Start your project</strong> → regístrate con GitHub o email.</div></div>
+        <div class="key-step"><span class="key-step-num">2</span><div class="key-step-body">Pulsa <strong>New project</strong>.<br>· Nombre: <code>mediaboard</code><br>· Region: <em>West EU (Ireland)</em> para España<br>· Contraseña: cualquiera, guárdala<br>Pulsa <strong>Create new project</strong> y espera ~1 min.</div></div>
+        <div class="key-step"><span class="key-step-num">3</span><div class="key-step-body">
+          Dentro de tu proyecto en supabase.com, busca el icono ⚙ en el menú lateral izquierdo → pulsa <strong>Settings</strong> → luego <strong>API</strong>.<br><br>
+          Verás dos valores que necesitas copiar e integrar en el código:<br>
+          · <strong>Project URL</strong> (ej. <code>https://xxxx.supabase.co</code>) → va en la constante <code>SB_URL</code><br>
+          · <strong>Publishable key</strong> (empieza por <code>sb_publishable_…</code>) → va en la constante <code>SB_KEY</code><br><br>
+          Para IGDB también necesitas la <strong>Anon Key</strong>: en esa misma página pulsa la pestaña <strong>"Legacy anon, service_role API keys"</strong> y copia el valor de la fila <strong>anon</strong> (empieza por <code>eyJ…</code>). Pégala en el paso 4.
+        </div></div>
+      <div class="key-step"><span class="key-step-num">4</span><div class="key-step-body">
+        <label class="key-field-label">Supabase Anon Key (eyJ…)</label>
+        <input class="modal-input key-visible" id="sb-anon-inp" type="text" placeholder="eyJhbGciOiJIUzI1NiIs…" value="${escHtml(localStorage.getItem('mediaboard_sb_anon')||'')}">
+        <button class="btn-primary" style="margin-top:8px;font-size:12px;padding:6px 14px" onclick="saveSbAnonKey()">Guardar Anon Key</button>
+        <p style="font-size:11px;color:#888;margin-top:6px">Esta key permite a la app usar las Edge Functions de Supabase (necesaria para IGDB).</p>
+      </div></div>
+      </div>
+
+      <div class="repo-section-title">2 · Crear la tabla</div>
+      <div class="key-steps">
+        <div class="key-step"><span class="key-step-num">4</span><div class="key-step-body">En tu proyecto Supabase ve a <strong>SQL Editor</strong> (menú izquierdo) → <strong>New query</strong>.<br>Pega y ejecuta este SQL:</div></div>
+      </div>
+      <div style="position:relative">
+        <button class="copy-btn" onclick="copySql()">Copiar</button>
+        <div class="sql-block" id="sql-block">CREATE TABLE mediaboard (
+  id text PRIMARY KEY,
+  data jsonb NOT NULL,
+  updated_at timestamptz DEFAULT now()
+);
+
+ALTER TABLE mediaboard ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "allow_all" ON mediaboard
+  FOR ALL USING (true) WITH CHECK (true);</div>
+      </div>
+      <div class="key-steps">
+        <div class="key-step"><span class="key-step-num">5</span><div class="key-step-body">Pulsa <strong>Run</strong>. Verás un mensaje de éxito. La tabla ya está lista para sincronizar tu MediaBoard.</div></div>
+      </div>
+      <p style="font-size:12px;color:#888;margin-top:8px">✓ Una vez hecho esto, el indicador de sync en el topbar pasará a verde al cargar la página.</p>
+    </div>
+
+    <div id="repo-tab-github" class="repo-tab-content">
+      <div class="repo-section-title">1 · Crear repositorio</div>
+      <div class="key-steps">
+        <div class="key-step"><span class="key-step-num">1</span><div class="key-step-body">Ve a <a href="https://github.com" target="_blank">github.com</a> → regístrate o inicia sesión.</div></div>
+        <div class="key-step"><span class="key-step-num">2</span><div class="key-step-body">Pulsa <strong>+</strong> → <strong>New repository</strong>.<br>· Nombre: <code>mediaboard</code><br>· Visibilidad: <strong>Public</strong> (obligatorio para Pages gratis)<br>Pulsa <strong>Create repository</strong>.</div></div>
+        <div class="key-step"><span class="key-step-num">3</span><div class="key-step-body">En el repositorio pulsa <strong>Add file → Upload files</strong>.<br>Arrastra el archivo <code>index.html</code> y pulsa <strong>Commit changes</strong>.</div></div>
+      </div>
+
+      <div class="repo-section-title">2 · Activar GitHub Pages</div>
+      <div class="key-steps">
+        <div class="key-step"><span class="key-step-num">4</span><div class="key-step-body">Ve a <strong>Settings</strong> (pestaña del repositorio) → <strong>Pages</strong>.<br>· Source: <em>Deploy from a branch</em><br>· Branch: <code>main</code> · Carpeta: <code>/ (root)</code><br>Pulsa <strong>Save</strong>.</div></div>
+        <div class="key-step"><span class="key-step-num">5</span><div class="key-step-body">Espera 1-2 minutos y recarga Settings → Pages. Aparecerá tu URL:<br><code>https://tuusuario.github.io/mediaboard/</code></div></div>
+      </div>
+
+      <div class="repo-section-title">3 · Actualizar el archivo</div>
+      <div class="key-steps">
+        <div class="key-step"><span class="key-step-num">6</span><div class="key-step-body">Para subir versiones nuevas: repositorio → <strong>Add file → Upload files</strong> → arrastra el nuevo <code>index.html</code> → <strong>Commit changes</strong>.<br><em>Nota: el editor web (lápiz) congela con archivos grandes. Usa siempre Upload.</em></div></div>
+      </div>
+      <p style="font-size:12px;color:#888;margin-top:8px">✓ Con Supabase configurado, cualquier dispositivo que abra tu URL verá siempre el mismo tablero sincronizado.</p>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-primary" onclick="closeModal()">Entendido</button>
+    </div>
+  `, 'wide');
+}
+
+
+function saveSbAnonKey(){
+  const v=document.getElementById('sb-anon-inp')?.value.trim();
+  if(v){ localStorage.setItem('mediaboard_sb_anon',v); showToast('Anon Key guardada ✓'); }
+}
+
+function switchRepoTab(name, btn){
+  document.querySelectorAll('.repo-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.repo-tab-content').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('repo-tab-'+name)?.classList.add('active');
+}
+
+function copySql(){
+  const sql=document.getElementById('sql-block')?.textContent||'';
+  navigator.clipboard?.writeText(sql).then(()=>showToast('SQL copiado ✓')).catch(()=>showToast('Copia el texto manualmente'));
+}
+
+// ── FILTER STATE ──────────────────────────────────────────────────────────
+let activeFilters = { duration: null, genres: new Set() };
+let showPlatforms = true;   // toggle platform pills visibility
+let showRatings   = false;  // toggle TMDB rating overlay on cards
+
+const DURATION_FILTERS = [
+  { id:'game',  label:'Juegos',       test: c => c.mediaType==='game' },
+  { id:'series',label:'Series',       test: c => c.mediaType==='tv' },
+  { id:'ended', label:'Terminadas',    test: c => c.mediaType==='tv'&&c.ended===true },
+  { id:'ongoing',label:'En emisión',   test: c => c.mediaType==='tv'&&!c.ended },
+  { id:'lt30',  label:'Hasta 30 min', test: c => c.runtime&&c.runtime<=30 },
+  { id:'lt60',  label:'Hasta 60 min', test: c => c.runtime&&c.runtime<=60 },
+  { id:'lt90',  label:'Hasta 90 min', test: c => c.runtime&&c.runtime<=90 },
+  { id:'lt120', label:'Hasta 2h',     test: c => c.runtime&&c.runtime<=120 },
+  { id:'lt150', label:'Hasta 2h30',   test: c => c.runtime&&c.runtime<=150 },
+  { id:'gt150', label:'Más de 2h30',  test: c => c.runtime&&c.runtime>150 },
+];
+
+function cardMatchesFilters(card){
+  // Duration filter
+  if(activeFilters.duration){
+    const df=DURATION_FILTERS.find(f=>f.id===activeFilters.duration);
+    if(df&&!df.test(card)) return false;
+  }
+  // Genre filter (card must have ALL selected genres)
+  for(const g of activeFilters.genres){
+    if(!(card.genres||[]).includes(g)) return false;
+  }
+  return true;
+}
+
+function hasActiveFilters(){
+  return activeFilters.duration||activeFilters.genres.size>0;
+}
+
+
+function toggleShowPlatforms(){
+  showPlatforms=!showPlatforms;
+  document.querySelectorAll('.card-platforms').forEach(el=>{
+    el.style.display=showPlatforms?'':'none';
+  });
+  renderFilterBar();
+}
+
+function toggleShowRatings(){
+  showRatings=!showRatings;
+  renderFilterBar();
+  renderAll(); // re-render to show/hide rating overlays
+}
+
+function toggleDurationFilter(id){
+  activeFilters.duration = activeFilters.duration===id ? null : id;
+  renderFilterBar(); renderAll();
+}
+
+function toggleGenreFilter(genre){
+  if(activeFilters.genres.has(genre)) activeFilters.genres.delete(genre);
+  else activeFilters.genres.add(genre);
+  renderFilterBar(); renderAll();
+}
+
+function clearFilters(){
+  activeFilters.duration=null; activeFilters.genres=new Set();
+  renderFilterBar(); renderAll();
+}
+
+// Collect all genres present in the board
+function getAllGenres(){
+  const genres=new Set();
+  state.columns.forEach(col=>{
+    [...col.top10,...col.sections.flatMap(s=>s.cards)].forEach(card=>{
+      (card.genres||[]).forEach(g=>genres.add(g));
+    });
+  });
+  return [...genres].sort();
+}
+
+function renderFilterBar(){
+  setTimeout(adjustCanvasTop, 50);
+  const bar=document.getElementById('filter-bar');
+  if(!bar) return;
+  const genres=getAllGenres();
+  const hasActive=hasActiveFilters();
+
+  const platIcon=`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 2l-4 5-4-5"/></svg>`;
+  const starIcon=`<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+  bar.innerHTML=`
+    <div class="filter-group">
+      <span class="filter-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg></span>
+      ${DURATION_FILTERS.map(f=>`
+        <button class="filter-chip ${activeFilters.duration===f.id?'active':''}" onclick="toggleDurationFilter('${f.id}')">${f.label}</button>
+      `).join('')}
+    </div>
+    <button class="filter-toggle-btn ${showPlatforms?'on':'off'}" onclick="toggleShowPlatforms()" title="Mostrar/ocultar plataformas">
+      ${platIcon} Plataformas
+    </button>
+    <button class="filter-toggle-btn ${showRatings?'on':'off'}" onclick="toggleShowRatings()" title="Mostrar/ocultar nota TMDB en las cards">
+      ${starIcon} Nota
+    </button>
+    ${genres.length?`
+    <div class="filter-group">
+      <span class="filter-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="6" width="15" height="12" rx="2"/><polygon points="23 6 16 10 16 14 23 18 23 6"/><circle cx="6" cy="12" r="2"/></svg></span>
+      ${genres.map(g=>`
+        <button class="filter-chip ${activeFilters.genres.has(g)?'active':''}" onclick="toggleGenreFilter('${escHtml(g)}')">${escHtml(g)}</button>
+      `).join('')}
+    </div>`:''}
+    ${hasActive?`<button class="filter-clear" onclick="clearFilters()">✕ Borrar filtros</button>`:''}
+  `;
+}
+// ── FETCH DETAILS (runtime / seasons) ────────────────────────────────────
+async function fetchDetails(tmdbId, mediaType){
+  const key=getKey(); if(!key||!tmdbId) return null;
+  try{
+    const ctrl=new AbortController(); setTimeout(()=>ctrl.abort(),4000);
+    const type=mediaType==='tv'?'tv':'movie';
+    const r=await fetch(`${TMDB_BASE}/${type}/${tmdbId}?api_key=${key}&language=es-ES`,{signal:ctrl.signal});
+    if(!r.ok) return null;
+    const d=await r.json();
+    const genres=(d.genres||[]).map(g=>g.name);
+    const rating=typeof d.vote_average==='number'&&d.vote_average>0 ? Math.round(d.vote_average*10)/10 : null;
+    if(mediaType==='tv') return { seasons:d.number_of_seasons||null, genres, ended: d.status==='Ended'||d.status==='Canceled', rating };
+    else return { runtime:d.runtime||null, genres, rating };
+  }catch{return null;}
+}
+
+// ── UID ───────────────────────────────────────────────────────────────────
+function uid(){ return '_'+Math.random().toString(36).slice(2,9); }
+
+// ── COLUMN MANAGEMENT ─────────────────────────────────────────────────────
+function promptAddColumn(){
+  showModal(`
+    <button class="modal-close-x" onclick="closeModal()">✕</button>
+    <h2>Nueva sección</h2>
+    <input class="modal-input" id="col-name-inp" placeholder="Nombre (ej: Terror, Anime…)">
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-primary" onclick="confirmAddColumn()">Crear</button>
+    </div>`);
+  setTimeout(()=>document.getElementById('col-name-inp')?.focus(),50);
+}
+function confirmAddColumn(){
+  const name=document.getElementById('col-name-inp')?.value.trim(); if(!name) return;
+  state.columns.push({id:uid(),name,top10:[],sections:[{id:uid(),name,cards:[]}]});
+  closeModal(); renderAll();
+}
+function moveColumn(colId,dir){
+  const idx=state.columns.findIndex(c=>c.id===colId), nxt=idx+dir;
+  if(nxt<0||nxt>=state.columns.length) return;
+  [state.columns[idx],state.columns[nxt]]=[state.columns[nxt],state.columns[idx]];
+  renderAll();
+}
+function renameColumn(colId){
+  const col=state.columns.find(c=>c.id===colId); if(!col) return;
+  const secId=col.sections[0]?.id||'';
+  const curBg=col.sections[0]?.bgColor||'';
+  showModal(`
+    <button class="modal-close-x" onclick="closeModal()">✕</button>
+    <h2>Editar sección</h2>
+    <label class="key-field-label">Nombre</label>
+    <input class="modal-input" id="rename-inp" value="${escHtml(col.name)}">
+    <label class="key-field-label" style="margin-top:14px">Color de fondo</label>
+    <div class="color-picker-row" id="color-picker-row">
+      <div class="color-swatch none-swatch" style="background:" title="Sin color" data-color="" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#dbeafe" title="Azul" data-color="#dbeafe" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#bfdbfe" title="Azul medio" data-color="#bfdbfe" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#e0e7ff" title="Índigo" data-color="#e0e7ff" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#ede9fe" title="Violeta" data-color="#ede9fe" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#fce7f3" title="Rosa" data-color="#fce7f3" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#fecdd3" title="Coral" data-color="#fecdd3" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#ffedd5" title="Naranja" data-color="#ffedd5" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#fde68a" title="Ámbar" data-color="#fde68a" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#fef9c3" title="Amarillo" data-color="#fef9c3" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#d9f99d" title="Lima" data-color="#d9f99d" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#dcfce7" title="Verde" data-color="#dcfce7" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#a7f3d0" title="Menta" data-color="#a7f3d0" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#ccfbf1" title="Teal" data-color="#ccfbf1" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#bae6fd" title="Cielo" data-color="#bae6fd" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#e5e7eb" title="Gris claro" data-color="#e5e7eb" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#f3e8ff" title="Lavanda" data-color="#f3e8ff" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#fdf2f8" title="Blush" data-color="#fdf2f8" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#ecfdf5" title="Menta claro" data-color="#ecfdf5" onclick="selectSectionColor(this)"></div>
+<div class="color-swatch" style="background:#6b7280" title="Gris" data-color="#6b7280" onclick="selectSectionColor(this)"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-primary" onclick="confirmRename('${colId}','${secId}')">Guardar</button>
+    </div>`);
+  window._selectedSectionColor=curBg;
+  // Mark current selected
+  setTimeout(()=>{
+    document.querySelectorAll('.color-swatch').forEach(sw=>{
+      const swColor=sw.dataset.color||'';
+      sw.classList.toggle('selected', swColor===curBg);
+    });
+    const i=document.getElementById('rename-inp');i?.focus();i?.select();
+  },50);
+}
+function selectSectionColor(el){
+  document.querySelectorAll('.color-swatch').forEach(sw=>sw.classList.remove('selected'));
+  el.classList.add('selected');
+  window._selectedSectionColor=el.dataset.color||'';
+}
+function confirmRename(colId,secId){
+  const name=document.getElementById('rename-inp')?.value.trim(); if(!name) return;
+  const col=state.columns.find(c=>c.id===colId); if(!col) return;
+  col.name=name;
+  // Only update bgColor on the first section (top10 bg), not name
+  if(col.sections[0]) col.sections[0].bgColor=window._selectedSectionColor||'';
+  closeModal(); renderAll();
+}
+function confirmDeleteCol(colId){
+  showModal(`<div class="confirm-modal">
+    <button class="modal-close-x" onclick="closeModal()">✕</button>
+    <h2>¿Eliminar sección?</h2><p>Se eliminarán todos sus títulos.</p>
+    <div class="modal-actions" style="justify-content:center">
+      <button class="btn-secondary" onclick="closeModal()">No</button>
+      <button class="btn-primary" onclick="doDeleteCol('${colId}')">Sí</button>
+    </div></div>`);
+}
+function doDeleteCol(colId){ state.columns=state.columns.filter(c=>c.id!==colId); closeModal(); renderAll(); }
+
+// ── SEARCH ────────────────────────────────────────────────────────────────
+function openSearchModal(colId,sectionId,inTop10){
+  showModal(`
+    <button class="modal-close-x" onclick="closeModal()">✕</button>
+    <h2>${inTop10?'Añadir al Top 10':'Buscar título'}</h2>
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <button class="btn-primary" style="flex:1;font-size:12px;padding:6px" onclick="switchSearchMode('movie')">🎬 Película / Serie</button>
+      <button class="btn-secondary" style="flex:1;font-size:12px;padding:6px" onclick="switchSearchMode('game')">🎮 Videojuego</button>
+    </div>
+    <input class="modal-input" id="search-inp" placeholder="Escribe el nombre…">
+    <div id="search-results-area"></div>
+    <div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">Cancelar</button></div>`);
+  window._searchMode='movie';
+  window._searchColId=colId; window._searchSecId=sectionId; window._searchInTop10=inTop10;
+  const inp=document.getElementById('search-inp');
+  let db;
+  inp?.addEventListener('input',()=>{
+    clearTimeout(db);
+    db=setTimeout(()=>{
+      if(window._searchMode==='game') doGameSearch(inp.value,window._searchColId,window._searchSecId,window._searchInTop10);
+      else doSearch(inp.value,window._searchColId,window._searchSecId,window._searchInTop10);
+    },420);
+  });
+  setTimeout(()=>inp?.focus(),50);
+}
+function switchSearchMode(mode){
+  window._searchMode=mode;
+  const btns=document.querySelectorAll('.modal-box button[onclick^="switchSearchMode"]');
+  btns.forEach(b=>{ b.className=b.getAttribute('onclick').includes(mode)?'btn-primary':'btn-secondary'; b.style.flex='1'; b.style.fontSize='12px'; b.style.padding='6px'; });
+  document.getElementById('search-results-area').innerHTML='';
+  const inp=document.getElementById('search-inp');
+  if(inp){inp.value='';inp.placeholder=mode==='game'?'Nombre del juego…':'Escribe el nombre…';inp.focus();}
+}
+async function doSearch(query,colId,sectionId,inTop10){
+  const area=document.getElementById('search-results-area');
+  if(!area||!query.trim()) return;
+  area.innerHTML='<p class="no-results">Buscando <span class="spinner"></span></p>';
+  const results=await tmdbSearch(query);
+  if(!document.getElementById('search-results-area')) return;
+  if(!results||!results.length){area.innerHTML='<p class="no-results">Sin resultados para "'+escHtml(query)+'"</p>';return;}
+  area.innerHTML='<div class="search-results">'+results.map((r,i)=>{
+    const title=r.title||r.name||'?';
+    const year=(r.release_date||r.first_air_date||'').slice(0,4);
+    const icon=r.media_type==='movie'?'🎬':'📺';
+    const poster=r.poster_path?IMG_BASE+r.poster_path:'';
+    return `<div class="search-result-item" onclick="pickResult('${colId}','${sectionId}',${i},${inTop10})">
+      <img src="${poster}" alt="">
+      <div><div class="result-title">${icon} ${escHtml(title)}</div>
+      <div class="result-meta">${year} · ${r.media_type==='movie'?'Película':'Serie'}</div></div></div>`;
+  }).join('')+'</div>';
+  window._searchResults=results;
+}
+async function pickResult(colId,sectionId,idx,inTop10){
+  const r=window._searchResults?.[idx]; if(!r) return;
+  const title=r.title||r.name||'?';
+  const year=(r.release_date||r.first_air_date||'').slice(0,4);
+  const poster=r.poster_path?IMG_BASE+r.poster_path:'';
+  const area=document.getElementById('search-results-area');
+  if(area) area.innerHTML='<p class="no-results">Cargando datos… <span class="spinner"></span></p>';
+  const [platforms,details]=await Promise.all([
+    fetchProviders(r.id,r.media_type),
+    fetchDetails(r.id,r.media_type)
+  ]);
+
+  // If filling an empty slot — replace it instead of pushing
+  if(window._fillSlotMode&&window._fillSlotTarget){
+    const target=window._fillSlotTarget;
+    window._fillSlotMode=false; window._fillSlotTarget=null;
+    const newCard={id:target.cardId,title,year,poster,platforms,tmdbId:r.id,mediaType:r.media_type,pending:false,genres:[],isEmpty:false};
+    if(details){
+      if(r.media_type==='tv'&&details.seasons) newCard.seasons=details.seasons;
+      if(r.media_type==='movie'&&details.runtime) newCard.runtime=details.runtime;
+      if(details.genres) newCard.genres=details.genres;
+      if(details.rating!==undefined&&details.rating!==null) newCard.rating=details.rating;
+      if(r.media_type==='tv'&&details.ended!==undefined) newCard.ended=details.ended;
+    }
+    const col=state.columns.find(c=>c.id===target.colId); if(!col) return;
+    if(target.inTop10){ const i=col.top10.findIndex(x=>x.id===target.cardId); if(i>=0) col.top10[i]=newCard; }
+    else{ const sec=col.sections.find(s=>s.id===target.secId); if(sec){ const i=sec.cards.findIndex(x=>x.id===target.cardId); if(i>=0) sec.cards[i]=newCard; } }
+    closeModal(); renderAll(); return;
+  }
+
+  // Normal add
+  const card={id:uid(),title,year,poster,platforms,tmdbId:r.id,mediaType:r.media_type,pending:false,genres:[]};
+  if(details){
+    if(r.media_type==='tv'&&details.seasons) card.seasons=details.seasons;
+    if(r.media_type==='tv'&&details.ended!==undefined) card.ended=details.ended;
+    if(details.rating!==undefined&&details.rating!==null) card.rating=details.rating;
+    if(r.media_type==='movie'&&details.runtime) card.runtime=details.runtime;
+    if(details.genres) card.genres=details.genres;
+  }
+  const col=state.columns.find(c=>c.id===colId); if(!col) return;
+  if(inTop10){
+    if(col.top10.length>=10){showToast('Top 10 lleno');return;}
+    col.top10.push(card);
+  } else {
+    const sec=col.sections.find(s=>s.id===sectionId); if(sec) sec.cards.push(card);
+  }
+  closeModal(); renderAll();
+}
+
+// ── DELETE — inline overlay on the card ──────────────────────────────────
+function showInlineDelete(btn,colId,sectionId,cardId,inTop10){
+  const card=btn.closest('.media-card'); if(!card) return;
+  // Remove any existing overlay
+  card.querySelectorAll('.delete-overlay').forEach(el=>el.remove());
+  const ov=document.createElement('div');
+  ov.className='delete-overlay';
+  ov.innerHTML=`<span class="delete-ov-label">¿Quitar?</span>
+    <button class="delete-ov-yes" onclick="event.stopPropagation();doDelete('${colId}','${sectionId}','${cardId}',${inTop10})">Sí</button>
+    <button class="delete-ov-no" onclick="event.stopPropagation();this.closest('.delete-overlay').remove()">No</button>`;
+  card.querySelector('.card-img-wrap').appendChild(ov);
+}
+function doDelete(colId,sectionId,cardId,inTop10){
+  const col=state.columns.find(c=>c.id===colId); if(!col) return;
+  if(inTop10) col.top10=col.top10.filter(c=>c.id!==cardId);
+  else{const s=col.sections.find(s=>s.id===sectionId);if(s) s.cards=s.cards.filter(c=>c.id!==cardId);}
+  closeModal(); renderAll();
+}
+
+// ── PENDING TOGGLE ────────────────────────────────────────────────────────
+function togglePending(colId,sectionId,cardId,inTop10){
+  const col=state.columns.find(c=>c.id===colId); if(!col) return;
+  const card=inTop10
+    ?col.top10.find(x=>x.id===cardId)
+    :col.sections.find(s=>s.id===sectionId)?.cards.find(x=>x.id===cardId);
+  if(card){ card.pending=!card.pending; renderAll(); }
+}
+
+// ── STREAMING PICKER ──────────────────────────────────────────────────────
+function getCard(colId,sectionId,cardId,inTop10){
+  const col=state.columns.find(c=>c.id===colId);
+  return inTop10?col?.top10.find(x=>x.id===cardId):col?.sections.find(s=>s.id===sectionId)?.cards.find(x=>x.id===cardId);
+}
+function openStreamingPicker(colId,sectionId,cardId,inTop10){
+  const card=getCard(colId,sectionId,cardId,inTop10); if(!card) return;
+  const opts=PICKER_PLATFORMS.map(p=>{
+    const sel=(card.platforms||[]).some(x=>x.id===p.id);
+    return `<div class="streaming-option ${sel?'selected':''}" id="sopt-${p.id}" onclick="togglePlatform('${p.id}','${escHtml(p.name)}','${p.logo}')">
+      <img src="${p.logo}" alt="${p.name}"><span>${p.name}</span></div>`;
+  }).join('');
+  showModal(`
+    <button class="modal-close-x" onclick="closeModal()">✕</button>
+    <h2>¿Dónde se puede ver?</h2>
+    <div class="streaming-picker">${opts}</div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-primary" onclick="savePlatforms('${colId}','${sectionId}','${cardId}',${inTop10})">Guardar</button>
+    </div>`);
+  window._editPlats=JSON.parse(JSON.stringify(card.platforms||[]));
+}
+function togglePlatform(pid,name,logo){
+  const arr=window._editPlats, idx=arr.findIndex(x=>x.id===pid);
+  if(idx>-1) arr.splice(idx,1); else arr.push({id:pid,name,logo});
+  document.getElementById('sopt-'+pid)?.classList.toggle('selected',arr.some(x=>x.id===pid));
+}
+function savePlatforms(colId,sectionId,cardId,inTop10){
+  const card=getCard(colId,sectionId,cardId,inTop10);
+  if(card) card.platforms=[...window._editPlats];
+  closeModal(); renderAll();
+}
+
+// ── MODALS ────────────────────────────────────────────────────────────────
+function showModal(html, extraCls=''){ document.getElementById('modal-container').innerHTML=`<div class="modal-overlay" onclick="overlayClose(event)"><div class="modal-box ${extraCls}">${html}</div></div>`; }
+function closeModal(){ document.getElementById('modal-container').innerHTML=''; }
+function overlayClose(e){ if(e.target.classList.contains('modal-overlay')) closeModal(); }
+
+// ── RENDER ────────────────────────────────────────────────────────────────
+function renderAll(){
+  const container=document.getElementById('columns-container');
+  container.querySelectorAll('.genre-column').forEach(el=>el.remove());
+  const addBtn=document.getElementById('add-col-btn');
+  state.columns.forEach(col=>{
+    const el=document.createElement('div');
+    el.className='genre-column'; el.dataset.colId=col.id;
+    el.innerHTML=renderColumn(col);
+    container.insertBefore(el,addBtn);
+  });
+  setupDrag();
+  renderFilterBar();
+  scheduleSave();
+}
+
+function renderColumn(col){
+  const isFirst=state.columns[0]?.id===col.id;
+  const isLast=state.columns[state.columns.length-1]?.id===col.id;
+  // Render top10 rows — each row max 5, add-btn always separate row
+  const top10rows=chunkArray(col.top10,5);
+  let top10Html='';
+  if(col.top10.length===0){
+    top10Html=`<div class="card-row" data-col="${col.id}" data-zone="top10" data-rowri="0">
+      <div class="add-card" onclick="openSearchModal('${col.id}','',true)">+<span>Añadir</span></div></div>`;
+  } else {
+    const lastT10Full=top10rows[top10rows.length-1].length===5;
+    top10Html=top10rows.map((row,ri)=>{
+      const zone=ri===0?'top10':'top10b';
+      const isLast=ri===top10rows.length-1;
+      const addBtn=isLast&&!lastT10Full&&col.top10.length<10?`<div class="add-card" onclick="openSearchModal('${col.id}','',true)">+<span>Añadir</span></div>`:'';
+      return `<div class="card-row" data-col="${col.id}" data-zone="${zone}" data-rowri="${ri}">${row.map((card,ci)=>renderCard(card,col.id,null,true,ri*5+ci)).join('')}${addBtn}</div>`;
+    }).join('');
+    if(lastT10Full&&col.top10.length<10){
+      const zone=top10rows.length===1?'top10':'top10b';
+      top10Html+=`<div class="card-row" data-col="${col.id}" data-zone="${zone}" data-rowri="${top10rows.length}"><div class="add-card" onclick="openSearchModal('${col.id}','',true)">+<span>Añadir</span></div></div>`;
+    }
+  }
+  return `
+    <div class="col-inner">
+      <div class="col-header" draggable="true" data-col-drag="${col.id}">
+        <div class="col-title-row">
+          <span class="col-drag-handle" title="Arrastrar para reordenar">⠿</span>
+          <span class="col-title">${escHtml(col.name)}</span>
+          <button class="col-rename-btn" onclick="renameColumn('${col.id}')" title="Renombrar">✎</button>
+        </div>
+        <button class="col-delete-btn" onclick="confirmDeleteCol('${col.id}')">✕</button>
+      </div>
+      <div class="combined-card">
+        <div class="top10-section" style="background:${col.sections[0]?.bgColor||'transparent'}">
+          <div class="top10-title">TOP 10 ${escHtml(col.name).toUpperCase()} <span class="badge">TO WATCH</span></div>
+          ${top10Html}
+        </div>
+        <div class="card-divider"></div>
+        ${col.sections.map((sec,si)=>`
+          ${si>0?'<div class="sec-divider"></div>':''}
+          ${renderSection(sec,col.id)}
+        `).join('')}
+        <div class="add-section-row" style="background:${col.sections[col.sections.length-1]?.bgColor||'transparent'};padding-top:0">
+          <button class="add-section-btn" onclick="addSection('${col.id}')">+ Nueva subsección</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderSection(sec,colId){
+  const rows=chunkArray(sec.cards,5);
+  const lastFull=rows.length>0&&rows[rows.length-1].length===5;
+  let html;
+  if(rows.length===0){
+    html=`<div class="card-row" data-col="${colId}" data-sec="${sec.id}" data-zone="grid" data-rowri="0"><div class="add-card" onclick="openSearchModal('${colId}','${sec.id}',false)">+<span>Añadir</span></div></div>`;
+  } else {
+    html=rows.map((row,ri)=>{
+      const isLast=ri===rows.length-1;
+      const addBtn=isLast&&!lastFull?`<div class="add-card" onclick="openSearchModal('${colId}','${sec.id}',false)">+<span>Añadir</span></div>`:'';
+      return `<div class="card-row" data-col="${colId}" data-sec="${sec.id}" data-zone="grid" data-rowri="${ri}">${row.map(card=>renderCard(card,colId,sec.id,false)).join('')}${addBtn}</div>`;
+    }).join('');
+    if(lastFull){
+      html+=`<div class="card-row" data-col="${colId}" data-sec="${sec.id}" data-zone="grid" data-rowri="${rows.length}"><div class="add-card" onclick="openSearchModal('${colId}','${sec.id}',false)">+<span>Añadir</span></div></div>`;
+    }
+  }
+  return `<div class="genre-section" data-sec="${sec.id}" style="background:${sec.bgColor||'transparent'}">
+    <div class="sec-header">
+      <span class="sec-title">${escHtml(sec.name)}</span>
+      <div class="sec-actions">
+        <button class="sec-rename-btn" onclick="renameSection('${colId}','${sec.id}')" title="Renombrar / color">✎</button>
+        <button class="sec-delete-btn" onclick="confirmDeleteSection('${colId}','${sec.id}')" title="Eliminar subsección">✕</button>
+      </div>
+    </div>
+    ${html}
+  </div>`;
+}
+
+function renderCard(card,colId,sectionId,inTop10,rank){
+  const secId=sectionId||'', top10f=inTop10?'true':'false';
+
+  // Empty slot — functional add card that replaces itself when filled
+  if(card.isEmpty){
+    return `<div class="media-card" data-card-id="${card.id}" data-col="${colId}" data-sec="${secId}" data-top10="${top10f}" draggable="true">
+      <button class="delete-btn" onclick="event.stopPropagation();showInlineDelete(this,'${colId}','${secId}','${card.id}',${top10f})">✕</button>
+      <div class="add-card" onclick="event.stopPropagation();fillEmptySlot('${colId}','${secId}','${card.id}',${top10f})" style="height:var(--th);">+<span>Añadir</span></div>
+    </div>`;
+  }
+
+  const platforms=card.platforms||[];
+  // Filter dimming
+  const dimmed=hasActiveFilters()&&!cardMatchesFilters(card);
+
+  // Platform pills
+  let platHtml='';
+  const clockSvg=`<svg viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>`;
+  const pendCls=card.pending?'active':'';
+  const clockBtn=`<button class="pending-btn ${pendCls}" title="${card.pending?'Quitar pendiente':'Sin estrenar / pendiente'}" onclick="event.stopPropagation();togglePending('${colId}','${secId}','${card.id}',${top10f})">${clockSvg}</button>`;
+  if(card.mediaType==='game'){
+    // Games: show console platforms as plain pills, no streaming picker
+    const allGplats=(card.gamePlatforms||[]);
+    const gplats=allGplats.slice(0,3);
+    const extraG=allGplats.length-3;
+    const abbrev=p=>p.replace('Family Computer Disk System','FDS').replace('Family Computer','Famicom').replace('Nintendo Entertainment System','NES').replace('Super Nintendo Entertainment System','SNES').replace('Nintendo 64','N64').replace('Nintendo Switch','Switch').replace('Nintendo 3DS','3DS').replace('Nintendo DS','DS').replace('Game Boy Advance','GBA').replace('Game Boy Color','GBC').replace('PlayStation 5','PS5').replace('PlayStation 4','PS4').replace('PlayStation 3','PS3').replace('PlayStation 2','PS2').replace('PlayStation Portable','PSP').replace('Xbox Series X|S','Xbox SX').replace('PC (Microsoft Windows)','PC');
+    if(gplats.length){
+      const morePill=extraG>0?`<span class="platform-pill platform-pill-more" style="cursor:pointer;border-style:dashed;background:#d1cdc7;color:#333;font-weight:700" title="${escHtml(allGplats.slice(3).map(abbrev).join(', '))}" onclick="event.stopPropagation();showAllPlatforms('${colId}','${secId}','${card.id}',${top10f})">+${extraG}</span>`:'';
+      platHtml=gplats.map(p=>`<span class="platform-pill" style="cursor:default" title="${escHtml(p)}"><span>${escHtml(abbrev(p))}</span></span>`).join('')+morePill+clockBtn;
+    } else {
+      platHtml=clockBtn;
+    }
+  } else if(platforms.length){
+    platHtml=platforms.map(p=>{
+      const logo=p.logo?`<img src="${p.logo}" alt="">`:''
+      return `<span class="platform-pill" onclick="event.stopPropagation();openStreamingPicker('${colId}','${secId}','${card.id}',${top10f})" title="${escHtml(p.name)}">${logo}<span>${escHtml(p.name)}</span></span>`;
+    }).join('')+clockBtn;
+  } else {
+    platHtml=`<span class="add-platform-pill" onclick="event.stopPropagation();openStreamingPicker('${colId}','${secId}','${card.id}',${top10f})">+ dónde ver</span>${clockBtn}`;
+  }
+
+  // Meta line
+  let metaStr=escHtml(card.year||'');
+  let extraInfo='';
+  const noMeta=!card.runtime&&!card.seasons&&!card.ttbMain&&card.tmdbId;
+
+  if(card.mediaType==='game'){
+    // HLTB-style times
+    const fh=s=>s?formatHours(s):null;
+    const main=fh(card.ttbMain), sides=fh(card.ttbMainSides), comp=fh(card.ttbComplete);
+    if(main||sides||comp){
+      extraInfo=`<div class="hltb-times">
+        ${main?`<div class="hltb-row"><span class="hltb-label">Main Story</span><span class="hltb-val">${main}</span></div>`:''}
+        ${sides?`<div class="hltb-row"><span class="hltb-label">Main + Sides</span><span class="hltb-val">${sides}</span></div>`:''}
+        ${comp?`<div class="hltb-row"><span class="hltb-label">Completionist</span><span class="hltb-val">${comp}</span></div>`:''}
+      </div>`;
+    }
+
+  } else {
+    if(card.runtime) metaStr+=` · ${card.runtime} min`;
+    else if(card.seasons) metaStr+=` · ${card.seasons} temp.`;
+  }
+
+  let typeBadge='';
+  if(card.mediaType==='game') typeBadge='<span class="card-type-badge game">JUEGO</span>';
+  else if(card.ended) typeBadge='<span class="card-type-badge" style="background:#555">FIN</span>';
+  const rankHtml=inTop10?`<div class="rank-num">${rank+1}</div>`:'';
+  const pendingOverlay=card.pending?`<div class="pending-label">PENDIENTE</div>`:'';
+  const pendingCls=card.pending?'pending':'';
+
+  const cardCls=[pendingCls,dimmed?'filter-dim':''].filter(Boolean).join(' ');
+  return `<div class="media-card ${cardCls}" draggable="true"
+    data-card-id="${card.id}" data-col="${colId}" data-sec="${secId}" data-top10="${top10f}">
+    <button class="delete-btn" onclick="event.stopPropagation();showInlineDelete(this,'${colId}','${secId}','${card.id}',${top10f})">✕</button>
+    <div class="card-img-wrap">
+      <img src="${escHtml(card.poster)}" alt="${escHtml(card.title)}" loading="lazy">
+      ${rankHtml}
+      ${pendingOverlay}
+      ${showRatings&&card.rating!=null?`<div class="card-rating"><svg width="13" height="13" viewBox="0 0 24 24" fill="#f59e0b" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>${card.rating}</div>`:''}
+      <button class="card-menu-btn" onclick="event.stopPropagation();openCardMenu(event,'${colId}','${secId}','${card.id}',${top10f})"><span></span><span></span><span></span></button>
+    </div>
+    <div class="card-info">
+      ${typeBadge}
+      <div class="card-title">${escHtml(card.title)}</div>
+      <div class="card-meta">${metaStr}${noMeta?` <button onclick="event.stopPropagation();reloadMeta('${colId}','${secId}','${card.id}',${top10f})" style="background:none;border:none;cursor:pointer;color:#aaa;font-size:10px;padding:0;line-height:1;" title="Cargar duración">↻</button>`:''}</div>
+      ${extraInfo}
+      <div class="card-platforms" style="${showPlatforms?'':' display:none'}">${platHtml}</div>
+    </div>
+  </div>`;
+}
+
+
+function filterTitleSearch(query){
+  const q=query.toLowerCase().trim();
+  document.querySelectorAll('.media-card').forEach(el=>{
+    const title=el.querySelector('.card-title')?.textContent?.toLowerCase()||'';
+    if(!q){ el.classList.remove('filter-dim'); return; }
+    if(title.includes(q)) el.classList.remove('filter-dim');
+    else el.classList.add('filter-dim');
+  });
+}
+
+function chunkArray(arr,size){
+  const out=[];
+  for(let i=0;i<arr.length;i+=size) out.push(arr.slice(i,i+size));
+  return out;
+}
+
+async function reloadMeta(colId,secId,cardId,inTop10){
+  const col=state.columns.find(c=>c.id===colId); if(!col) return;
+  const card=inTop10?col.top10.find(x=>x.id===cardId):col.sections.find(s=>s.id===secId)?.cards.find(x=>x.id===cardId);
+  if(!card||!card.tmdbId) return;
+  const details=await fetchDetails(card.tmdbId,card.mediaType);
+  if(details){
+    if(card.mediaType==='tv'&&details.seasons) card.seasons=details.seasons;
+    if(card.mediaType==='tv'&&details.ended!==undefined) card.ended=details.ended;
+    if(details.rating!==undefined&&details.rating!==null) card.rating=details.rating;
+    if(card.mediaType==='movie'&&details.runtime) card.runtime=details.runtime;
+    if(details.genres) card.genres=details.genres;
+  }
+  renderAll();
+}
+
+// ── CARD CONTEXT MENU ─────────────────────────────────────────────────────
+let _ctxMenu=null;
+function closeCardMenu(){ if(_ctxMenu){_ctxMenu.remove();_ctxMenu=null;} }
+document.addEventListener('click', closeCardMenu);
+
+function openCardMenu(e, colId, secId, cardId, inTop10){
+  closeCardMenu();
+  const card=getCard(colId,secId,cardId,inTop10); if(!card) return;
+
+  // Build "Move to" submenu from all sections
+  const sections=[];
+  state.columns.forEach(col=>{
+    col.sections.forEach(sec=>{
+      const isCurrent=!inTop10&&sec.id===secId&&col.id===colId;
+      if(!isCurrent) sections.push({colId:col.id,secId:sec.id,label:`${col.name}`});
+    });
+  });
+  const moveItems=sections.map(s=>
+    `<div class="card-ctx-sub-item" onclick="closeCardMenu();moveCardTo('${colId}','${secId}','${cardId}',${inTop10},'${s.colId}','${s.secId}')">${escHtml(s.label)}</div>`
+  ).join('');
+
+  const menu=document.createElement('div');
+  menu.className='card-context-menu';
+  menu.innerHTML=`
+    <div class="card-ctx-item" onclick="closeCardMenu();openMoveModal('${colId}','${secId}','${cardId}',${inTop10})">
+      <span class="ctx-icon">↪</span> Mover a…
+    </div>
+    <div class="card-ctx-sep"></div>
+    <div class="card-ctx-item" onclick="closeCardMenu();insertEmptySlot('${colId}','${secId}','${cardId}',${inTop10})">
+      <span class="ctx-icon">▭</span> Añadir hueco a la derecha
+    </div>
+    <div class="card-ctx-sep"></div>
+    ${card.mediaType==='game'?`
+    <div class="card-ctx-sep"></div>
+    <div class="card-ctx-item" onclick="closeCardMenu();editGameTimes('${colId}','${secId}','${cardId}',${inTop10})">
+      <span class="ctx-icon">⏱</span> Tiempos HLTB
+    </div>`:''}
+    <div class="card-ctx-sep"></div>
+    <div class="card-ctx-item" onclick="closeCardMenu();showCardInfo('${colId}','${secId}','${cardId}',${inTop10})">
+      <span class="ctx-icon">ℹ</span> Info
+    </div>
+  `;
+  document.body.appendChild(menu);
+  _ctxMenu=menu;
+
+  // Position near button
+  const rect=e.currentTarget.getBoundingClientRect();
+  let left=rect.right+4, top=rect.top;
+  if(left+170>window.innerWidth) left=rect.left-174;
+  if(top+120>window.innerHeight) top=window.innerHeight-130;
+  menu.style.left=left+'px'; menu.style.top=top+'px';
+  e.stopPropagation();
+}
+
+function openMoveModal(colId, secId, cardId, inTop10){
+  const card=getCard(colId,secId,cardId,inTop10); if(!card) return;
+  // Build list of all sections grouped by column
+  let html='';
+  state.columns.forEach(col=>{
+    const colSections=[];
+    // Top 10 option
+    const isCurrentTop10=inTop10&&col.id===colId;
+    colSections.push({colId:col.id, secId:'__top10__', label:'Top 10 '+col.name, current:isCurrentTop10});
+    col.sections.forEach(sec=>{
+      const isCurrent=!inTop10&&sec.id===secId&&col.id===colId;
+      colSections.push({colId:col.id, secId:sec.id, label:col.name, current:isCurrent});
+    });
+    html+=`<div style="margin-bottom:4px;font-size:10px;font-weight:700;color:#aaa;letter-spacing:.5px;text-transform:uppercase;padding:8px 0 4px">${escHtml(col.name)}</div>`;
+    colSections.forEach(s=>{
+      if(s.current){
+        html+=`<div style="padding:7px 10px;font-size:12px;color:#555;border-radius:6px;background:#f5f5f5;">✓ ${escHtml(s.label)} <span style="font-size:10px;color:#aaa">(actual)</span></div>`;
+      } else {
+        html+=`<div class="move-option" onclick="closeModal();moveCardTo('${colId}','${secId}','${cardId}',${inTop10},'${s.colId}','${s.secId}')">${escHtml(s.label)}</div>`;
+      }
+    });
+  });
+  showModal(`
+    <button class="modal-close-x" onclick="closeModal()">✕</button>
+    <h2>↪ Mover a…</h2>
+    <div style="max-height:340px;overflow-y:auto;padding-right:4px">${html}</div>
+    <div class="modal-actions"><button class="btn-cancel" onclick="closeModal()">Cancelar</button></div>
+  `);
+}
+
+function moveCardTo(srcColId, srcSecId, cardId, inTop10, tgtColId, tgtSecId){
+  const srcCol=state.columns.find(c=>c.id===srcColId); if(!srcCol) return;
+  let card;
+  if(inTop10){ card=srcCol.top10.find(x=>x.id===cardId); srcCol.top10=srcCol.top10.filter(x=>x.id!==cardId); }
+  else { const s=srcCol.sections.find(s=>s.id===srcSecId); if(!s) return; card=s.cards.find(x=>x.id===cardId); s.cards=s.cards.filter(x=>x.id!==cardId); }
+  if(!card) return;
+  const tgtCol=state.columns.find(c=>c.id===tgtColId); if(!tgtCol) return;
+  if(tgtSecId==='__top10__'){
+    if(tgtCol.top10.length<10) tgtCol.top10.push(card); else { showToast('Top 10 lleno'); return; }
+  } else {
+    const tgtSec=tgtCol.sections.find(s=>s.id===tgtSecId); if(tgtSec) tgtSec.cards.push(card);
+  }
+  renderAll(); showToast('Movido ✓');
+}
+
+
+function fillEmptySlot(colId, secId, cardId, inTop10){
+  // Open search modal; when a result is picked it replaces this empty slot
+  window._fillSlotTarget={colId, secId, cardId, inTop10};
+  openSearchModal(colId, secId, inTop10);
+  // Override pickResult to replace slot instead of pushing
+  window._fillSlotMode=true;
+}
+
+
+function insertEmptySlot(colId, secId, cardId, inTop10){
+  // Insert an empty placeholder card immediately to the right of the target card
+  const emptyCard={
+    id:uid(), title:'', year:'', poster:'', platforms:[], genres:[],
+    pending:false, mediaType:'empty', isEmpty:true
+  };
+  const col=state.columns.find(c=>c.id===colId); if(!col) return;
+  if(inTop10){
+    const idx=col.top10.findIndex(x=>x.id===cardId);
+    if(col.top10.length>=10){showToast('Top 10 lleno');return;}
+    col.top10.splice(idx+1,0,emptyCard);
+  } else {
+    const sec=col.sections.find(s=>s.id===secId); if(!sec) return;
+    const idx=sec.cards.findIndex(x=>x.id===cardId);
+    sec.cards.splice(idx+1,0,emptyCard);
+  }
+  renderAll(); showToast('Hueco añadido ✓');
+}
+
+async function showCardInfo(colId, secId, cardId, inTop10){
+  const card=getCard(colId,secId,cardId,inTop10); if(!card||!card.tmdbId) { showToast('Sin datos TMDB'); return; }
+  showModal('<button class="modal-close-x" onclick="closeModal()">✕</button><h2>Cargando info…</h2><div class="spinner" style="margin:20px auto;display:block"></div>');
+  const key=getKey(); if(!key) return;
+  try{
+    const type=card.mediaType==='tv'?'tv':'movie';
+    const r=await fetch(`${TMDB_BASE}/${type}/${card.tmdbId}/credits?api_key=${key}&language=es-ES`);
+    const d=await r.json();
+    const cast=(d.cast||[]).slice(0,8).map(a=>`
+      <div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f0ede8">
+        ${a.profile_path?`<img src="https://image.tmdb.org/t/p/w45${a.profile_path}" style="width:32px;height:32px;border-radius:50%;object-fit:cover">`:
+          '<div style="width:32px;height:32px;border-radius:50%;background:#eee;flex-shrink:0"></div>'}
+        <div>
+          <div style="font-size:12px;font-weight:600">${escHtml(a.name)}</div>
+          <div style="font-size:10px;color:#888">${escHtml(a.character||'')}</div>
+        </div>
+      </div>`).join('');
+    // Director or showrunner
+    const crew=d.crew||[];
+    const dir=crew.filter(x=>x.job==='Director'||x.job==='Executive Producer'||x.job==='Series Director').slice(0,3);
+    const dirHtml=dir.length?`<div style="font-size:12px;margin-bottom:12px"><strong>${card.mediaType==='tv'?'Showrunner / Creador':'Director'}:</strong> ${dir.map(x=>escHtml(x.name)).join(', ')}</div>`:'';
+    showModal(`
+      <button class="modal-close-x" onclick="closeModal()">✕</button>
+      <div style="display:flex;gap:14px;margin-bottom:14px">
+        <img src="${escHtml(card.poster)}" style="width:60px;height:90px;object-fit:cover;border-radius:6px;flex-shrink:0">
+        <div>
+          <h2 style="font-size:18px;margin-bottom:4px">${escHtml(card.title)}</h2>
+          <div style="font-size:12px;color:#888">${escHtml(card.year)}${card.runtime?' · '+card.runtime+' min':''}${card.seasons?' · '+card.seasons+' temp.':''}</div>
+        </div>
+      </div>
+      ${dirHtml}
+      <div style="font-size:12px;font-weight:700;margin-bottom:6px;color:#888;text-transform:uppercase;letter-spacing:.5px">Reparto principal</div>
+      ${cast||'<p style="color:#888;font-size:12px">Sin datos de reparto</p>'}
+    `);
+  }catch(e){ showToast('❌ Error cargando info: '+e.message); }
+}
+
+
+// ── RELOAD ALL METADATA ───────────────────────────────────────────────────
+async function reloadAllMeta(){
+  const key=getKey(); if(!key){ showToast('⚠️ Necesitas la API Key de TMDB'); return; }
+  // Collect all cards with tmdbId
+  const todos=[];
+  state.columns.forEach(col=>{
+    col.top10.forEach(card=>{ if(card.tmdbId&&card.mediaType!=='game'&&card.mediaType!=='empty') todos.push({card, arr:col.top10}); });
+    col.sections.forEach(sec=>sec.cards.forEach(card=>{ if(card.tmdbId&&card.mediaType!=='game'&&card.mediaType!=='empty') todos.push({card, arr:sec.cards}); }));
+  });
+  if(!todos.length){ showToast('Sin títulos que actualizar'); return; }
+  showToast('Recargando '+todos.length+' títulos…');
+  setSyncStatus('syncing','Actualizando…');
+  let done=0;
+  // Process in batches of 3 to avoid rate limiting
+  for(let i=0;i<todos.length;i+=3){
+    const batch=todos.slice(i,i+3);
+    await Promise.all(batch.map(async ({card})=>{
+      const details=await fetchDetails(card.tmdbId, card.mediaType);
+      if(details){
+        if(card.mediaType==='tv'&&details.seasons) card.seasons=details.seasons;
+        if(card.mediaType==='movie'&&details.runtime) card.runtime=details.runtime;
+        if(details.genres?.length) card.genres=details.genres;
+        if(details.rating!==undefined&&details.rating!==null) card.rating=details.rating;
+        if(card.mediaType==='tv'&&details.ended!==undefined) card.ended=details.ended;
+      }
+      done++;
+    }));
+    // Small pause between batches
+    if(i+3<todos.length) await new Promise(r=>setTimeout(r,300));
+  }
+  renderAll();
+  saveBoard();
+  showToast('✓ Actualizados '+done+' títulos');
+  setSyncStatus('synced','Guardado ✓');
+}
+
+
+// ── SECTION MANAGEMENT ────────────────────────────────────────────────────
+function addSection(colId){
+  showModal(`
+    <button class="modal-close-x" onclick="closeModal()">✕</button>
+    <h2>Nueva subsección</h2>
+    <input class="modal-input" id="new-sec-inp" placeholder="Nombre (ej: Slasher, Años 80…)">
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-primary" onclick="confirmAddSection('${colId}')">Crear</button>
+    </div>`
+    .replace('${colId}', colId)
+  );
+  setTimeout(()=>document.getElementById('new-sec-inp')?.focus(),50);
+}
+function confirmAddSection(colId){
+  const name=document.getElementById('new-sec-inp')?.value.trim(); if(!name) return;
+  const col=state.columns.find(c=>c.id===colId); if(!col) return;
+  col.sections.push({id:uid(), name, cards:[], bgColor:''});
+  closeModal(); renderAll();
+}
+
+function renameSection(colId, secId){
+  const col=state.columns.find(c=>c.id===colId); if(!col) return;
+  const sec=col.sections.find(s=>s.id===secId); if(!sec) return;
+  const curBg=sec.bgColor||'';
+
+  const COLORS=[
+    {hex:'',label:'Sin color'},{hex:'#dbeafe',label:'Azul'},{hex:'#bfdbfe',label:'Azul medio'},
+    {hex:'#e0e7ff',label:'Índigo'},{hex:'#ede9fe',label:'Violeta'},{hex:'#fce7f3',label:'Rosa'},
+    {hex:'#fecdd3',label:'Coral'},{hex:'#ffedd5',label:'Naranja'},{hex:'#fde68a',label:'Ámbar'},
+    {hex:'#fef9c3',label:'Amarillo'},{hex:'#d9f99d',label:'Lima'},{hex:'#dcfce7',label:'Verde'},
+    {hex:'#a7f3d0',label:'Menta'},{hex:'#ccfbf1',label:'Teal'},{hex:'#bae6fd',label:'Cielo'},
+    {hex:'#e5e7eb',label:'Gris claro'},{hex:'#f3e8ff',label:'Lavanda'},{hex:'#fdf2f8',label:'Blush'},
+    {hex:'#ecfdf5',label:'Menta claro'},{hex:'#6b7280',label:'Gris'},
+  ];
+  const swatches=COLORS.map(col=>`
+    <div class="color-swatch ${!col.hex?'none-swatch':''}" style="background:${col.hex}" title="${col.label}" data-color="${col.hex}" onclick="selectSectionColor(this)"></div>
+  `).join('');
+
+  showModal(`
+    <button class="modal-close-x" onclick="closeModal()">✕</button>
+    <h2>Editar subsección</h2>
+    <label class="key-field-label">Nombre</label>
+    <input class="modal-input" id="rename-sec-inp" value="${escHtml(sec.name)}">
+    <label class="key-field-label" style="margin-top:14px">Color de fondo</label>
+    <div class="color-picker-row">${swatches}</div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-primary" onclick="confirmRenameSection('${colId}','${secId}')">Guardar</button>
+    </div>`);
+  window._selectedSectionColor=curBg;
+  setTimeout(()=>{
+    document.querySelectorAll('.color-swatch').forEach(sw=>{
+      sw.classList.toggle('selected', (sw.dataset.color||'')===(curBg||''));
+    });
+    const i=document.getElementById('rename-sec-inp'); i?.focus(); i?.select();
+  },50);
+}
+function confirmRenameSection(colId, secId){
+  const name=document.getElementById('rename-sec-inp')?.value.trim(); if(!name) return;
+  const col=state.columns.find(c=>c.id===colId); if(!col) return;
+  const sec=col.sections.find(s=>s.id===secId); if(!sec) return;
+  sec.name=name;
+  sec.bgColor=window._selectedSectionColor||'';
+  closeModal(); renderAll();
+}
+
+function confirmDeleteSection(colId, secId){
+  const col=state.columns.find(c=>c.id===colId); if(!col) return;
+  if(col.sections.length<=1){ showToast('Debe haber al menos una subsección'); return; }
+  showModal(`<div class="confirm-modal">
+    <h2>¿Eliminar subsección?</h2><p>Se eliminarán todos sus títulos.</p>
+    <div class="modal-actions" style="justify-content:center">
+      <button class="btn-secondary" onclick="closeModal()">No</button>
+      <button class="btn-primary" onclick="doDeleteSection('${colId}','${secId}')">Sí</button>
+    </div></div>`);
+}
+function doDeleteSection(colId, secId){
+  const col=state.columns.find(c=>c.id===colId); if(!col) return;
+  col.sections=col.sections.filter(s=>s.id!==secId);
+  closeModal(); renderAll();
+}
+
+
+// ── LONG PRESS → card menu on touch ──────────────────────────────────────
+let _lpTimer=null, _lpCard=null;
+document.addEventListener('touchstart',e=>{
+  const btn=e.target.closest('.card-menu-btn');
+  if(btn){
+    // Normal tap on menu btn — handled by onclick
+    return;
+  }
+  const card=e.target.closest('.media-card');
+  if(!card) return;
+  _lpCard=card;
+  _lpTimer=setTimeout(()=>{
+    if(!_lpCard) return;
+    const menuBtn=_lpCard.querySelector('.card-menu-btn');
+    if(menuBtn){
+      // Simulate click with touch position
+      const touch=e.touches[0];
+      const fakeEvent={currentTarget:menuBtn, clientX:touch.clientX, clientY:touch.clientY, stopPropagation:()=>{}};
+      const colId=_lpCard.dataset.col, secId=_lpCard.dataset.sec||'';
+      const cardId=_lpCard.dataset.cardId, inTop10=_lpCard.dataset.top10==='true';
+      openCardMenu(fakeEvent,colId,secId,cardId,inTop10);
+    }
+    _lpCard=null;
+  },500);
+},{passive:true});
+document.addEventListener('touchend',()=>{ clearTimeout(_lpTimer); _lpCard=null; },{passive:true});
+document.addEventListener('touchmove',()=>{ clearTimeout(_lpTimer); _lpCard=null; },{passive:true});
+
+
+// ── IGDB DIAGNOSTIC ───────────────────────────────────────────────────────
+async function testIGDB(){
+  const clientId=getIGDBClientId(), clientSecret=getIGDBSecret();
+  if(!clientId||!clientSecret){
+    showModal('<button class="modal-close-x" onclick="closeModal()">✕</button><h2>🔧 Test IGDB</h2><p style="color:red;margin-top:8px">❌ No hay Client ID o Secret configurados.<br>Pulsa el botón IGDB en el topbar para configurarlos.</p><div class="modal-actions"><button class="btn-primary" onclick="closeModal()">OK</button></div>');
+    return;
+  }
+
+  showModal('<button class="modal-close-x" onclick="closeModal()">✕</button><h2>🔧 Test IGDB</h2><p id="test-log" style="font-family:monospace;font-size:11px;line-height:1.8;white-space:pre-wrap">Probando…</p>');
+
+  const log=(msg,color='#333')=>{
+    const p=document.getElementById('test-log');
+    if(p) p.innerHTML+='\n<span style="color:'+color+'">'+msg+'</span>';
+  };
+
+  // Step 1: Twitch token
+  log('1. Obteniendo token de Twitch…','#888');
+  try{
+    const r=await fetch(`https://id.twitch.tv/oauth2/token?client_id=${clientId}&client_secret=${clientSecret}&grant_type=client_credentials`,{method:'POST'});
+    const d=await r.json();
+    if(d.access_token){
+      log('   ✅ Token OK: '+d.access_token.slice(0,12)+'…','#2d6a4f');
+    } else {
+      log('   ❌ Sin token: '+JSON.stringify(d),'red');
+      return;
+    }
+  }catch(e){
+    log('   ❌ Error Twitch: '+e.message,'red');
+  }
+
+  // Step 2: Edge Function
+  log('\n2. Probando Edge Function Supabase…','#888');
+  log('   URL: '+SB_IGDB_PROXY,'#555');
+  try{
+    const r=await fetch(SB_IGDB_PROXY,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','apikey':(localStorage.getItem('mediaboard_sb_anon')||SB_KEY),'Authorization':'Bearer '+(localStorage.getItem('mediaboard_sb_anon')||SB_KEY)},
+      body:JSON.stringify({endpoint:'games',body:'search "zelda"; fields name; limit 2;',clientId,clientSecret})
+    });
+    log('   HTTP status: '+r.status+(r.ok?' ✅':' ❌'),'#333');
+    const text=await r.text();
+    log('   Respuesta: '+text.slice(0,200),'#333');
+    if(r.ok){
+      try{
+        const data=JSON.parse(text);
+        if(Array.isArray(data)&&data.length){
+          log('   ✅ IGDB funciona! Ejemplo: '+data[0].name,'#2d6a4f');
+        } else {
+          log('   ⚠️ Respuesta vacía o inesperada','orange');
+        }
+      }catch(e){ log('   ⚠️ No es JSON válido','orange'); }
+    }
+  }catch(e){
+    log('   ❌ Error Edge Function: '+e.message,'red');
+  }
+
+  // Step 3: Direct IGDB (will likely fail — that's expected)
+  log('\n3. IGDB directo (sin proxy)…','#888');
+  try{
+    const t=await fetch(`https://id.twitch.tv/oauth2/token?client_id=${clientId}&client_secret=${clientSecret}&grant_type=client_credentials`,{method:'POST'});
+    const td=await t.json();
+    const r=await fetch('https://api.igdb.com/v4/games',{
+      method:'POST',
+      headers:{'Client-ID':clientId,'Authorization':'Bearer '+td.access_token,'Content-Type':'text/plain'},
+      body:'search "zelda"; fields name; limit 1;'
+    });
+    if(r.ok) log('   ✅ CORS directo funciona desde este origen','#2d6a4f');
+    else log('   <span style="color:#aaa">✗ Bloqueado (HTTP '+r.status+') — normal, para eso usamos la Edge Function</span>');
+  }catch(e){
+    log('   <span style="color:#aaa">✗ Bloqueado por CORS — normal y esperado desde GitHub Pages ✅</span>');
+  }
+
+  log('\n— Diagnóstico completo —','#888');
+}
+
+
+function showAllPlatforms(colId,secId,cardId,inTop10){
+  const card=getCard(colId,secId,cardId,inTop10); if(!card) return;
+  const all=(card.gamePlatforms||[]);
+  showModal(`
+    <button class="modal-close-x" onclick="closeModal()">✕</button>
+    <h2>🎮 Plataformas</h2>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px">
+      ${all.map(p=>`<span class="platform-pill" style="cursor:default;padding:4px 8px;font-size:11px"><span>${escHtml(p)}</span></span>`).join('')}
+    </div>
+    <div class="modal-actions"><button class="btn-primary" onclick="closeModal()">Cerrar</button></div>
+  `);
+}
+
+
+function editGameTimes(colId, secId, cardId, inTop10){
+  const card=getCard(colId,secId,cardId,inTop10); if(!card) return;
+  const fh=s=>s?Math.round(s/3600*10)/10:'';
+  showModal(`
+    <button class="modal-close-x" onclick="closeModal()">✕</button>
+    <h2>⏱ Tiempos HLTB</h2>
+    <p style="font-size:12px;color:#888;margin-bottom:14px">Introduce los tiempos en horas desde <a href="https://howlongtobeat.com/game/${card.igdbId||''}" target="_blank" style="color:var(--accent2)">HowLongToBeat</a>. Puedes dejarlo en blanco.</p>
+    <label class="key-field-label">Main Story (horas)</label>
+    <input class="modal-input" id="ttb-main" type="number" step="0.5" min="0" placeholder="ej. 12.5" value="${card.ttbMain?Math.round(card.ttbMain/3600*10)/10:''}">
+    <label class="key-field-label" style="margin-top:10px">Main + Sides (horas)</label>
+    <input class="modal-input" id="ttb-sides" type="number" step="0.5" min="0" placeholder="ej. 20" value="${card.ttbMainSides?Math.round(card.ttbMainSides/3600*10)/10:''}">
+    <label class="key-field-label" style="margin-top:10px">Completionist (horas)</label>
+    <input class="modal-input" id="ttb-comp" type="number" step="0.5" min="0" placeholder="ej. 35" value="${card.ttbComplete?Math.round(card.ttbComplete/3600*10)/10:''}">
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-primary" onclick="saveGameTimes('${colId}','${secId}','${cardId}',${inTop10})">Guardar</button>
+    </div>
+  `);
+}
+
+function saveGameTimes(colId, secId, cardId, inTop10){
+  const card=getCard(colId,secId,cardId,inTop10); if(!card) return;
+  const toSec=v=>{ const n=parseFloat(v); return isNaN(n)||n<=0?null:Math.round(n*3600); };
+  card.ttbMain=toSec(document.getElementById('ttb-main')?.value);
+  card.ttbMainSides=toSec(document.getElementById('ttb-sides')?.value);
+  card.ttbComplete=toSec(document.getElementById('ttb-comp')?.value);
+  closeModal(); renderAll(); showToast('Tiempos guardados ✓');
+}
+
+function escHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ── DRAG & DROP ───────────────────────────────────────────────────────────
+let dragCard=null, dragColId=null;
+let dropLineEl=null, dropTargetRow=null, dropInsertIdx=null;
+
+function setupDrag(){
+  document.querySelectorAll('.media-card').forEach(el=>{
+    el.addEventListener('dragstart',onCardDragStart);
+    el.addEventListener('dragend',onCardDragEnd);
+  });
+  document.querySelectorAll('.card-row').forEach(row=>{
+    row.addEventListener('dragover',onRowDragOver);
+    row.addEventListener('dragleave',onRowDragLeave);
+    row.addEventListener('drop',onRowDrop);
+  });
+  document.querySelectorAll('.col-header[data-col-drag]').forEach(hdr=>{
+    hdr.addEventListener('dragstart',onColDragStart);
+    hdr.addEventListener('dragend',onColDragEnd);
+  });
+  document.querySelectorAll('.genre-column').forEach(col=>{
+    col.addEventListener('dragover',onColDragOver);
+    col.addEventListener('dragleave',onColDragLeave);
+    col.addEventListener('drop',onColDrop);
+  });
+}
+
+function onCardDragStart(e){
+  dragCard={colId:this.dataset.col,sectionId:this.dataset.sec,cardId:this.dataset.cardId,inTop10:this.dataset.top10==='true'};
+  e.dataTransfer.effectAllowed='move'; e.dataTransfer.setData('type','card');
+  setTimeout(()=>this.classList.add('dragging'),0);
+  e.stopPropagation();
+}
+function onCardDragEnd(){ this.classList.remove('dragging'); dragCard=null; clearDropLine(); }
+
+function clearDropLine(){
+  if(dropLineEl){dropLineEl.remove();dropLineEl=null;}
+  dropTargetRow=null; dropInsertIdx=null;
+}
+function onRowDragOver(e){
+  if(!dragCard) return; e.preventDefault(); e.stopPropagation();
+  const row=this;
+  const cards=[...row.querySelectorAll('.media-card')];
+  let insertIdx=cards.length;
+  for(let i=0;i<cards.length;i++){
+    const rect=cards[i].getBoundingClientRect();
+    if(e.clientX<rect.left+rect.width/2){insertIdx=i;break;}
+  }
+  if(dropTargetRow===row&&dropInsertIdx===insertIdx) return;
+  clearDropLine();
+  dropTargetRow=row; dropInsertIdx=insertIdx;
+  const line=document.createElement('div'); line.className='drop-line'; dropLineEl=line;
+  if(insertIdx>=cards.length){
+    const addCard=row.querySelector('.add-card');
+    if(addCard) row.insertBefore(line,addCard); else row.appendChild(line);
+  } else { row.insertBefore(line,cards[insertIdx]); }
+}
+function onRowDragLeave(e){ if(!dragCard) return; if(!this.contains(e.relatedTarget)) clearDropLine(); }
+function onRowDrop(e){
+  e.preventDefault(); e.stopPropagation();
+  if(!dragCard) return;
+  const row=this, tColId=row.dataset.col, tSecId=row.dataset.sec||'';
+  const zone=row.dataset.zone, inTop10Target=zone==='top10'||zone==='top10b';
+  const insertAt=dropInsertIdx??99;
+  clearDropLine();
+  const srcCol=state.columns.find(c=>c.id===dragCard.colId); if(!srcCol) return;
+  let srcCard;
+  if(dragCard.inTop10){
+    srcCard=srcCol.top10.find(c=>c.id===dragCard.cardId);
+    srcCol.top10=srcCol.top10.filter(c=>c.id!==dragCard.cardId);
+  } else {
+    const srcSec=srcCol.sections.find(s=>s.id===dragCard.sectionId); if(!srcSec) return;
+    srcCard=srcSec.cards.find(c=>c.id===dragCard.cardId);
+    srcSec.cards=srcSec.cards.filter(c=>c.id!==dragCard.cardId);
+  }
+  if(!srcCard) return;
+  const tCol=state.columns.find(c=>c.id===tColId); if(!tCol) return;
+  if(inTop10Target){
+    if(tCol.top10.length>=10){showToast('Top 10 lleno');return;}
+    const absIdx=Math.min(insertAt+(zone==='top10b'?5:0),tCol.top10.length);
+    tCol.top10.splice(absIdx,0,srcCard);
+  } else {
+    const tSec=tCol.sections.find(s=>s.id===tSecId); if(!tSec) return;
+    const rowIdx=parseInt(row.dataset.rowri||'0');
+    const absIdx=Math.min(rowIdx*5+insertAt,tSec.cards.length);
+    tSec.cards.splice(absIdx,0,srcCard);
+  }
+  dragCard=null; renderAll();
+}
+// ── Column drag with vertical red line indicator ──
+let colDropLineEl=null, colDropTarget=null, colDropBefore=null;
+
+function onColDragStart(e){
+  dragColId=this.dataset.colDrag;
+  e.dataTransfer.effectAllowed='move'; e.dataTransfer.setData('type','col');
+  setTimeout(()=>this.closest('.genre-column')?.classList.add('dragging-col'),0);
+}
+function onColDragEnd(){
+  this.closest('.genre-column')?.classList.remove('dragging-col');
+  clearColDropLine(); dragColId=null;
+}
+function clearColDropLine(){
+  if(colDropLineEl){
+    if(colDropLineEl.parentNode) colDropLineEl.parentNode.removeChild(colDropLineEl);
+    colDropLineEl=null;
+  }
+  colDropTarget=null; colDropBefore=null;
+}
+function onColDragOver(e){
+  if(!dragColId||dragCard) return; e.preventDefault(); e.stopPropagation();
+  const col=this;
+  if(col.dataset.colId===dragColId){ clearColDropLine(); return; }
+  const rect=col.getBoundingClientRect();
+  const center=rect.left+rect.width/2;
+  const DEAD=40;
+  if(e.clientX>center-DEAD&&e.clientX<center+DEAD) return;
+  const before=e.clientX<center;
+  if(colDropTarget===col&&colDropBefore===before) return;
+  // Position fixed line — no DOM insertion into container, no layout shift
+  if(!colDropLineEl){
+    const line=document.createElement('div'); line.className='col-drop-line';
+    document.body.appendChild(line); colDropLineEl=line;
+  }
+  colDropTarget=col; colDropBefore=before;
+  if(!colDropLineEl){
+    const line=document.createElement('div'); line.className='col-drop-line';
+    document.body.appendChild(line); colDropLineEl=line;
+  }
+  // Position: from canvas-wrapper top to bottom of viewport
+  const canvasTop=document.getElementById('canvas-wrapper')?.getBoundingClientRect().top||92;
+  colDropLineEl.style.top=canvasTop+'px';
+  colDropLineEl.style.bottom='0';
+  const x=before?rect.left-2:rect.right-1;
+  colDropLineEl.style.left=x+'px';
+}
+function onColDragLeave(e){
+  if(!dragColId) return;
+  if(!this.contains(e.relatedTarget)) clearColDropLine();
+}
+function onColDrop(e){
+  e.preventDefault(); e.stopPropagation();
+  if(!dragColId||dragCard) return;
+  const tCol=this; const before=colDropBefore;
+  clearColDropLine();
+  const tId=tCol.dataset.colId; if(!tId||tId===dragColId){ clearColDropLine(); dragColId=null; return; }
+  const fi=state.columns.findIndex(c=>c.id===dragColId);
+  let ti=state.columns.findIndex(c=>c.id===tId);
+  if(fi<0||ti<0) return;
+  const [m]=state.columns.splice(fi,1);
+  ti=state.columns.findIndex(c=>c.id===tId); // recalculate after splice
+  state.columns.splice(before?ti:ti+1,0,m);
+  dragColId=null; renderAll();
+}
+
+
+// ── EXPORT / IMPORT JSON ──────────────────────────────────────────────────
+function exportJSON(){
+  const data=JSON.stringify(state,null,2);
+  const blob=new Blob([data],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url;
+  a.download='mediaboard_'+new Date().toISOString().slice(0,10)+'.json';
+  a.click(); URL.revokeObjectURL(url);
+  showToast('Exportado ✓');
+}
+function importJSON(){
+  document.getElementById('import-file-input').click();
+}
+function handleImportFile(input){
+  const file=input.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    try{
+      const imported=JSON.parse(e.target.result);
+      if(!imported.columns) throw new Error('Formato inválido');
+      state=imported;
+      scheduleSave();
+      renderAll();
+      showToast('Importado ✓ ('+state.columns.length+' secciones)');
+    }catch(err){ showToast('❌ Error al importar: '+err.message); }
+    input.value='';
+  };
+  reader.readAsText(file);
+}
+// ── INIT ──────────────────────────────────────────────────────────────────
+window.onload=async ()=>{
+  applyCanvasTransform(); // init at 65% zoom with Figma engine
+  updateDots();
+  // Load from Supabase (falls back to localStorage if offline)
+  await loadFromSupabase();
+  renderAll();
+  renderFilterBar();
+};
 </script>
 </body>
 </html>
