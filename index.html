@@ -1260,7 +1260,7 @@ async function igdbSearch(query){
   }
 
   // Fallback: where name ~ contains (handles special chars)
-  const escaped=q.replace(/\/g,'\\').replace(/"/g,'\"');
+  const escaped=q.replace(/"/g,'\\"');
   const r2=await igdbQuery('games',
     `where name ~ *"${escaped}"*${extraWhere}; ${FIELDS}; sort rating desc; limit 8;`
   );
