@@ -1169,28 +1169,110 @@ async function igdbQuery(endpoint, body){
   }
 }
 
+function parseGameQuery(raw){
+  // Extract year (4-digit 19xx or 20xx) and platform hints from query
+  // e.g. "In the Hunt 1993" → {name:"In the Hunt", year:1993}
+  // e.g. "In the Hunt neo geo" → {name:"In the Hunt", platform:"neo geo"}
+  const PLATFORMS={
+    'neo geo':'Neo Geo','neogeo':'Neo Geo','arcade':'Arcade',
+    'snes':'Super Nintendo Entertainment System','nes':'Nintendo Entertainment System',
+    'n64':'Nintendo 64','gameboy':'Game Boy','gba':'Game Boy Advance',
+    'gb':'Game Boy','megadrive':'Sega Mega Drive/Genesis','genesis':'Sega Mega Drive/Genesis',
+    'master system':'Sega Master System','saturn':'Sega Saturn','dreamcast':'Dreamcast',
+    'ps1':'PlayStation','psx':'PlayStation','ps2':'PlayStation 2',
+    'ps3':'PlayStation 3','ps4':'PlayStation 4','ps5':'PlayStation 5',
+    'psp':'PlayStation Portable','vita':'PlayStation Vita',
+    'xbox':'Xbox','xbox360':'Xbox 360','xbox one':'Xbox One',
+    'pc':'PC (Microsoft Windows)','windows':'PC (Microsoft Windows)',
+    'switch':'Nintendo Switch','3ds':'Nintendo 3DS','ds':'Nintendo DS',
+    'wii':'Wii','wiiu':'Wii U','gamecube':'GameCube','n64':'Nintendo 64',
+    'atari':'Atari','amiga':'Amiga','dos':'DOS',
+  };
+  let name=raw.trim();
+  let year=null, platform=null;
+
+  // Extract year
+  const yearMatch=name.match(/(19\d{2}|20\d{2})/);
+  if(yearMatch){ year=parseInt(yearMatch[1]); name=name.replace(yearMatch[0],'').trim(); }
+
+  // Extract platform (check longest match first)
+  const lc=name.toLowerCase();
+  const sorted=Object.keys(PLATFORMS).sort((a,b)=>b.length-a.length);
+  for(const key of sorted){
+    if(lc.endsWith(' '+key)||lc.includes(' '+key+' ')){
+      platform=PLATFORMS[key];
+      name=name.replace(new RegExp('\\s+'+key+'\\s*$','i'),'').trim();
+      break;
+    }
+  }
+  return {name, year, platform};
+}
+
+function generateQueryVariants(q){
+  // Generate alternate spellings to maximize IGDB hits
+  const variants=new Set([q]);
+  // MegaMan → Mega Man and vice versa
+  const spaced=q.replace(/([a-z])([A-Z])/g,'$1 $2');
+  if(spaced!==q) variants.add(spaced);
+  const unspaced=q.replace(/(Mega)\s+(Man)/gi,'MegaMan')
+                   .replace(/(Pac)\s*(Man)/gi,'Pac-Man')
+                   .replace(/(Rock)\s*(Man)/gi,'Rockman')
+                   .replace(/(Spider)\s*(-?)\s*(Man)/gi,'Spider-Man');
+  if(unspaced!==q) variants.add(unspaced);
+  // Mega Man → Rockman (regional alias)
+  if(/mega\s*man/i.test(q)) variants.add(q.replace(/mega\s*man/gi,'Rockman'));
+  if(/rockman/i.test(q)) variants.add(q.replace(/rockman/gi,'Mega Man'));
+  // Castlevania → Akumajo Dracula
+  if(/castlevania/i.test(q)) variants.add(q.replace(/castlevania/gi,'Akumajo Dracula'));
+  // Remove subtitles after colon/dash for broader search
+  const noSub=q.replace(/\s*[:\-–]\s*.+$/,'').trim();
+  if(noSub&&noSub!==q&&noSub.length>3) variants.add(noSub);
+  // Remove roman numerals at end for series search
+  const noNum=q.replace(/\s+[IVX]+$/i,'').trim();
+  if(noNum&&noNum!==q&&noNum.length>3) variants.add(noNum);
+  return [...variants];
+}
+
 async function igdbSearch(query){
-  const q=query.replace(/"/g,"'").trim();
-  // Primary: search operator (best for normal names)
-  const r1=await igdbQuery('games',
-    `search "${q}"; fields id,name,cover.image_id,first_release_date,genres.name,platforms.name; limit 8;`
-  );
-  if(r1&&r1.length&&r1[0]?.name) return r1;
+  const {name, year, platform}=parseGameQuery(query);
+  const q=name.replace(/"/g,"'").trim();
+  const FIELDS='fields id,name,cover.image_id,first_release_date,genres.name,platforms.name';
 
-  // Fallback: where name ~ (case-insensitive contains) — handles special chars, accents
-  const escaped=q.replace(/\\/g,'\\\\').replace(/"/g,'\\"');
+  let extraWhere='';
+  if(year) extraWhere+=` & first_release_date >= ${Math.floor(new Date(year+'-01-01').getTime()/1000)} & first_release_date <= ${Math.floor(new Date(year+'-12-31').getTime()/1000)}`;
+
+  const filterByPlatform=(results)=>{
+    if(!platform||!results.length) return results;
+    const key=platform.toLowerCase().split(' ')[0];
+    const f=results.filter(r=>(r.platforms||[]).some(p=>p.name?.toLowerCase().includes(key)));
+    return f.length?f:results;
+  };
+
+  // Try all variants with search operator
+  const variants=generateQueryVariants(q);
+  for(const v of variants){
+    let body=extraWhere
+      ? `search "${v}"; ${FIELDS}; where (1=1${extraWhere}); limit 8;`
+      : `search "${v}"; ${FIELDS}; limit 8;`;
+    const r=await igdbQuery('games', body);
+    const results=filterByPlatform(r?.filter(x=>x?.name)||[]);
+    if(results.length) return results;
+  }
+
+  // Fallback: where name ~ contains (handles special chars)
+  const escaped=q.replace(/\/g,'\\').replace(/"/g,'\"');
   const r2=await igdbQuery('games',
-    `where name ~ *"${escaped}"*; fields id,name,cover.image_id,first_release_date,genres.name,platforms.name; sort rating desc; limit 8;`
+    `where name ~ *"${escaped}"*${extraWhere}; ${FIELDS}; sort rating desc; limit 8;`
   );
-  if(r2&&r2.length&&r2[0]?.name) return r2;
+  const res2=filterByPlatform(r2?.filter(x=>x?.name)||[]);
+  if(res2.length) return res2;
 
-  // Fallback 2: normalize diacritics and search again
-  const normalized=q.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  // Fallback: strip diacritics
+  const normalized=q.normalize('NFD').replace(/[̀-ͯ]/g,'');
   if(normalized!==q){
-    const r3=await igdbQuery('games',
-      `search "${normalized}"; fields id,name,cover.image_id,first_release_date,genres.name,platforms.name; limit 8;`
-    );
-    if(r3&&r3.length&&r3[0]?.name) return r3;
+    const r3=await igdbQuery('games', `search "${normalized}"; ${FIELDS}; limit 8;`);
+    const res3=r3?.filter(x=>x?.name)||[];
+    if(res3.length) return res3;
   }
 
   return [];
