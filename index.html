@@ -157,8 +157,8 @@
   .media-card .card-meta { font-size:12px; color:var(--text); font-weight:400; margin-bottom:4px; }
 
   /* Platform pills */
-  .card-platforms { display:flex; flex-wrap:wrap; gap:2px; align-items:center; }
-  .platform-pill { display:inline-flex; align-items:center; gap:2px; background:#f2efea; border:1px solid var(--border); border-radius:3px; padding:1px 4px; font-size:9px; font-weight:600; color:#555; cursor:pointer; transition:background .1s; max-width:var(--tw); overflow:hidden; }
+  .card-platforms { display:flex; flex-wrap:wrap; gap:2px; align-items:center; width:var(--tw); overflow:hidden; max-height:38px; }
+  .platform-pill { display:inline-flex; align-items:center; gap:2px; background:#f2efea; border:1px solid var(--border); border-radius:3px; padding:1px 4px; font-size:9px; font-weight:600; color:#555; cursor:pointer; transition:background .1s; max-width:calc(var(--tw) - 4px); overflow:hidden; flex-shrink:1; min-width:0; }
   .platform-pill img { width:11px; height:11px; object-fit:contain; flex-shrink:0; }
   .platform-pill span { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .platform-pill:hover { background:#e8e4de; }
@@ -1201,7 +1201,13 @@ function openRepoConfig(){
       <div class="key-steps">
         <div class="key-step"><span class="key-step-num">1</span><div class="key-step-body">Ve a <a href="https://supabase.com" target="_blank">supabase.com</a> → <strong>Start your project</strong> → regístrate con GitHub o email.</div></div>
         <div class="key-step"><span class="key-step-num">2</span><div class="key-step-body">Pulsa <strong>New project</strong>.<br>· Nombre: <code>mediaboard</code><br>· Region: <em>West EU (Ireland)</em> para España<br>· Contraseña: cualquiera, guárdala<br>Pulsa <strong>Create new project</strong> y espera ~1 min.</div></div>
-        <div class="key-step"><span class="key-step-num">3</span><div class="key-step-body">Ve a <strong>Settings → API</strong>.<br>· Copia la <strong>Project URL</strong> e intégrala en la constante <code>SB_URL</code> del código.<br>· En la pestaña <strong>"Legacy anon, service_role API keys"</strong> copia la <strong>anon key</strong> (empieza por <code>eyJ…</code>) y pégala abajo 👇</div></div>
+        <div class="key-step"><span class="key-step-num">3</span><div class="key-step-body">
+          Dentro de tu proyecto en supabase.com, busca el icono ⚙ en el menú lateral izquierdo → pulsa <strong>Settings</strong> → luego <strong>API</strong>.<br><br>
+          Verás dos valores que necesitas copiar e integrar en el código:<br>
+          · <strong>Project URL</strong> (ej. <code>https://xxxx.supabase.co</code>) → va en la constante <code>SB_URL</code><br>
+          · <strong>Publishable key</strong> (empieza por <code>sb_publishable_…</code>) → va en la constante <code>SB_KEY</code><br><br>
+          Para IGDB también necesitas la <strong>Anon Key</strong>: en esa misma página pulsa la pestaña <strong>"Legacy anon, service_role API keys"</strong> y copia el valor de la fila <strong>anon</strong> (empieza por <code>eyJ…</code>). Pégala en el paso 4.
+        </div></div>
       <div class="key-step"><span class="key-step-num">4</span><div class="key-step-body">
         <label class="key-field-label">Supabase Anon Key (eyJ…)</label>
         <input class="modal-input key-visible" id="sb-anon-inp" type="text" placeholder="eyJhbGciOiJIUzI1NiIs…" value="${escHtml(localStorage.getItem('mediaboard_sb_anon')||'')}">
@@ -1779,7 +1785,15 @@ function renderCard(card,colId,sectionId,inTop10,rank){
   const clockSvg=`<svg viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>`;
   const pendCls=card.pending?'active':'';
   const clockBtn=`<button class="pending-btn ${pendCls}" title="${card.pending?'Quitar pendiente':'Sin estrenar / pendiente'}" onclick="event.stopPropagation();togglePending('${colId}','${secId}','${card.id}',${top10f})">${clockSvg}</button>`;
-  if(platforms.length){
+  if(card.mediaType==='game'){
+    // Games: show console platforms as plain pills, no streaming picker
+    const gplats=(card.gamePlatforms||[]).slice(0,4);
+    if(gplats.length){
+      platHtml=gplats.map(p=>`<span class="platform-pill" style="cursor:default" title="${escHtml(p)}"><span>${escHtml(p)}</span></span>`).join('')+clockBtn;
+    } else {
+      platHtml=clockBtn;
+    }
+  } else if(platforms.length){
     platHtml=platforms.map(p=>{
       const logo=p.logo?`<img src="${p.logo}" alt="">`:''
       return `<span class="platform-pill" onclick="event.stopPropagation();openStreamingPicker('${colId}','${secId}','${card.id}',${top10f})" title="${escHtml(p.name)}">${logo}<span>${escHtml(p.name)}</span></span>`;
@@ -1804,9 +1818,7 @@ function renderCard(card,colId,sectionId,inTop10,rank){
         ${comp?`<div class="hltb-row"><span class="hltb-label">Completionist</span><span class="hltb-val">${comp}</span></div>`:''}
       </div>`;
     }
-    if(card.gamePlatforms?.length){
-      metaStr+=card.gamePlatforms.slice(0,2).map(p=>`<span style="font-size:9px;background:#eee;border-radius:3px;padding:1px 4px;margin-left:2px">${escHtml(p)}</span>`).join('');
-    }
+
   } else {
     if(card.runtime) metaStr+=` · ${card.runtime} min`;
     else if(card.seasons) metaStr+=` · ${card.seasons} temp.`;
