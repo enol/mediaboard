@@ -534,6 +534,7 @@
       <label>Zoom:</label>
       <input type="range" id="zoom-slider" min="40" max="100" value="65" step="5">
       <span id="zoom-val">65%</span>
+      <button class="topbar-btn secondary" onclick="resetView()" title="Centrar vista">⌖</button>
       <button class="topbar-btn secondary" onclick="reloadAllMeta()" title="Recargar duración, nota y géneros de todos los títulos">↻ Todo</button>
       <button class="topbar-btn secondary" onclick="exportJSON()">📤</button>
       <button class="topbar-btn secondary" onclick="importJSON()">📥</button>
@@ -658,6 +659,12 @@ let _spaceDown=false;
 let _touches=[], _pinchDist0=0, _pinchZ0=0, _pinchCx0=0, _pinchCy0=0;
 
 const MIN_Z=0.15, MAX_Z=2.0;
+
+
+function resetView(){
+  _cx=60; _cy=120; _cz=0.65;
+  applyCanvasTransform(true);
+}
 
 function applyCanvasTransform(animate=false){
   const w=document.getElementById('canvas-wrapper');
