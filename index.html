@@ -535,9 +535,7 @@
       <button class="topbar-key-btn" id="igdb-btn" onclick="openKeyModal('igdb')">
         <span class="dot" id="igdb-dot"></span> IGDB
       </button>
-      <button class="topbar-key-btn" id="rawg-btn" onclick="openKeyModal('rawg')">
-        <span class="dot" id="rawg-dot"></span> RAWG
-      </button>
+
       <button class="topbar-btn secondary" onclick="testIGDB()" style="font-size:11px;padding:5px 8px;" title="Probar conexión IGDB">🔧 Test IGDB</button>
       <button class="topbar-btn secondary" onclick="openRepoConfig()" style="font-size:11px;padding:5px 10px;">⚙ Repo Config</button>
       <label>Zoom:</label>
@@ -815,16 +813,11 @@ function updateDots(){
   const igdbDot=document.getElementById('igdb-dot'), igdbBtn=document.getElementById('igdb-btn');
   if(igdbDot) igdbDot.style.background=hasIgdb?'#4caf50':'#555';
   if(igdbBtn) igdbBtn.classList.toggle('active',hasIgdb);
-  // RAWG
-  const hasRawg=!!localStorage.getItem('mediaboard_key_rawg');
-  const rawgDot=document.getElementById('rawg-dot'), rawgBtn=document.getElementById('rawg-btn');
-  if(rawgDot) rawgDot.style.background=hasRawg?'#4caf50':'#555';
-  if(rawgBtn) rawgBtn.classList.toggle('active',hasRawg);
+
 }
 
 function openKeyModal(type='tmdb'){
   if(type==='igdb') { openIGDBModal(); return; }
-  if(type==='rawg') { openRAWGModal(); return; }
   // TMDB modal
   const currentKey=getKey('tmdb');
   showModal(`
@@ -851,44 +844,34 @@ function saveTMDBKey(){
   closeModal();
 }
 
+// ── HLTB via Supabase Edge Function ──────────────────────────────────────
+const HLTB_PROXY='https://sxpbsekgijvanylhqyaf.supabase.co/functions/v1/hltb-proxy';
 
-function openRAWGModal(){
-  const cur=localStorage.getItem('mediaboard_key_rawg')||'';
-  showModal(`
-    <button class="modal-close-x" onclick="closeModal()">✕</button>
-    <h2>🎮 RAWG API Key</h2>
-    <div class="key-steps">
-      <div class="key-step"><span class="key-step-num">1</span><div class="key-step-body">Ve a <a href="https://rawg.io/apidocs" target="_blank">rawg.io/apidocs</a> y pulsa <strong>"Get API Key"</strong>.</div></div>
-      <div class="key-step"><span class="key-step-num">2</span><div class="key-step-body">Regístrate con email o Google. Es gratuito.</div></div>
-      <div class="key-step"><span class="key-step-num">3</span><div class="key-step-body">Copia tu API key y pégala aquí:</div></div>
-    </div>
-    <input class="modal-input key-visible" id="rawg-key-inp" type="text" placeholder="Tu RAWG API key…" value="${escHtml(cur)}">
-    <p class="rawg-note">RAWG proporciona el tiempo medio de juego de la comunidad. Aparecerá automáticamente en las cards de juegos.</p>
-    <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeModal()">Cerrar</button>
-      <button class="btn-primary" onclick="saveRAWGKey()">Guardar</button>
-    </div>`);
-  setTimeout(()=>document.getElementById('rawg-key-inp')?.focus(),50);
-}
-function saveRAWGKey(){
-  const v=document.getElementById('rawg-key-inp')?.value.trim();
-  if(v){ localStorage.setItem('mediaboard_key_rawg',v); updateDots(); showToast('RAWG Key guardada ✓'); }
-  closeModal();
-}
-
-async function fetchRAWGPlaytime(gameName){
-  const key=localStorage.getItem('mediaboard_key_rawg'); if(!key) return null;
+async function fetchHLTBTimes(gameName){
+  const anonKey=localStorage.getItem('mediaboard_sb_anon')||SB_KEY;
   try{
-    const ctrl=new AbortController(); setTimeout(()=>ctrl.abort(),5000);
-    const r=await fetch(`https://api.rawg.io/api/games?key=${key}&search=${encodeURIComponent(gameName)}&page_size=3`,{signal:ctrl.signal});
+    const ctrl=new AbortController(); setTimeout(()=>ctrl.abort(),10000);
+    const r=await fetch(HLTB_PROXY,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','apikey':anonKey,'Authorization':'Bearer '+anonKey},
+      body:JSON.stringify({game:gameName}),
+      signal:ctrl.signal
+    });
     if(!r.ok) return null;
     const d=await r.json();
-    // Find best match by name similarity
-    const results=d.results||[];
-    const best=results.find(g=>g.name.toLowerCase()===gameName.toLowerCase())||results[0];
-    if(best&&best.playtime>0) return best.playtime; // hours
-    return null;
+    if(!d.found) return null;
+    return {
+      main: d.main||null,         // seconds
+      mainSides: d.mainSides||null,
+      completionist: d.completionist||null,
+    };
   }catch{return null;}
+}
+
+// Legacy alias for single-value callers
+async function fetchRAWGPlaytime(gameName){
+  const t=await fetchHLTBTimes(gameName);
+  return t?.main ? t.main/3600 : null;
 }
 
 function openIGDBModal(){
@@ -1395,15 +1378,18 @@ async function pickGame(colId,sectionId,idx,inTop10){
     const sec=col.sections.find(s=>s.id===sectionId); if(sec) sec.cards.push(card);
   }
   closeModal(); renderAll();
-  // Async: fetch RAWG playtime and update card
-  if(localStorage.getItem('mediaboard_key_rawg')){
-    fetchRAWGPlaytime(title).then(hours=>{
-      if(hours){
-        const c2=getCard(colId,sectionId,card.id,inTop10);
-        if(c2){ c2.ttbMain=hours*3600; renderAll(); }
+  // Async: fetch HLTB times
+  fetchHLTBTimes(title).then(t=>{
+    if(t){
+      const c2=getCard(colId,sectionId,card.id,inTop10);
+      if(c2){
+        if(t.main) c2.ttbMain=t.main;
+        if(t.mainSides) c2.ttbMainSides=t.mainSides;
+        if(t.completionist) c2.ttbComplete=t.completionist;
+        renderAll();
       }
-    });
-  }
+    }
+  });
 }
 
 
@@ -1456,6 +1442,7 @@ CREATE POLICY "allow_all" ON mediaboard
       </div>
       <div class="key-steps">
         <div class="key-step"><span class="key-step-num">5</span><div class="key-step-body">Pulsa <strong>Run</strong>. Verás un mensaje de éxito. La tabla ya está lista para sincronizar tu MediaBoard.</div></div>
+      <div class="key-step"><span class="key-step-num">6</span><div class="key-step-body">Para tiempos automáticos de juegos (HLTB), crea una Edge Function llamada <strong>hltb-proxy</strong> en Supabase → Edge Functions → Open Editor. El código lo tienes en las instrucciones de configuración inicial.</div></div>
       </div>
       <p style="font-size:12px;color:#888;margin-top:8px">✓ Una vez hecho esto, el indicador de sync en el topbar pasará a verde al cargar la página.</p>
     </div>
@@ -1953,15 +1940,18 @@ async function pickResult(colId,sectionId,idx,inTop10){
     const sec=col.sections.find(s=>s.id===sectionId); if(sec) sec.cards.push(card);
   }
   closeModal(); renderAll();
-  // Async: fetch RAWG playtime and update card
-  if(localStorage.getItem('mediaboard_key_rawg')){
-    fetchRAWGPlaytime(title).then(hours=>{
-      if(hours){
-        const c2=getCard(colId,sectionId,card.id,inTop10);
-        if(c2){ c2.ttbMain=hours*3600; renderAll(); }
+  // Async: fetch HLTB times
+  fetchHLTBTimes(title).then(t=>{
+    if(t){
+      const c2=getCard(colId,sectionId,card.id,inTop10);
+      if(c2){
+        if(t.main) c2.ttbMain=t.main;
+        if(t.mainSides) c2.ttbMainSides=t.mainSides;
+        if(t.completionist) c2.ttbComplete=t.completionist;
+        renderAll();
       }
-    });
-  }
+    }
+  });
 }
 
 // ── DELETE — inline overlay on the card ──────────────────────────────────
@@ -2181,9 +2171,20 @@ function renderCard(card,colId,sectionId,inTop10,rank){
   const noMeta=!card.runtime&&!card.seasons&&!card.ttbMain&&card.tmdbId;
 
   if(card.mediaType==='game'){
-    // Show time inline like movies: "2018 · 12h"
-    const t=card.ttbMain||card.ttbMainSides||card.ttbComplete;
-    if(t) metaStr+=` · ${formatHours(t)}`;
+    const fh=s=>s?formatHours(s):null;
+    const main=fh(card.ttbMain), sides=fh(card.ttbMainSides), comp=fh(card.ttbComplete);
+    if(main||sides||comp){
+      // Show inline if only main, table if multiple
+      if(main&&!sides&&!comp){
+        metaStr+=` · ${main}`;
+      } else {
+        extraInfo=`<div class="hltb-times">
+          ${main?`<div class="hltb-row"><span class="hltb-label">Main</span><span class="hltb-val">${main}</span></div>`:''}
+          ${sides?`<div class="hltb-row"><span class="hltb-label">+ Sides</span><span class="hltb-val">${sides}</span></div>`:''}
+          ${comp?`<div class="hltb-row"><span class="hltb-label">100%</span><span class="hltb-val">${comp}</span></div>`:''}
+        </div>`;
+      }
+    }
   } else {
     if(card.runtime) metaStr+=` · ${card.runtime} min`;
     else if(card.seasons) metaStr+=` · ${card.seasons} temp.`;
@@ -2459,16 +2460,19 @@ async function reloadAllMeta(){
     if(i+3<tmdbCards.length) await new Promise(r=>setTimeout(r,300));
   }
 
-  // Game cards — fetch RAWG playtime
-  const hasRawg=!!localStorage.getItem('mediaboard_key_rawg');
-  if(hasRawg&&gameCards.length){
-    for(let i=0;i<gameCards.length;i+=3){
-      await Promise.all(gameCards.slice(i,i+3).map(async card=>{
-        const hours=await fetchRAWGPlaytime(card.title);
-        if(hours) card.ttbMain=hours*3600;
+  // Game cards — fetch HLTB times
+  if(gameCards.length){
+    for(let i=0;i<gameCards.length;i+=2){
+      await Promise.all(gameCards.slice(i,i+2).map(async card=>{
+        const t=await fetchHLTBTimes(card.title);
+        if(t){
+          if(t.main) card.ttbMain=t.main;
+          if(t.mainSides) card.ttbMainSides=t.mainSides;
+          if(t.completionist) card.ttbComplete=t.completionist;
+        }
         done++;
       }));
-      if(i+3<gameCards.length) await new Promise(r=>setTimeout(r,300));
+      if(i+2<gameCards.length) await new Promise(r=>setTimeout(r,500));
     }
   }
 
