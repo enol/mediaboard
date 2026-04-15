@@ -2127,7 +2127,7 @@ function renderCard(card,colId,sectionId,inTop10,rank){
   if(card.mediaType==='game'){
     const clockSvg=`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:2px;cursor:pointer"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>`;
     const hltbUrl=`https://howlongtobeat.com/?q=${encodeURIComponent(card.title||'')}`;
-    metaStr+=` · <span onclick="event.stopPropagation();openHLTBModal('${escHtml(card.title||'')}','${hltbUrl}')" style="cursor:pointer" title="Ver en HowLongToBeat">${clockSvg}</span>`;
+    metaStr+=` · <span onclick="event.stopPropagation();window.open('https://howlongtobeat.com/?q='+encodeURIComponent(card.title||'')','${hltbUrl}')" style="cursor:pointer" title="Ver en HowLongToBeat">${clockSvg}</span>`;
   } else {
     if(card.runtime) metaStr+=` · ${card.runtime} min`;
     else if(card.seasons) metaStr+=` · ${card.seasons} temp.`;
@@ -2231,7 +2231,7 @@ function openCardMenu(e, colId, secId, cardId, inTop10){
     </div>
     ${card.mediaType==='game'?`
     <div class="card-ctx-sep"></div>
-    <div class="card-ctx-item" onclick="closeCardMenu();openHLTBModal(getCard('${colId}','${secId}','${cardId}',${inTop10})?.title||'','https://howlongtobeat.com/?q='+encodeURIComponent(getCard('${colId}','${secId}','${cardId}',${inTop10})?.title||''))">
+    <div class="card-ctx-item" onclick="closeCardMenu();window.open('https://howlongtobeat.com/?q='+encodeURIComponent(getCard('${colId}','${secId}','${cardId}',${inTop10})?.title||'','https://howlongtobeat.com/?q='+encodeURIComponent(getCard('${colId}','${secId}','${cardId}',${inTop10})?.title||''))">
       <span class="ctx-icon">⏱</span> Ver en HLTB
     </div>`:''}
     ${card.isManual||card.mediaType==='game'?`
