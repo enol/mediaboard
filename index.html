@@ -526,15 +526,15 @@
     .filter-toggle-btn { padding:5px 14px; font-size:12px; }
     .filter-clear { padding:5px 16px; font-size:12px; }
 
-    /* Topbar — always show all buttons, no hamburger */
-    #topbar-controls { display:flex !important; flex-wrap:wrap; gap:6px; }
-    #topbar-menu-btn { display:none !important; }
-    #topbar-main { height:auto; padding:8px 12px; flex-wrap:wrap; gap:6px; }
-    #topbar h1 { font-size:20px; }
-
-    /* Topbar buttons bigger */
-    .topbar-key-btn { font-size:12px; padding:7px 12px; }
-    .topbar-btn { font-size:12px; padding:7px 12px; }
+    /* Topbar mobile — compact single row */
+    #topbar-main { height:52px; padding:0 12px; flex-wrap:nowrap; }
+    #topbar h1 { font-size:18px; }
+    #topbar-controls { display:none !important; }
+    #title-search-wrap { display:none !important; }
+    #topbar-menu-btn { display:flex !important; }
+    /* Sync status minimal */
+    #sync-label { display:none; }
+    .sync-dot { width:10px; height:10px; }
 
     /* Filter bar wraps */
     #filter-bar { flex-wrap:wrap; gap:6px; padding:8px 12px; }
@@ -641,6 +641,10 @@
     <button id="topbar-menu-btn" onclick="toggleTopbarDrawer()">☰</button>
   </div>
   <div id="topbar-drawer">
+    <div class="drawer-row" style="justify-content:space-between;padding:4px 0 8px">
+      <span style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:#fff;letter-spacing:1px">Configuración</span>
+      <button onclick="toggleTopbarDrawer()" style="background:none;border:none;color:#aaa;font-size:18px;cursor:pointer">✕</button>
+    </div>
     <div class="drawer-row">
       <button class="topbar-key-btn" onclick="openKeyModal('tmdb')">
         <span class="dot" id="tmdb-dot2"></span> TMDB
@@ -648,14 +652,28 @@
       <button class="topbar-key-btn" onclick="openKeyModal('igdb')">
         <span class="dot" id="igdb-dot2"></span> IGDB
       </button>
-      <button class="topbar-btn secondary" onclick="openRepoConfig()" style="font-size:11px;padding:5px 10px;">⚙ Repo Config</button>
     </div>
     <div class="drawer-row">
-      <label>Zoom:</label>
-      <input type="range" id="zoom-slider2" min="40" max="100" value="65" step="5">
-      <span id="zoom-val2">65%</span>
-      <button class="topbar-btn secondary" onclick="exportJSON()">📤 Exportar</button>
-      <button class="topbar-btn secondary" onclick="importJSON()">📥 Importar</button>
+      <button class="topbar-btn secondary" onclick="openRepoConfig();toggleTopbarDrawer()" style="font-size:12px">⚙ Repo Config</button>
+      <button class="topbar-btn secondary" onclick="testIGDB();toggleTopbarDrawer()" style="font-size:12px">🔧 Test IGDB</button>
+    </div>
+    <div class="drawer-row" style="align-items:center">
+      <label style="color:#aaa;font-size:12px">Zoom:</label>
+      <input type="range" id="zoom-slider2" min="40" max="100" value="65" step="5" style="flex:1">
+      <span id="zoom-val2" style="color:#aaa;font-size:11px;min-width:36px">65%</span>
+    </div>
+    <div class="drawer-row">
+      <button class="topbar-btn secondary" onclick="resetView();toggleTopbarDrawer()" style="flex:1">⌖ Centrar</button>
+      <button class="topbar-btn secondary" onclick="reloadAllMeta();toggleTopbarDrawer()" style="flex:1">↻ Todo</button>
+    </div>
+    <div class="drawer-row">
+      <button class="topbar-btn secondary" onclick="exportJSON()" style="flex:1">📤 Exportar</button>
+      <button class="topbar-btn secondary" onclick="importJSON()" style="flex:1">📥 Importar</button>
+    </div>
+    <div class="drawer-row">
+      <input id="title-search-drawer" type="text" placeholder="Buscar título…"
+        style="flex:1;background:#2a2a2a;border:1px solid #444;color:#fff;font-size:12px;padding:8px 10px;border-radius:4px;font-family:'DM Sans',sans-serif;outline:none;"
+        oninput="filterTitleSearch(this.value)">
     </div>
   </div>
 </div>
@@ -784,16 +802,28 @@ function resetView(){
   applyCanvasTransform(true);
 }
 
+let _rafPending=false;
 function applyCanvasTransform(animate=false){
   const w=document.getElementById('canvas-wrapper');
   if(!w) return;
-  if(animate) w.style.transition='transform .12s ease';
-  else w.style.transition='none';
-  w.style.transform=`translate(${_cx}px,${_cy}px) scale(${_cz})`;
-  // Update topbar zoom display
-  const pct=Math.round(_cz*100);
-  document.getElementById('zoom-val').textContent=pct+'%';
-  document.getElementById('zoom-slider').value=Math.max(40,Math.min(100,pct));
+  if(animate){
+    w.style.transition='transform .12s ease';
+    w.style.transform=`translate(${_cx}px,${_cy}px) scale(${_cz})`;
+    const pct=Math.round(_cz*100);
+    document.getElementById('zoom-val').textContent=pct+'%';
+    document.getElementById('zoom-slider').value=Math.max(40,Math.min(100,pct));
+    return;
+  }
+  if(_rafPending) return;
+  _rafPending=true;
+  requestAnimationFrame(()=>{
+    _rafPending=false;
+    w.style.transition='none';
+    w.style.transform=`translate(${_cx}px,${_cy}px) scale(${_cz})`;
+    const pct=Math.round(_cz*100);
+    document.getElementById('zoom-val').textContent=pct+'%';
+    document.getElementById('zoom-slider').value=Math.max(40,Math.min(100,pct));
+  });
 }
 
 function setCanvasZoom(newZ, pivotX, pivotY){
@@ -864,35 +894,42 @@ window.addEventListener('mouseup',e=>{
   }
 });
 
-// ── Touch — two-finger pan + pinch zoom ──
+// ── Touch — two-finger pan + pinch zoom (clean, no drift) ──
+let _pinchStartMidX=0, _pinchStartMidY=0;
+
 document.getElementById('canvas-viewport')?.addEventListener('touchstart',e=>{
-  _touches=[...e.touches];
   if(e.touches.length===2){
-    const dx=e.touches[0].clientX-e.touches[1].clientX;
-    const dy=e.touches[0].clientY-e.touches[1].clientY;
+    const t0=e.touches[0], t1=e.touches[1];
+    const dx=t0.clientX-t1.clientX, dy=t0.clientY-t1.clientY;
     _pinchDist0=Math.hypot(dx,dy);
     _pinchZ0=_cz;
     _pinchCx0=_cx; _pinchCy0=_cy;
+    // Store initial midpoint in CANVAS coordinates
+    _pinchStartMidX=(t0.clientX+t1.clientX)/2;
+    _pinchStartMidY=(t0.clientY+t1.clientY)/2;
   }
+  _touches=[...e.touches];
 },{passive:true});
 
 document.getElementById('canvas-viewport')?.addEventListener('touchmove',e=>{
   if(e.touches.length===2){
     e.preventDefault();
-    const dx=e.touches[0].clientX-e.touches[1].clientX;
-    const dy=e.touches[0].clientY-e.touches[1].clientY;
+    const t0=e.touches[0], t1=e.touches[1];
+    const dx=t0.clientX-t1.clientX, dy=t0.clientY-t1.clientY;
     const dist=Math.hypot(dx,dy);
-    const midX=(e.touches[0].clientX+e.touches[1].clientX)/2;
-    const midY=(e.touches[0].clientY+e.touches[1].clientY)/2;
+    const midX=(t0.clientX+t1.clientX)/2;
+    const midY=(t0.clientY+t1.clientY)/2;
+
     const newZ=Math.max(MIN_Z,Math.min(MAX_Z,_pinchZ0*(dist/_pinchDist0)));
-    // Pan delta from pinch midpoint movement vs start
-    const startMidX=(_touches[0].clientX+_touches[1].clientX)/2;
-    const startMidY=(_touches[0].clientY+_touches[1].clientY)/2;
-    const panDx=midX-startMidX, panDy=midY-startMidY;
-    // Apply zoom around midpoint
-    const dz=newZ/_cz;
-    _cx=midX-(midX-_cx)*dz+panDx*0.3;
-    _cy=midY-(midY-_cy)*dz+panDy*0.3;
+
+    // Pan from initial midpoint
+    const panDx=midX-_pinchStartMidX;
+    const panDy=midY-_pinchStartMidY;
+
+    // Zoom around initial pinch midpoint (no drift)
+    const dz=newZ/_pinchZ0;
+    _cx=_pinchCx0 - (_pinchStartMidX-_pinchCx0)*(dz-1) + panDx;
+    _cy=_pinchCy0 - (_pinchStartMidY-_pinchCy0)*(dz-1) + panDy;
     _cz=newZ;
     applyCanvasTransform();
   }
