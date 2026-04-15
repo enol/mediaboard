@@ -391,8 +391,6 @@
   .add-section-btn:hover { border-color:var(--accent); color:var(--accent); background:#fff5f5; }
 
 
-  /* RAWG key modal */
-  .rawg-note { font-size:11px; color:#888; margin-top:6px; line-height:1.5; }
 
   /* GAME CARD extras */
   .hltb-times { display:flex; flex-direction:column; gap:1px; margin-top:3px; }
@@ -844,35 +842,6 @@ function saveTMDBKey(){
   closeModal();
 }
 
-// ── HLTB via Supabase Edge Function ──────────────────────────────────────
-const HLTB_PROXY='https://sxpbsekgijvanylhqyaf.supabase.co/functions/v1/hltb-proxy';
-
-async function fetchHLTBTimes(gameName){
-  const anonKey=localStorage.getItem('mediaboard_sb_anon')||SB_KEY;
-  try{
-    const ctrl=new AbortController(); setTimeout(()=>ctrl.abort(),10000);
-    const r=await fetch(HLTB_PROXY,{
-      method:'POST',
-      headers:{'Content-Type':'application/json','apikey':anonKey,'Authorization':'Bearer '+anonKey},
-      body:JSON.stringify({game:gameName}),
-      signal:ctrl.signal
-    });
-    if(!r.ok) return null;
-    const d=await r.json();
-    if(!d.found) return null;
-    return {
-      main: d.main||null,         // seconds
-      mainSides: d.mainSides||null,
-      completionist: d.completionist||null,
-    };
-  }catch{return null;}
-}
-
-// Legacy alias for single-value callers
-async function fetchRAWGPlaytime(gameName){
-  const t=await fetchHLTBTimes(gameName);
-  return t?.main ? t.main/3600 : null;
-}
 
 function openIGDBModal(){
   const curId=getIGDBClientId(), curSecret=getIGDBSecret();
@@ -1378,18 +1347,6 @@ async function pickGame(colId,sectionId,idx,inTop10){
     const sec=col.sections.find(s=>s.id===sectionId); if(sec) sec.cards.push(card);
   }
   closeModal(); renderAll();
-  // Async: fetch HLTB times
-  fetchHLTBTimes(title).then(t=>{
-    if(t){
-      const c2=getCard(colId,sectionId,card.id,inTop10);
-      if(c2){
-        if(t.main) c2.ttbMain=t.main;
-        if(t.mainSides) c2.ttbMainSides=t.mainSides;
-        if(t.completionist) c2.ttbComplete=t.completionist;
-        renderAll();
-      }
-    }
-  });
 }
 
 
@@ -1940,18 +1897,6 @@ async function pickResult(colId,sectionId,idx,inTop10){
     const sec=col.sections.find(s=>s.id===sectionId); if(sec) sec.cards.push(card);
   }
   closeModal(); renderAll();
-  // Async: fetch HLTB times
-  fetchHLTBTimes(title).then(t=>{
-    if(t){
-      const c2=getCard(colId,sectionId,card.id,inTop10);
-      if(c2){
-        if(t.main) c2.ttbMain=t.main;
-        if(t.mainSides) c2.ttbMainSides=t.mainSides;
-        if(t.completionist) c2.ttbComplete=t.completionist;
-        renderAll();
-      }
-    }
-  });
 }
 
 // ── DELETE — inline overlay on the card ──────────────────────────────────
@@ -2173,17 +2118,23 @@ function renderCard(card,colId,sectionId,inTop10,rank){
   if(card.mediaType==='game'){
     const fh=s=>s?formatHours(s):null;
     const main=fh(card.ttbMain), sides=fh(card.ttbMainSides), comp=fh(card.ttbComplete);
+    const clockSvg=`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:2px"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>`;
+    const hltbUrl=`https://howlongtobeat.com/?q=${encodeURIComponent(card.title||'')}`;
     if(main||sides||comp){
-      // Show inline if only main, table if multiple
+      // Show times + clock link to HLTB
       if(main&&!sides&&!comp){
-        metaStr+=` · ${main}`;
+        metaStr+=` · <a href="${hltbUrl}" target="_blank" onclick="event.stopPropagation()" style="color:inherit;text-decoration:none" title="Ver en HowLongToBeat">${clockSvg}${main}</a>`;
       } else {
         extraInfo=`<div class="hltb-times">
           ${main?`<div class="hltb-row"><span class="hltb-label">Main</span><span class="hltb-val">${main}</span></div>`:''}
-          ${sides?`<div class="hltb-row"><span class="hltb-label">+ Sides</span><span class="hltb-val">${sides}</span></div>`:''}
+          ${sides?`<div class="hltb-row"><span class="hltb-label">+Sides</span><span class="hltb-val">${sides}</span></div>`:''}
           ${comp?`<div class="hltb-row"><span class="hltb-label">100%</span><span class="hltb-val">${comp}</span></div>`:''}
+          <a href="${hltbUrl}" target="_blank" onclick="event.stopPropagation()" style="font-size:9px;color:var(--text-muted);text-decoration:none;opacity:.7" title="Ver en HowLongToBeat">${clockSvg} HLTB</a>
         </div>`;
       }
+    } else {
+      // No time data — just clock link
+      metaStr+=` · <a href="${hltbUrl}" target="_blank" onclick="event.stopPropagation()" style="color:var(--text-muted);text-decoration:none;opacity:.8" title="Ver en HowLongToBeat">${clockSvg}</a>`;
     }
   } else {
     if(card.runtime) metaStr+=` · ${card.runtime} min`;
@@ -2288,8 +2239,8 @@ function openCardMenu(e, colId, secId, cardId, inTop10){
     </div>
     ${card.mediaType==='game'?`
     <div class="card-ctx-sep"></div>
-    <div class="card-ctx-item" onclick="closeCardMenu();editGameTimes('${colId}','${secId}','${cardId}',${inTop10})">
-      <span class="ctx-icon">⏱</span> Tiempos HLTB
+    <div class="card-ctx-item" onclick="closeCardMenu();window.open('https://howlongtobeat.com/?q='+encodeURIComponent(getCard('${colId}','${secId}','${cardId}',${inTop10})?.title||''),'_blank')">
+      <span class="ctx-icon">⏱</span> Ver en HLTB
     </div>`:''}
     ${card.isManual||card.mediaType==='game'?`
     <div class="card-ctx-sep"></div>
@@ -2460,21 +2411,7 @@ async function reloadAllMeta(){
     if(i+3<tmdbCards.length) await new Promise(r=>setTimeout(r,300));
   }
 
-  // Game cards — fetch HLTB times
-  if(gameCards.length){
-    for(let i=0;i<gameCards.length;i+=2){
-      await Promise.all(gameCards.slice(i,i+2).map(async card=>{
-        const t=await fetchHLTBTimes(card.title);
-        if(t){
-          if(t.main) card.ttbMain=t.main;
-          if(t.mainSides) card.ttbMainSides=t.mainSides;
-          if(t.completionist) card.ttbComplete=t.completionist;
-        }
-        done++;
-      }));
-      if(i+2<gameCards.length) await new Promise(r=>setTimeout(r,500));
-    }
-  }
+
 
   renderAll();
   saveBoard();
@@ -2739,34 +2676,8 @@ function saveCardMeta(colId, secId, cardId, inTop10){
   closeModal(); renderAll(); showToast('Guardado ✓');
 }
 
-function editGameTimes(colId, secId, cardId, inTop10){
-  const card=getCard(colId,secId,cardId,inTop10); if(!card) return;
-  const fh=s=>s?Math.round(s/3600*10)/10:'';
-  showModal(`
-    <button class="modal-close-x" onclick="closeModal()">✕</button>
-    <h2>⏱ Tiempos HLTB</h2>
-    <p style="font-size:12px;color:#888;margin-bottom:14px">Introduce los tiempos en horas desde <a href="https://howlongtobeat.com/game/${card.igdbId||''}" target="_blank" style="color:var(--accent2)">HowLongToBeat</a>. Puedes dejarlo en blanco.</p>
-    <label class="key-field-label">Main Story (horas)</label>
-    <input class="modal-input" id="ttb-main" type="number" step="0.5" min="0" placeholder="ej. 12.5" value="${card.ttbMain?Math.round(card.ttbMain/3600*10)/10:''}">
-    <label class="key-field-label" style="margin-top:10px">Main + Sides (horas)</label>
-    <input class="modal-input" id="ttb-sides" type="number" step="0.5" min="0" placeholder="ej. 20" value="${card.ttbMainSides?Math.round(card.ttbMainSides/3600*10)/10:''}">
-    <label class="key-field-label" style="margin-top:10px">Completionist (horas)</label>
-    <input class="modal-input" id="ttb-comp" type="number" step="0.5" min="0" placeholder="ej. 35" value="${card.ttbComplete?Math.round(card.ttbComplete/3600*10)/10:''}">
-    <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
-      <button class="btn-primary" onclick="saveGameTimes('${colId}','${secId}','${cardId}',${inTop10})">Guardar</button>
-    </div>
-  `);
-}
 
-function saveGameTimes(colId, secId, cardId, inTop10){
-  const card=getCard(colId,secId,cardId,inTop10); if(!card) return;
-  const toSec=v=>{ const n=parseFloat(v); return isNaN(n)||n<=0?null:Math.round(n*3600); };
-  card.ttbMain=toSec(document.getElementById('ttb-main')?.value);
-  card.ttbMainSides=toSec(document.getElementById('ttb-sides')?.value);
-  card.ttbComplete=toSec(document.getElementById('ttb-comp')?.value);
-  closeModal(); renderAll(); showToast('Tiempos guardados ✓');
-}
+
 
 
 // ── SECTION DRAG & DROP ───────────────────────────────────────────────────
