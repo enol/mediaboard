@@ -2125,7 +2125,7 @@ function renderCard(card,colId,sectionId,inTop10,rank){
   const noMeta=!card.runtime&&!card.seasons&&!card.ttbMain&&card.tmdbId;
 
   if(card.mediaType==='game'){
-    metaStr+=` · <a href="https://howlongtobeat.com/?q=${encodeURIComponent(card.title||'')}" target="_blank" onclick="event.stopPropagation()" style="color:var(--text-muted);text-decoration:none;vertical-align:middle" title="Ver en HowLongToBeat"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg></a>`;
+    metaStr+=` · <a href="https://howlongtobeat.com/?q=${encodeURIComponent(card.title||'')}" target="_blank" onclick="event.stopPropagation()" style="text-decoration:none;vertical-align:middle;display:inline-flex;align-items:center;gap:3px;background:#1a1a1a;color:#fff;font-size:8px;font-weight:700;letter-spacing:.4px;padding:2px 5px;border-radius:3px;line-height:1" title="Ver en HowLongToBeat"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>HLTB</a>`;
   } else {
     if(card.runtime) metaStr+=` · ${card.runtime} min`;
     else if(card.seasons) metaStr+=` · ${card.seasons} temp.`;
