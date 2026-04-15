@@ -2420,20 +2420,25 @@ async function showCardInfo(colId, secId, cardId, inTop10){
 // ── RELOAD ALL METADATA ───────────────────────────────────────────────────
 async function reloadAllMeta(){
   const key=getKey(); if(!key){ showToast('⚠️ Necesitas la API Key de TMDB'); return; }
-  // Collect all cards with tmdbId
-  const todos=[];
+  // Collect all cards
+  const tmdbCards=[], gameCards=[];
   state.columns.forEach(col=>{
-    col.top10.forEach(card=>{ if(card.tmdbId&&card.mediaType!=='game'&&card.mediaType!=='empty') todos.push({card, arr:col.top10}); });
-    col.sections.forEach(sec=>sec.cards.forEach(card=>{ if(card.tmdbId&&card.mediaType!=='game'&&card.mediaType!=='empty') todos.push({card, arr:sec.cards}); }));
+    const all=[...col.top10,...col.sections.flatMap(s=>s.cards)];
+    all.forEach(card=>{
+      if(card.mediaType==='empty'||card.isManual) return;
+      if(card.mediaType==='game') gameCards.push(card);
+      else if(card.tmdbId) tmdbCards.push(card);
+    });
   });
-  if(!todos.length){ showToast('Sin títulos que actualizar'); return; }
-  showToast('Recargando '+todos.length+' títulos…');
+  const total=tmdbCards.length+gameCards.length;
+  if(!total){ showToast('Sin títulos que actualizar'); return; }
+  showToast('Recargando '+total+' títulos…');
   setSyncStatus('syncing','Actualizando…');
   let done=0;
-  // Process in batches of 3 to avoid rate limiting
-  for(let i=0;i<todos.length;i+=3){
-    const batch=todos.slice(i,i+3);
-    await Promise.all(batch.map(async ({card})=>{
+
+  // TMDB cards in batches of 3
+  for(let i=0;i<tmdbCards.length;i+=3){
+    await Promise.all(tmdbCards.slice(i,i+3).map(async card=>{
       const details=await fetchDetails(card.tmdbId, card.mediaType);
       if(details){
         if(card.mediaType==='tv'&&details.seasons) card.seasons=details.seasons;
@@ -2444,9 +2449,22 @@ async function reloadAllMeta(){
       }
       done++;
     }));
-    // Small pause between batches
-    if(i+3<todos.length) await new Promise(r=>setTimeout(r,300));
+    if(i+3<tmdbCards.length) await new Promise(r=>setTimeout(r,300));
   }
+
+  // Game cards — fetch RAWG playtime
+  const hasRawg=!!localStorage.getItem('mediaboard_key_rawg');
+  if(hasRawg&&gameCards.length){
+    for(let i=0;i<gameCards.length;i+=3){
+      await Promise.all(gameCards.slice(i,i+3).map(async card=>{
+        const hours=await fetchRAWGPlaytime(card.title);
+        if(hours) card.ttbMain=hours*3600;
+        done++;
+      }));
+      if(i+3<gameCards.length) await new Promise(r=>setTimeout(r,300));
+    }
+  }
+
   renderAll();
   saveBoard();
   showToast('✓ Actualizados '+done+' títulos');
@@ -2487,12 +2505,20 @@ function renameSection(colId, secId){
     <div class="color-swatch ${!col.hex?'none-swatch':''}" style="background:${col.hex}" title="${col.label}" data-color="${col.hex}" onclick="selectSectionColor(this)"></div>
   `).join('');
 
+  // Build move-to options
+  const moveOpts=state.columns.map(col=>{
+    const isCurrent=col.id===colId;
+    return `<option value="${col.id}" ${isCurrent?'selected':''}>${escHtml(col.name)}</option>`;
+  }).join('');
+
   showModal(`
     <button class="modal-close-x" onclick="closeModal()">✕</button>
     <h2>Editar subsección</h2>
     <label class="key-field-label">Nombre</label>
     <input class="modal-input" id="rename-sec-inp" value="${escHtml(sec.name)}">
-    <label class="key-field-label" style="margin-top:14px">Color de fondo</label>
+    <label class="key-field-label" style="margin-top:12px">Mover a columna</label>
+    <select class="modal-input" id="sec-move-col" style="cursor:pointer">${moveOpts}</select>
+    <label class="key-field-label" style="margin-top:12px">Color de fondo</label>
     <div class="color-picker-row">${swatches}</div>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
@@ -2508,10 +2534,20 @@ function renameSection(colId, secId){
 }
 function confirmRenameSection(colId, secId){
   const name=document.getElementById('rename-sec-inp')?.value.trim(); if(!name) return;
-  const col=state.columns.find(c=>c.id===colId); if(!col) return;
-  const sec=col.sections.find(s=>s.id===secId); if(!sec) return;
+  const srcCol=state.columns.find(c=>c.id===colId); if(!srcCol) return;
+  const sec=srcCol.sections.find(s=>s.id===secId); if(!sec) return;
   sec.name=name;
   sec.bgColor=window._selectedSectionColor||'';
+  // Move to another column if selected
+  const tgtColId=document.getElementById('sec-move-col')?.value;
+  if(tgtColId&&tgtColId!==colId){
+    const tgtCol=state.columns.find(c=>c.id===tgtColId);
+    if(tgtCol){
+      srcCol.sections=srcCol.sections.filter(s=>s.id!==secId);
+      if(srcCol.sections.length===0) srcCol.sections.push({id:uid(),name:srcCol.name,cards:[],bgColor:''});
+      tgtCol.sections.push(sec);
+    }
+  }
   closeModal(); renderAll();
 }
 
