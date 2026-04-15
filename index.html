@@ -1259,20 +1259,35 @@ async function igdbSearch(query){
     if(results.length) return results;
   }
 
-  // Fallback: where name ~ contains (handles special chars)
+  // Fallback: where name ~ contains (handles special chars & obscure titles)
   const escaped=q.replace(/"/g,'\\"');
   const r2=await igdbQuery('games',
-    `where name ~ *"${escaped}"*${extraWhere}; ${FIELDS}; sort rating desc; limit 8;`
+    `where name ~ *"${escaped}"*${extraWhere}; ${FIELDS}; sort total_rating_count desc; limit 8;`
   );
   const res2=filterByPlatform(r2?.filter(x=>x?.name)||[]);
   if(res2.length) return res2;
 
+  // Fallback: each word as partial match (for multi-word titles)
+  const words=q.split(' ').filter(w=>w.length>3);
+  if(words.length>1){
+    const firstWord=words[0].replace(/"/g,'\\"');
+    const r3=await igdbQuery('games',
+      `where name ~ *"${firstWord}"*${extraWhere}; ${FIELDS}; sort total_rating_count desc; limit 10;`
+    );
+    if(r3?.length){
+      // Client-side filter: all words present in name
+      const filtered=r3.filter(g=>g.name&&words.every(w=>g.name.toLowerCase().includes(w.toLowerCase())));
+      if(filtered.length) return filtered;
+      return filterByPlatform(r3.filter(x=>x?.name).slice(0,8));
+    }
+  }
+
   // Fallback: strip diacritics
   const normalized=q.normalize('NFD').replace(/[̀-ͯ]/g,'');
   if(normalized!==q){
-    const r3=await igdbQuery('games', `search "${normalized}"; ${FIELDS}; limit 8;`);
-    const res3=r3?.filter(x=>x?.name)||[];
-    if(res3.length) return res3;
+    const r4=await igdbQuery('games', `search "${normalized}"; ${FIELDS}; limit 8;`);
+    const res4=r4?.filter(x=>x?.name)||[];
+    if(res4.length) return res4;
   }
 
   return [];
@@ -2166,17 +2181,9 @@ function renderCard(card,colId,sectionId,inTop10,rank){
   const noMeta=!card.runtime&&!card.seasons&&!card.ttbMain&&card.tmdbId;
 
   if(card.mediaType==='game'){
-    // HLTB-style times
-    const fh=s=>s?formatHours(s):null;
-    const main=fh(card.ttbMain), sides=fh(card.ttbMainSides), comp=fh(card.ttbComplete);
-    if(main||sides||comp){
-      extraInfo=`<div class="hltb-times">
-        ${main?`<div class="hltb-row"><span class="hltb-label">Main Story</span><span class="hltb-val">${main}</span></div>`:''}
-        ${sides?`<div class="hltb-row"><span class="hltb-label">Main + Sides</span><span class="hltb-val">${sides}</span></div>`:''}
-        ${comp?`<div class="hltb-row"><span class="hltb-label">Completionist</span><span class="hltb-val">${comp}</span></div>`:''}
-      </div>`;
-    }
-
+    // Show time inline like movies: "2018 · 12h"
+    const t=card.ttbMain||card.ttbMainSides||card.ttbComplete;
+    if(t) metaStr+=` · ${formatHours(t)}`;
   } else {
     if(card.runtime) metaStr+=` · ${card.runtime} min`;
     else if(card.seasons) metaStr+=` · ${card.seasons} temp.`;
