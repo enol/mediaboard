@@ -1073,6 +1073,8 @@ document.addEventListener('focusout', e=>{
 // One-finger pan in nav mode
 document.getElementById('canvas-viewport')?.addEventListener('touchstart', e=>{
   if(!_navMode || e.touches.length !== 1) return;
+  cancelAnimationFrame(_inertiaRaf); // stop inertia on new touch
+  _velX=0; _velY=0; _prevPanT=0;
   _oneTouchPanning = true;
   _oneTouchStartX = e.touches[0].clientX;
   _oneTouchStartY = e.touches[0].clientY;
@@ -1082,11 +1084,22 @@ document.getElementById('canvas-viewport')?.addEventListener('touchstart', e=>{
 
 let _rafPanPending = false;
 let _rafPanX = 0, _rafPanY = 0;
+let _prevPanX = 0, _prevPanY = 0, _prevPanT = 0;
 document.getElementById('canvas-viewport')?.addEventListener('touchmove', e=>{
   if(!_oneTouchPanning || e.touches.length !== 1) return;
   e.preventDefault();
-  _rafPanX = _oneTouchOriginX + (e.touches[0].clientX - _oneTouchStartX);
-  _rafPanY = _oneTouchOriginY + (e.touches[0].clientY - _oneTouchStartY);
+  cancelAnimationFrame(_inertiaRaf); // stop inertia if user re-touches
+  const now = Date.now();
+  const nx = _oneTouchOriginX + (e.touches[0].clientX - _oneTouchStartX);
+  const ny = _oneTouchOriginY + (e.touches[0].clientY - _oneTouchStartY);
+  // Track velocity (px/ms * 16 for ~60fps)
+  if(_prevPanT){
+    const dt = Math.max(1, now - _prevPanT);
+    _velX = (nx - _prevPanX) / dt * 16;
+    _velY = (ny - _prevPanY) / dt * 16;
+  }
+  _prevPanX = nx; _prevPanY = ny; _prevPanT = now;
+  _rafPanX = nx; _rafPanY = ny;
   if(!_rafPanPending){
     _rafPanPending = true;
     requestAnimationFrame(()=>{
@@ -1097,10 +1110,22 @@ document.getElementById('canvas-viewport')?.addEventListener('touchmove', e=>{
   }
 }, {passive:false});
 
+let _velX=0, _velY=0, _lastTouchX=0, _lastTouchY=0, _lastTouchT=0, _inertiaRaf=null;
 document.getElementById('canvas-viewport')?.addEventListener('touchend', e=>{
   if(_oneTouchPanning){
     _oneTouchPanning = false;
     document.getElementById('canvas-viewport')?.classList.remove('panning-active');
+    // Start inertia
+    cancelAnimationFrame(_inertiaRaf);
+    const decay = 0.92;
+    function inertiaStep(){
+      if(Math.abs(_velX)<0.3 && Math.abs(_velY)<0.3) return;
+      _cx += _velX; _cy += _velY;
+      _velX *= decay; _velY *= decay;
+      applyCanvasTransform();
+      _inertiaRaf = requestAnimationFrame(inertiaStep);
+    }
+    _inertiaRaf = requestAnimationFrame(inertiaStep);
   }
 }, {passive:true});
 
