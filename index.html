@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
@@ -87,6 +87,7 @@
     position:absolute; top:0; left:0;
     padding:120px 60px 200px;
     transform-origin:0 0;
+    -webkit-transform-origin:0 0;
     will-change:transform;
     user-select:none;
     -webkit-user-select:none;
@@ -400,6 +401,89 @@
   .card-type-badge { display:inline-block; font-size:8px; font-weight:700; letter-spacing:.5px; padding:1px 5px; border-radius:3px; margin-bottom:3px; background:#1a1a1a; color:#fff; }
   .card-type-badge.game { background:#2d6a4f; }
 
+
+  /* ── NAV MODE BUTTON (touch only) ──────────────────────────── */
+  #nav-mode-btn {
+    display: none; /* hidden on desktop */
+    position: fixed;
+    bottom: 24px; right: 20px;
+    z-index: 2000;
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    background: #1a1a1a;
+    border: none;
+    box-shadow: 0 4px 16px rgba(0,0,0,.35);
+    cursor: pointer;
+    align-items: center; justify-content: center;
+    transition: background .2s, transform .15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #nav-mode-btn.nav-active {
+    background: var(--accent);
+    transform: scale(1.08);
+  }
+  #nav-mode-btn svg { pointer-events: none; }
+
+  /* Nav mode — one finger pans canvas */
+  #canvas-viewport.nav-mode { cursor: grab; }
+  #canvas-viewport.nav-mode.panning-active { cursor: grabbing; }
+
+  /* Nav mode hint toast */
+  #nav-hint {
+    display: none;
+    position: fixed;
+    bottom: 88px; right: 20px;
+    background: rgba(0,0,0,.75);
+    color: #fff;
+    font-size: 11px;
+    font-family: 'DM Sans', sans-serif;
+    padding: 6px 12px;
+    border-radius: 20px;
+    pointer-events: none;
+    z-index: 1999;
+    white-space: nowrap;
+  }
+
+  /* ── TIZEN / TV CONTROLS ────────────────────────────────────── */
+  #tv-controls {
+    display: none;
+    position: fixed;
+    bottom: 20px; right: 20px;
+    z-index: 2000;
+    gap: 4px;
+    flex-direction: column;
+    align-items: center;
+  }
+  .tv-ctrl-row { display: flex; gap: 4px; }
+  .tv-btn {
+    width: 40px; height: 40px;
+    background: rgba(0,0,0,.7);
+    border: 1px solid #444;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .15s;
+  }
+  .tv-btn:hover, .tv-btn:focus { background: var(--accent); outline: none; }
+  .tv-zoom-row { display: flex; gap: 4px; margin-top: 4px; }
+
+  /* ── CROSS-BROWSER FIXES ────────────────────────────────────── */
+  /* Safari iOS — prevent bounce on canvas */
+  #canvas-viewport { -webkit-overflow-scrolling: touch; }
+  /* Firefox — hide scrollbar */
+  * { scrollbar-width: thin; scrollbar-color: var(--border) var(--bg2); }
+  /* Tizen — remove transitions that cause lag */
+  .tizen-detected * { transition: none !important; }
+  .tizen-detected #canvas-wrapper { will-change: auto !important; }
+
+  @media (hover:none) and (pointer:coarse) {
+    #nav-mode-btn { display: flex; }
+    #nav-hint { display: block; opacity: 0; transition: opacity .3s; }
+    #nav-hint.visible { opacity: 1; }
+  }
+
   /* ══════════════════════════════════════════════
      MOBILE / TOUCH RESPONSIVE — Phase 1
      ══════════════════════════════════════════════ */
@@ -584,6 +668,35 @@
   </div>
 </div>
 <div id="modal-container"></div>
+
+<!-- Mobile nav mode toggle -->
+<button id="nav-mode-btn" onclick="toggleNavMode()" title="Modo navegar / editar">
+  <svg id="nav-icon-nav" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/>
+    <polyline points="15 19 12 22 9 19"/><polyline points="19 9 22 12 19 15"/>
+    <line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/>
+  </svg>
+  <svg id="nav-icon-edit" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+  </svg>
+</button>
+<div id="nav-hint">✋ Navegar · Un dedo = pan</div>
+
+<!-- TV / Tizen controls -->
+<div id="tv-controls">
+  <div class="tv-ctrl-row"><button class="tv-btn" onclick="tvPan(0,-80)">▲</button></div>
+  <div class="tv-ctrl-row">
+    <button class="tv-btn" onclick="tvPan(-80,0)">◀</button>
+    <button class="tv-btn" onclick="resetView()" title="Centrar">⌖</button>
+    <button class="tv-btn" onclick="tvPan(80,0)">▶</button>
+  </div>
+  <div class="tv-ctrl-row"><button class="tv-btn" onclick="tvPan(0,80)">▼</button></div>
+  <div class="tv-zoom-row">
+    <button class="tv-btn" onclick="setCanvasZoom(_cz*1.2)" title="Acercar">＋</button>
+    <button class="tv-btn" onclick="setCanvasZoom(_cz*0.8)" title="Alejar">－</button>
+  </div>
+</div>
 
 <script>
 // ── STATE ──────────────────────────────────────────────────────────────────
@@ -794,6 +907,101 @@ document.getElementById('zoom-slider')?.addEventListener('input',function(){
 // Fake adjustCanvasTop for compatibility
 function adjustCanvasTop(){ adjustFilterBarTop(); }
 function scheduleSave_debounce_alias(){ scheduleSave(); }
+
+// ── NAV MODE (mobile) ─────────────────────────────────────────────────────
+let _navMode = false; // false = edit mode, true = nav mode
+let _oneTouchPanning = false;
+let _oneTouchStartX = 0, _oneTouchStartY = 0;
+let _oneTouchOriginX = 0, _oneTouchOriginY = 0;
+
+function toggleNavMode(){
+  _navMode = !_navMode;
+  const btn = document.getElementById('nav-mode-btn');
+  const vp  = document.getElementById('canvas-viewport');
+  const hint= document.getElementById('nav-hint');
+  const iconNav  = document.getElementById('nav-icon-nav');
+  const iconEdit = document.getElementById('nav-icon-edit');
+  if(_navMode){
+    btn?.classList.add('nav-active');
+    vp?.classList.add('nav-mode');
+    if(iconNav)  iconNav.style.display='none';
+    if(iconEdit) iconEdit.style.display='';
+    if(hint){ hint.classList.add('visible'); setTimeout(()=>hint.classList.remove('visible'),2000); }
+  } else {
+    btn?.classList.remove('nav-active');
+    vp?.classList.remove('nav-mode');
+    if(iconNav)  iconNav.style.display='';
+    if(iconEdit) iconEdit.style.display='none';
+  }
+}
+
+// One-finger pan in nav mode
+document.getElementById('canvas-viewport')?.addEventListener('touchstart', e=>{
+  if(!_navMode || e.touches.length !== 1) return;
+  _oneTouchPanning = true;
+  _oneTouchStartX = e.touches[0].clientX;
+  _oneTouchStartY = e.touches[0].clientY;
+  _oneTouchOriginX = _cx; _oneTouchOriginY = _cy;
+  document.getElementById('canvas-viewport')?.classList.add('panning-active');
+}, {passive:true});
+
+document.getElementById('canvas-viewport')?.addEventListener('touchmove', e=>{
+  if(!_oneTouchPanning || e.touches.length !== 1) return;
+  e.preventDefault();
+  _cx = _oneTouchOriginX + (e.touches[0].clientX - _oneTouchStartX);
+  _cy = _oneTouchOriginY + (e.touches[0].clientY - _oneTouchStartY);
+  applyCanvasTransform();
+}, {passive:false});
+
+document.getElementById('canvas-viewport')?.addEventListener('touchend', e=>{
+  if(_oneTouchPanning){
+    _oneTouchPanning = false;
+    document.getElementById('canvas-viewport')?.classList.remove('panning-active');
+  }
+}, {passive:true});
+
+// ── TV / TIZEN CONTROLS ───────────────────────────────────────────────────
+function tvPan(dx, dy){
+  _cx += dx; _cy += dy;
+  applyCanvasTransform(true);
+}
+
+// Tizen detection
+function detectTizen(){
+  const ua = navigator.userAgent || '';
+  const isTizen = /Tizen/i.test(ua) || /SmartTV/i.test(ua) || /SMART-TV/i.test(ua);
+  if(isTizen){
+    document.body.classList.add('tizen-detected');
+    document.getElementById('tv-controls').style.display = 'flex';
+    document.getElementById('nav-mode-btn').style.display = 'none';
+    // Arrow key navigation for TV remote
+    window.addEventListener('keydown', tvKeyHandler);
+  }
+}
+
+function tvKeyHandler(e){
+  if(e.target.matches('input,textarea,select')) return;
+  const STEP = 120;
+  const ZOOM_STEP = 0.15;
+  switch(e.key){
+    case 'ArrowUp':    e.preventDefault(); tvPan(0, STEP); break;
+    case 'ArrowDown':  e.preventDefault(); tvPan(0, -STEP); break;
+    case 'ArrowLeft':  e.preventDefault(); tvPan(STEP, 0); break;
+    case 'ArrowRight': e.preventDefault(); tvPan(-STEP, 0); break;
+    case '+': case '=': e.preventDefault(); setCanvasZoom(_cz+ZOOM_STEP); break;
+    case '-':           e.preventDefault(); setCanvasZoom(_cz-ZOOM_STEP); break;
+    case 'Enter': break; // let it propagate for clicking focused elements
+  }
+}
+
+// ── SAFARI iOS FIXES ──────────────────────────────────────────────────────
+// Prevent iOS Safari overscroll bounce on canvas
+document.body.addEventListener('touchmove', e=>{
+  if(e.target.closest('#canvas-viewport')) return; // handled by canvas
+  // Allow scroll inside modals
+  if(e.target.closest('.modal-box,.search-results,.modal-overlay')) return;
+}, {passive:true});
+
 // ── KEYS ──────────────────────────────────────────────────────────────────
 function getKey(type='tmdb'){ return localStorage.getItem('mediaboard_key_'+type)||''; }
 function setKey(type,v){ localStorage.setItem('mediaboard_key_'+type,v); updateDots(); }
@@ -2918,6 +3126,7 @@ function handleImportFile(input){
 }
 // ── INIT ──────────────────────────────────────────────────────────────────
 window.onload=async ()=>{
+  detectTizen();
   applyCanvasTransform(); // init at 65% zoom with Figma engine
   updateDots();
   // Load from Supabase (falls back to localStorage if offline)
