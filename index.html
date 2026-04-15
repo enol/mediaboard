@@ -982,7 +982,16 @@ function sanitizeState(s){
       if(!sec.id) sec.id='_'+Math.random().toString(36).slice(2,7);
       if(!sec.name) sec.name='';
       if(!Array.isArray(sec.cards)) sec.cards=[];
+      // Strip unreliable RAWG time data
+      sec.cards=sec.cards.map(card=>{
+        delete card.ttbMain; delete card.ttbMainSides; delete card.ttbComplete;
+        return card;
+      });
       return sec;
+    });
+    col.top10=col.top10.map(card=>{
+      delete card.ttbMain; delete card.ttbMainSides; delete card.ttbComplete;
+      return card;
     });
     return col;
   });
@@ -2116,26 +2125,9 @@ function renderCard(card,colId,sectionId,inTop10,rank){
   const noMeta=!card.runtime&&!card.seasons&&!card.ttbMain&&card.tmdbId;
 
   if(card.mediaType==='game'){
-    const fh=s=>s?formatHours(s):null;
-    const main=fh(card.ttbMain), sides=fh(card.ttbMainSides), comp=fh(card.ttbComplete);
     const clockSvg=`<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:2px"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>`;
     const hltbUrl=`https://howlongtobeat.com/?q=${encodeURIComponent(card.title||'')}`;
-    if(main||sides||comp){
-      // Show times + clock link to HLTB
-      if(main&&!sides&&!comp){
-        metaStr+=` · <a href="${hltbUrl}" target="_blank" onclick="event.stopPropagation()" style="color:inherit;text-decoration:none" title="Ver en HowLongToBeat">${clockSvg}${main}</a>`;
-      } else {
-        extraInfo=`<div class="hltb-times">
-          ${main?`<div class="hltb-row"><span class="hltb-label">Main</span><span class="hltb-val">${main}</span></div>`:''}
-          ${sides?`<div class="hltb-row"><span class="hltb-label">+Sides</span><span class="hltb-val">${sides}</span></div>`:''}
-          ${comp?`<div class="hltb-row"><span class="hltb-label">100%</span><span class="hltb-val">${comp}</span></div>`:''}
-          <a href="${hltbUrl}" target="_blank" onclick="event.stopPropagation()" style="font-size:9px;color:var(--text-muted);text-decoration:none;opacity:.7" title="Ver en HowLongToBeat">${clockSvg} HLTB</a>
-        </div>`;
-      }
-    } else {
-      // No time data — just clock link
-      metaStr+=` · <a href="${hltbUrl}" target="_blank" onclick="event.stopPropagation()" style="color:var(--text-muted);text-decoration:none;opacity:.8" title="Ver en HowLongToBeat">${clockSvg}</a>`;
-    }
+    metaStr+=` · <a href="${hltbUrl}" target="_blank" onclick="event.stopPropagation()" style="color:var(--text-muted);text-decoration:none;opacity:.8" title="Ver en HowLongToBeat">${clockSvg}</a>`;
   } else {
     if(card.runtime) metaStr+=` · ${card.runtime} min`;
     else if(card.seasons) metaStr+=` · ${card.seasons} temp.`;
