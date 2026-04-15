@@ -402,54 +402,46 @@
   .card-type-badge.game { background:#2d6a4f; }
 
 
-  /* ── NAV MODE BUTTON (touch only) ──────────────────────────── */
-  #nav-mode-btn {
-    display: none; /* hidden on desktop */
+  /* ── MODE BUTTONS (touch only) ──────────────────────────── */
+  #mode-btns {
+    display: none;
     position: fixed;
     bottom: 24px; right: 20px;
     z-index: 2000;
-    width: 52px; height: 52px;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+  }
+  .mode-btn {
+    width: 48px; height: 48px;
     border-radius: 50%;
-    background: #1a1a1a;
-    border: none;
-    box-shadow: 0 4px 16px rgba(0,0,0,.35);
+    border: 2px solid #ccc;
+    box-shadow: 0 3px 12px rgba(0,0,0,.25);
     cursor: pointer;
-    align-items: center; justify-content: center;
+    display: flex; align-items: center; justify-content: center;
     transition: background .2s, transform .15s;
     -webkit-tap-highlight-color: transparent;
   }
-  #nav-mode-btn.nav-active {
-    background: var(--accent);
-    transform: scale(1.08);
-  }
-  #nav-mode-btn svg { pointer-events: none; }
+  .mode-btn svg { pointer-events: none; }
+  #btn-nav  { background: #fff; }
+  #btn-edit { background: #1a1a1a; border-color: #1a1a1a; }
+  #btn-nav.active  { background: var(--accent); border-color: var(--accent); transform: scale(1.06); }
+  #btn-edit.active { background: var(--accent); border-color: var(--accent); transform: scale(1.06); }
 
-  /* Nav mode — one finger pans canvas */
+  /* Nav mode */
   #canvas-viewport.nav-mode { cursor: grab; }
   #canvas-viewport.nav-mode.panning-active { cursor: grabbing; }
-  /* Nav mode overlay — blocks card interactions */
-  #nav-overlay {
-    display: none;
-    position: absolute;
-    inset: 0;
-    z-index: 500;
-    cursor: grab;
-  }
-  #canvas-viewport.nav-mode #nav-overlay { display: block; }
 
-  /* Nav mode hint toast */
+  /* Nav hint */
   #nav-hint {
     display: none;
     position: fixed;
-    bottom: 88px; right: 20px;
+    bottom: 140px; right: 16px;
     background: rgba(0,0,0,.75);
-    color: #fff;
-    font-size: 11px;
+    color: #fff; font-size: 11px;
     font-family: 'DM Sans', sans-serif;
-    padding: 6px 12px;
-    border-radius: 20px;
-    pointer-events: none;
-    z-index: 1999;
+    padding: 5px 10px; border-radius: 16px;
+    pointer-events: none; z-index: 1999;
     white-space: nowrap;
   }
 
@@ -488,7 +480,7 @@
   .tizen-detected #canvas-wrapper { will-change: auto !important; }
 
   @media (hover:none) and (pointer:coarse) {
-    #nav-mode-btn { display: flex; }
+    #mode-btns { display: flex; }
     #nav-hint { display: block; opacity: 0; transition: opacity .3s; }
     #nav-hint.visible { opacity: 1; }
   }
@@ -711,32 +703,41 @@
 </div>
 <div id="modal-container"></div>
 
-<!-- Mobile nav mode toggle -->
-<button id="nav-mode-btn" onclick="toggleNavMode()" title="Modo navegar / editar">
-  <svg id="nav-icon-nav" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/>
-    <polyline points="15 19 12 22 9 19"/><polyline points="19 9 22 12 19 15"/>
-    <line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/>
-  </svg>
-  <svg id="nav-icon-edit" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none">
-    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-  </svg>
-</button>
-<div id="nav-hint">✋ Navegar · Un dedo = pan</div>
+<!-- Mobile mode buttons -->
+<div id="mode-btns">
+  <!-- Nav button (top) -->
+  <button id="btn-nav" class="mode-btn" onclick="setMode('nav')" title="Modo navegar">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/>
+      <polyline points="15 19 12 22 9 19"/><polyline points="19 9 22 12 19 15"/>
+      <line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/>
+    </svg>
+  </button>
+  <!-- Edit button (bottom) -->
+  <button id="btn-edit" class="mode-btn active" onclick="setMode('edit')" title="Modo editar">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+    </svg>
+  </button>
+</div>
+<div id="nav-hint">✋ Un dedo = pan</div>
 
 <!-- TV / Tizen controls -->
 <div id="tv-controls">
-  <div class="tv-ctrl-row"><button class="tv-btn" onclick="tvPan(0,-80)">▲</button></div>
   <div class="tv-ctrl-row">
-    <button class="tv-btn" onclick="tvPan(-80,0)">◀</button>
-    <button class="tv-btn" onclick="resetView()" title="Centrar">⌖</button>
-    <button class="tv-btn" onclick="tvPan(80,0)">▶</button>
+    <button id="tv-nav-toggle" class="tv-btn" onclick="tvToggleNav()" title="Navegar/Editar" style="width:auto;padding:0 10px;font-size:13px">🖱 Editar</button>
   </div>
-  <div class="tv-ctrl-row"><button class="tv-btn" onclick="tvPan(0,80)">▼</button></div>
+  <div class="tv-ctrl-row"><button class="tv-btn" onclick="tvPan(0,100)">▲</button></div>
+  <div class="tv-ctrl-row">
+    <button class="tv-btn" onclick="tvPan(100,0)">◀</button>
+    <button class="tv-btn" onclick="resetView()" title="Centrar">⌖</button>
+    <button class="tv-btn" onclick="tvPan(-100,0)">▶</button>
+  </div>
+  <div class="tv-ctrl-row"><button class="tv-btn" onclick="tvPan(0,-100)">▼</button></div>
   <div class="tv-zoom-row">
-    <button class="tv-btn" onclick="setCanvasZoom(_cz*1.2)" title="Acercar">＋</button>
-    <button class="tv-btn" onclick="setCanvasZoom(_cz*0.8)" title="Alejar">－</button>
+    <button class="tv-btn" onclick="setCanvasZoom(_cz*1.2)">＋</button>
+    <button class="tv-btn" onclick="setCanvasZoom(_cz*0.8)">－</button>
   </div>
 </div>
 
@@ -980,42 +981,68 @@ let _oneTouchPanning = false;
 let _oneTouchStartX = 0, _oneTouchStartY = 0;
 let _oneTouchOriginX = 0, _oneTouchOriginY = 0;
 
-function toggleNavMode(){
-  _navMode = !_navMode;
-  const btn = document.getElementById('nav-mode-btn');
-  const vp  = document.getElementById('canvas-viewport');
-  const hint= document.getElementById('nav-hint');
-  const iconNav  = document.getElementById('nav-icon-nav');
-  const iconEdit = document.getElementById('nav-icon-edit');
-  const overlay  = document.getElementById('nav-overlay');
-  if(_navMode){
-    btn?.classList.add('nav-active');
-    vp?.classList.add('nav-mode');
-    if(iconNav)  iconNav.style.display='none';
-    if(iconEdit) iconEdit.style.display='';
-    if(hint){ hint.classList.add('visible'); setTimeout(()=>hint.classList.remove('visible'),2000); }
-  } else {
-    btn?.classList.remove('nav-active');
-    vp?.classList.remove('nav-mode');
-    if(iconNav)  iconNav.style.display='';
-    if(iconEdit) iconEdit.style.display='none';
+function setMode(mode){
+  _navMode = (mode==='nav');
+  const vp      = document.getElementById('canvas-viewport');
+  const hint    = document.getElementById('nav-hint');
+  const btnNav  = document.getElementById('btn-nav');
+  const btnEdit = document.getElementById('btn-edit');
+  const overlay = document.getElementById('nav-overlay');
+
+  // Update button states
+  btnNav?.classList.toggle('active',  _navMode);
+  btnEdit?.classList.toggle('active', !_navMode);
+  // Nav btn icon color — dark on white bg, white on colored bg
+  if(btnNav) btnNav.querySelector('svg').setAttribute('stroke', _navMode?'#fff':'#333');
+
+  vp?.classList.toggle('nav-mode', _navMode);
+
+  if(_navMode && hint){
+    hint.classList.add('visible');
+    setTimeout(()=>hint.classList.remove('visible'), 2000);
   }
-  // Wire overlay touch to pan (same as one-finger pan)
+
+  // Wire overlay
   if(overlay){
     overlay.ontouchstart = _navMode ? (e=>{
+      if(e.touches.length>1) return; // let pinch through
       _oneTouchPanning=true;
       _oneTouchStartX=e.touches[0].clientX; _oneTouchStartY=e.touches[0].clientY;
       _oneTouchOriginX=_cx; _oneTouchOriginY=_cy;
     }) : null;
     overlay.ontouchmove = _navMode ? (e=>{
+      if(e.touches.length>1) return;
       e.preventDefault();
       _rafPanX=_oneTouchOriginX+(e.touches[0].clientX-_oneTouchStartX);
       _rafPanY=_oneTouchOriginY+(e.touches[0].clientY-_oneTouchStartY);
       if(!_rafPanPending){ _rafPanPending=true; requestAnimationFrame(()=>{ _cx=_rafPanX; _cy=_rafPanY; applyCanvasTransform(); _rafPanPending=false; }); }
     }) : null;
-    overlay.ontouchend = _navMode ? (()=>{ _oneTouchPanning=false; }) : null;
+    overlay.ontouchend = _navMode ? (e=>{
+      if(e.touches.length===0) _oneTouchPanning=false;
+    }) : null;
   }
 }
+function toggleNavMode(){ setMode(_navMode?'edit':'nav'); } // legacy compat
+
+// Hide mode buttons when keyboard appears (input focused)
+document.addEventListener('focusin', e=>{
+  if(e.target.matches('input,textarea,select')){
+    document.getElementById('mode-btns').style.display='none';
+    document.getElementById('nav-hint').classList.remove('visible');
+  }
+});
+document.addEventListener('focusout', e=>{
+  if(e.target.matches('input,textarea,select')){
+    setTimeout(()=>{
+      if(!document.activeElement.matches('input,textarea,select')){
+        if(window.matchMedia('(hover:none) and (pointer:coarse)').matches){
+          document.getElementById('mode-btns').style.display='flex';
+        }
+      }
+    }, 200);
+  }
+});
+
 
 // One-finger pan in nav mode
 document.getElementById('canvas-viewport')?.addEventListener('touchstart', e=>{
@@ -1070,18 +1097,30 @@ function detectTizen(){
   }
 }
 
+let _tvNavMode = false;
+function tvToggleNav(){
+  _tvNavMode = !_tvNavMode;
+  const btn = document.getElementById('tv-nav-toggle');
+  if(btn) btn.textContent = _tvNavMode ? '✋' : '🖱';
+  const vp = document.getElementById('canvas-viewport');
+  vp?.classList.toggle('nav-mode', _tvNavMode);
+}
 function tvKeyHandler(e){
   if(e.target.matches('input,textarea,select')) return;
-  const STEP = 120;
+  const STEP = 100;
   const ZOOM_STEP = 0.15;
-  switch(e.key){
-    case 'ArrowUp':    e.preventDefault(); tvPan(0, STEP); break;
-    case 'ArrowDown':  e.preventDefault(); tvPan(0, -STEP); break;
-    case 'ArrowLeft':  e.preventDefault(); tvPan(STEP, 0); break;
-    case 'ArrowRight': e.preventDefault(); tvPan(-STEP, 0); break;
-    case '+': case '=': e.preventDefault(); setCanvasZoom(_cz+ZOOM_STEP); break;
-    case '-':           e.preventDefault(); setCanvasZoom(_cz-ZOOM_STEP); break;
-    case 'Enter': break; // let it propagate for clicking focused elements
+  if(_tvNavMode){
+    switch(e.key){
+      case 'ArrowUp':    e.preventDefault(); tvPan(0, STEP); break;   // up = pan up (+ Y)
+      case 'ArrowDown':  e.preventDefault(); tvPan(0,-STEP); break;   // down = pan down
+      case 'ArrowLeft':  e.preventDefault(); tvPan(STEP, 0); break;   // left = pan left (+ X)
+      case 'ArrowRight': e.preventDefault(); tvPan(-STEP, 0); break;  // right = pan right
+      case '+': case '=': e.preventDefault(); setCanvasZoom(_cz+ZOOM_STEP); break;
+      case '-':           e.preventDefault(); setCanvasZoom(_cz-ZOOM_STEP); break;
+      case 'Enter': tvToggleNav(); break;
+    }
+  } else {
+    if(e.key==='Enter') tvToggleNav();
   }
 }
 
@@ -1348,7 +1387,7 @@ async function tmdbSearch(query){
   const demoKey=Object.keys(DEMO_DATA).find(k=>query.toLowerCase().includes(k));
   try{
     const ctrl=new AbortController(); setTimeout(()=>ctrl.abort(),5000);
-    const r=await fetch(`${TMDB_BASE}/search/multi?api_key=${key}&query=${encodeURIComponent(query)}&language=es-ES`,{signal:ctrl.signal});
+    const r=await fetch(`${TMDB_BASE}/search/multi?api_key=${key}&query=${encodeURIComponent(query)}&language=en-US&include_adult=false`,{signal:ctrl.signal});
     if(!r.ok){if(r.status===401)showToast('❌ API key inválida');throw new Error();}
     const d=await r.json();
     return(d.results||[]).filter(x=>x.poster_path&&(x.media_type==='movie'||x.media_type==='tv')).slice(0,8);
@@ -1828,6 +1867,7 @@ function getAllGenres(){
   const genres=new Set();
   state.columns.forEach(col=>{
     [...col.top10,...col.sections.flatMap(s=>s.cards)].forEach(card=>{
+      if(card.mediaType==='game') return; // skip game genres
       (card.genres||[]).forEach(g=>genres.add(g));
     });
   });
@@ -1872,7 +1912,7 @@ async function fetchDetails(tmdbId, mediaType){
   try{
     const ctrl=new AbortController(); setTimeout(()=>ctrl.abort(),4000);
     const type=mediaType==='tv'?'tv':'movie';
-    const r=await fetch(`${TMDB_BASE}/${type}/${tmdbId}?api_key=${key}&language=es-ES`,{signal:ctrl.signal});
+    const r=await fetch(`${TMDB_BASE}/${type}/${tmdbId}?api_key=${key}&language=en-US`,{signal:ctrl.signal});
     if(!r.ok) return null;
     const d=await r.json();
     const genres=(d.genres||[]).map(g=>g.name);
@@ -2634,7 +2674,7 @@ async function showCardInfo(colId, secId, cardId, inTop10){
   const key=getKey(); if(!key) return;
   try{
     const type=card.mediaType==='tv'?'tv':'movie';
-    const r=await fetch(`${TMDB_BASE}/${type}/${card.tmdbId}/credits?api_key=${key}&language=es-ES`);
+    const r=await fetch(`${TMDB_BASE}/${type}/${card.tmdbId}/credits?api_key=${key}&language=en-US`);
     const d=await r.json();
     const cast=(d.cast||[]).slice(0,8).map(a=>`
       <div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f0ede8">
