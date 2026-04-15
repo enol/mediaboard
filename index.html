@@ -427,6 +427,15 @@
   /* Nav mode — one finger pans canvas */
   #canvas-viewport.nav-mode { cursor: grab; }
   #canvas-viewport.nav-mode.panning-active { cursor: grabbing; }
+  /* Nav mode overlay — blocks card interactions */
+  #nav-overlay {
+    display: none;
+    position: absolute;
+    inset: 0;
+    z-index: 500;
+    cursor: grab;
+  }
+  #canvas-viewport.nav-mode #nav-overlay { display: block; }
 
   /* Nav mode hint toast */
   #nav-hint {
@@ -536,8 +545,9 @@
     #sync-label { display:none; }
     .sync-dot { width:10px; height:10px; }
 
-    /* Filter bar wraps */
-    #filter-bar { flex-wrap:wrap; gap:6px; padding:8px 12px; }
+    /* Filter bar — horizontal scroll on touch */
+    #filter-bar { flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch; gap:6px; padding:8px 12px; scrollbar-width:none; }
+    #filter-bar::-webkit-scrollbar { display:none; }
 
     /* Modal — full screen on mobile */
     .modal-overlay { padding:0; align-items:flex-end; }
@@ -589,8 +599,21 @@
 
   /* Small screens general */
   @media (max-width:600px) {
-    #topbar h1 { font-size:18px; }
-    .topbar-key-btn span:not(.dot) { display:none; } /* hide text, keep dot */
+    /* Topbar compact single row */
+    #topbar { position:fixed; top:0; left:0; right:0; z-index:1000; overflow:visible; }
+    #topbar-main { height:48px !important; padding:0 10px !important; flex-wrap:nowrap !important; overflow:hidden; }
+    #topbar h1 { font-size:16px; flex-shrink:0; }
+    #topbar-controls { display:none !important; }
+    #title-search-wrap { display:none !important; }
+    #topbar-menu-btn { display:flex !important; margin-left:auto; }
+    #pan-hint { display:none !important; }
+    #sync-label { display:none !important; }
+    /* Drawer below topbar */
+    #topbar-drawer { position:fixed; top:48px; left:0; right:0; z-index:999; max-height:70vh; overflow-y:auto; }
+    /* Filter bar and canvas below topbar */
+    #filter-bar { top:48px !important; flex-wrap:wrap; gap:6px; padding:8px 10px; }
+    #canvas-viewport { top:48px !important; }
+    .topbar-key-btn span:not(.dot) { display:none; }
     .topbar-key-btn { padding:7px 10px; min-width:32px; justify-content:center; }
     #title-search { width:120px; }
   }
@@ -679,6 +702,7 @@
 </div>
 <div id="filter-bar"></div>
 <div id="canvas-viewport">
+  <div id="nav-overlay"></div>
   <div id="canvas-wrapper">
     <div id="columns-container">
       <div id="add-col-btn" onclick="promptAddColumn()">+<small>Nueva sección</small></div>
@@ -880,11 +904,20 @@ document.getElementById('canvas-viewport')?.addEventListener('mousedown',e=>{
     vp?.classList.add('panning-active');
   }
 });
+let _rafMousePending = false;
+let _rafMouseX = 0, _rafMouseY = 0;
 window.addEventListener('mousemove',e=>{
   if(!_panning) return;
-  _cx=_panOriginX+(e.clientX-_panStartX);
-  _cy=_panOriginY+(e.clientY-_panStartY);
-  applyCanvasTransform();
+  _rafMouseX = _panOriginX+(e.clientX-_panStartX);
+  _rafMouseY = _panOriginY+(e.clientY-_panStartY);
+  if(!_rafMousePending){
+    _rafMousePending = true;
+    requestAnimationFrame(()=>{
+      _cx = _rafMouseX; _cy = _rafMouseY;
+      applyCanvasTransform();
+      _rafMousePending = false;
+    });
+  }
 });
 window.addEventListener('mouseup',e=>{
   if(_panning){
@@ -915,21 +948,17 @@ document.getElementById('canvas-viewport')?.addEventListener('touchmove',e=>{
   if(e.touches.length===2){
     e.preventDefault();
     const t0=e.touches[0], t1=e.touches[1];
-    const dx=t0.clientX-t1.clientX, dy=t0.clientY-t1.clientY;
-    const dist=Math.hypot(dx,dy);
+    const dist=Math.hypot(t0.clientX-t1.clientX, t0.clientY-t1.clientY);
     const midX=(t0.clientX+t1.clientX)/2;
     const midY=(t0.clientY+t1.clientY)/2;
-
     const newZ=Math.max(MIN_Z,Math.min(MAX_Z,_pinchZ0*(dist/_pinchDist0)));
-
-    // Pan from initial midpoint
+    // Zoom around the FIXED initial midpoint (eliminates drift)
+    const scale=newZ/_pinchZ0;
+    // Pan = current mid minus start mid
     const panDx=midX-_pinchStartMidX;
     const panDy=midY-_pinchStartMidY;
-
-    // Zoom around initial pinch midpoint (no drift)
-    const dz=newZ/_pinchZ0;
-    _cx=_pinchCx0 - (_pinchStartMidX-_pinchCx0)*(dz-1) + panDx;
-    _cy=_pinchCy0 - (_pinchStartMidY-_pinchCy0)*(dz-1) + panDy;
+    _cx=_pinchStartMidX*(1-scale) + _pinchCx0*scale + panDx;
+    _cy=_pinchStartMidY*(1-scale) + _pinchCy0*scale + panDy;
     _cz=newZ;
     applyCanvasTransform();
   }
@@ -958,6 +987,7 @@ function toggleNavMode(){
   const hint= document.getElementById('nav-hint');
   const iconNav  = document.getElementById('nav-icon-nav');
   const iconEdit = document.getElementById('nav-icon-edit');
+  const overlay  = document.getElementById('nav-overlay');
   if(_navMode){
     btn?.classList.add('nav-active');
     vp?.classList.add('nav-mode');
@@ -969,6 +999,21 @@ function toggleNavMode(){
     vp?.classList.remove('nav-mode');
     if(iconNav)  iconNav.style.display='';
     if(iconEdit) iconEdit.style.display='none';
+  }
+  // Wire overlay touch to pan (same as one-finger pan)
+  if(overlay){
+    overlay.ontouchstart = _navMode ? (e=>{
+      _oneTouchPanning=true;
+      _oneTouchStartX=e.touches[0].clientX; _oneTouchStartY=e.touches[0].clientY;
+      _oneTouchOriginX=_cx; _oneTouchOriginY=_cy;
+    }) : null;
+    overlay.ontouchmove = _navMode ? (e=>{
+      e.preventDefault();
+      _rafPanX=_oneTouchOriginX+(e.touches[0].clientX-_oneTouchStartX);
+      _rafPanY=_oneTouchOriginY+(e.touches[0].clientY-_oneTouchStartY);
+      if(!_rafPanPending){ _rafPanPending=true; requestAnimationFrame(()=>{ _cx=_rafPanX; _cy=_rafPanY; applyCanvasTransform(); _rafPanPending=false; }); }
+    }) : null;
+    overlay.ontouchend = _navMode ? (()=>{ _oneTouchPanning=false; }) : null;
   }
 }
 
@@ -982,12 +1027,21 @@ document.getElementById('canvas-viewport')?.addEventListener('touchstart', e=>{
   document.getElementById('canvas-viewport')?.classList.add('panning-active');
 }, {passive:true});
 
+let _rafPanPending = false;
+let _rafPanX = 0, _rafPanY = 0;
 document.getElementById('canvas-viewport')?.addEventListener('touchmove', e=>{
   if(!_oneTouchPanning || e.touches.length !== 1) return;
   e.preventDefault();
-  _cx = _oneTouchOriginX + (e.touches[0].clientX - _oneTouchStartX);
-  _cy = _oneTouchOriginY + (e.touches[0].clientY - _oneTouchStartY);
-  applyCanvasTransform();
+  _rafPanX = _oneTouchOriginX + (e.touches[0].clientX - _oneTouchStartX);
+  _rafPanY = _oneTouchOriginY + (e.touches[0].clientY - _oneTouchStartY);
+  if(!_rafPanPending){
+    _rafPanPending = true;
+    requestAnimationFrame(()=>{
+      _cx = _rafPanX; _cy = _rafPanY;
+      applyCanvasTransform();
+      _rafPanPending = false;
+    });
+  }
 }, {passive:false});
 
 document.getElementById('canvas-viewport')?.addEventListener('touchend', e=>{
