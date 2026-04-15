@@ -2159,6 +2159,7 @@ function renderCard(card,colId,sectionId,inTop10,rank){
       ${typeBadge}
       <div class="card-title">${escHtml(card.title)}</div>
       <div class="card-meta">${metaStr}${noMeta?` <button onclick="event.stopPropagation();reloadMeta('${colId}','${secId}','${card.id}',${top10f})" style="background:none;border:none;cursor:pointer;color:#aaa;font-size:10px;padding:0;line-height:1;" title="Cargar duración">↻</button>`:''}</div>
+      ${card.mediaType==='game'?`<div style="margin-top:2px"><a href="https://howlongtobeat.com/?q=${encodeURIComponent(card.title||'')}" target="_blank" onclick="event.stopPropagation()" style="display:inline-flex;align-items:center;gap:2px;text-decoration:none;color:var(--text-muted);font-size:9px" title="Ver en HowLongToBeat"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#1a1a1a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg></a></div>`:''}
       ${extraInfo}
       <div class="card-platforms" style="${showPlatforms?'':' display:none'}">${platHtml}</div>
     </div>
