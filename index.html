@@ -446,23 +446,50 @@
   }
 
   /* ── TIZEN / TV CONTROLS ────────────────────────────────────── */
-  #tv-controls {
+  /* Tizen nav icon — center screen */
+  #tv-nav-icon {
     display: none;
     position: fixed;
-    bottom: 20px; right: 20px;
-    z-index: 2000;
-    gap: 4px;
-    flex-direction: column;
-    align-items: center;
+    top: 50%; left: 50%;
+    transform: translate(-50%,-50%);
+    z-index: 1999;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .2s;
   }
+  #tv-nav-icon.visible { opacity: 1; }
+  #tv-nav-icon svg { width: 80px; height: 80px; filter: drop-shadow(0 2px 8px rgba(0,0,0,.5)); }
+
+  /* Tizen zoom buttons — top right */
+  #tv-zoom {
+    display: none;
+    position: fixed;
+    top: 60px; right: 16px;
+    z-index: 2000;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .tv-zoom-btn {
+    width: 52px; height: 52px;
+    background: rgba(0,0,0,.8);
+    border: 2px solid #555;
+    border-radius: 10px;
+    color: #fff;
+    font-size: 26px; font-weight: 300;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .tv-zoom-btn:focus { background: var(--accent); border-color: var(--accent); outline: none; }
+
+  /* Tizen mode toggle — hidden, triggered by Enter key */
+  #tv-controls { display: none; }
   .tv-ctrl-row { display: flex; gap: 4px; }
   .tv-btn {
     width: 40px; height: 40px;
     background: rgba(0,0,0,.7);
     border: 1px solid #444;
     border-radius: 8px;
-    color: #fff;
-    font-size: 16px;
+    color: #fff; font-size: 16px;
     cursor: pointer;
     display: flex; align-items: center; justify-content: center;
     transition: background .15s;
@@ -478,6 +505,7 @@
   /* Tizen — remove transitions that cause lag */
   .tizen-detected * { transition: none !important; }
   .tizen-detected #canvas-wrapper { will-change: auto !important; }
+  .tizen-detected #canvas-viewport { overflow: visible !important; }
 
   @media (hover:none) and (pointer:coarse) {
     #mode-btns { display: flex; }
@@ -723,23 +751,21 @@
 </div>
 <div id="nav-hint">✋ Un dedo = pan</div>
 
-<!-- TV / Tizen controls -->
-<div id="tv-controls">
-  <div class="tv-ctrl-row">
-    <button id="tv-nav-toggle" class="tv-btn" onclick="tvToggleNav()" title="Navegar/Editar" style="width:auto;padding:0 10px;font-size:13px">🖱 Editar</button>
-  </div>
-  <div class="tv-ctrl-row"><button class="tv-btn" onclick="tvPan(0,100)">▲</button></div>
-  <div class="tv-ctrl-row">
-    <button class="tv-btn" onclick="tvPan(100,0)">◀</button>
-    <button class="tv-btn" onclick="resetView()" title="Centrar">⌖</button>
-    <button class="tv-btn" onclick="tvPan(-100,0)">▶</button>
-  </div>
-  <div class="tv-ctrl-row"><button class="tv-btn" onclick="tvPan(0,-100)">▼</button></div>
-  <div class="tv-zoom-row">
-    <button class="tv-btn" onclick="setCanvasZoom(_cz*1.2)">＋</button>
-    <button class="tv-btn" onclick="setCanvasZoom(_cz*0.8)">－</button>
-  </div>
+<!-- TV / Tizen: nav icon (center, shown when nav mode active) -->
+<div id="tv-nav-icon">
+  <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="5 9 2 12 5 15"/><polyline points="9 5 12 2 15 5"/>
+    <polyline points="15 19 12 22 9 19"/><polyline points="19 9 22 12 19 15"/>
+    <line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/>
+  </svg>
 </div>
+<!-- TV / Tizen: zoom buttons top-right -->
+<div id="tv-zoom">
+  <button class="tv-zoom-btn" onclick="setCanvasZoom(_cz*1.2)" title="Acercar">+</button>
+  <button class="tv-zoom-btn" onclick="setCanvasZoom(_cz*0.8)" title="Alejar">−</button>
+</div>
+<!-- TV controls (legacy, hidden) -->
+<div id="tv-controls"></div>
 
 <script>
 // ── STATE ──────────────────────────────────────────────────────────────────
@@ -1090,9 +1116,9 @@ function detectTizen(){
   const isTizen = /Tizen/i.test(ua) || /SmartTV/i.test(ua) || /SMART-TV/i.test(ua);
   if(isTizen){
     document.body.classList.add('tizen-detected');
-    document.getElementById('tv-controls').style.display = 'flex';
-    document.getElementById('nav-mode-btn').style.display = 'none';
-    // Arrow key navigation for TV remote
+    document.getElementById('tv-zoom').style.display = 'flex';
+    document.getElementById('tv-nav-icon').style.display = 'block';
+    // Arrow key navigation + Enter to toggle
     window.addEventListener('keydown', tvKeyHandler);
   }
 }
@@ -1100,10 +1126,15 @@ function detectTizen(){
 let _tvNavMode = false;
 function tvToggleNav(){
   _tvNavMode = !_tvNavMode;
-  const btn = document.getElementById('tv-nav-toggle');
-  if(btn) btn.textContent = _tvNavMode ? '✋' : '🖱';
+  const icon = document.getElementById('tv-nav-icon');
   const vp = document.getElementById('canvas-viewport');
   vp?.classList.toggle('nav-mode', _tvNavMode);
+  if(icon){ icon.classList.toggle('visible', _tvNavMode); }
+  // Brief flash then hide icon if exiting nav mode
+  if(!_tvNavMode && icon){
+    icon.classList.add('visible');
+    setTimeout(()=>icon.classList.remove('visible'), 600);
+  }
 }
 function tvKeyHandler(e){
   if(e.target.matches('input,textarea,select')) return;
@@ -1141,15 +1172,14 @@ function getIGDBSecret(){   return localStorage.getItem('mediaboard_key_igdb_sec
 function updateDots(){
   // TMDB
   const hasTmdb=!!getKey('tmdb');
-  const tmdbDot=document.getElementById('tmdb-dot'), tmdbBtn=document.getElementById('tmdb-btn');
-  if(tmdbDot) tmdbDot.style.background=hasTmdb?'#4caf50':'#555';
+  document.querySelectorAll('[id^="tmdb-dot"]').forEach(d=>d.style.background=hasTmdb?'#4caf50':'#555');
+  const tmdbBtn=document.getElementById('tmdb-btn');
   if(tmdbBtn) tmdbBtn.classList.toggle('active',hasTmdb);
   // IGDB
   const hasIgdb=!!(getIGDBClientId()&&getIGDBSecret());
-  const igdbDot=document.getElementById('igdb-dot'), igdbBtn=document.getElementById('igdb-btn');
-  if(igdbDot) igdbDot.style.background=hasIgdb?'#4caf50':'#555';
+  document.querySelectorAll('[id^="igdb-dot"]').forEach(d=>d.style.background=hasIgdb?'#4caf50':'#555');
+  const igdbBtn=document.getElementById('igdb-btn');
   if(igdbBtn) igdbBtn.classList.toggle('active',hasIgdb);
-
 }
 
 function openKeyModal(type='tmdb'){
@@ -1927,6 +1957,7 @@ function uid(){ return '_'+Math.random().toString(36).slice(2,9); }
 
 // ── COLUMN MANAGEMENT ─────────────────────────────────────────────────────
 function promptAddColumn(){
+  if(_navMode){ return; } // blocked in nav mode
   showModal(`
     <button class="modal-close-x" onclick="closeModal()">✕</button>
     <h2>Nueva sección</h2>
@@ -2040,6 +2071,7 @@ function doDeleteCol(colId){ state.columns=state.columns.filter(c=>c.id!==colId)
 
 // ── SEARCH ────────────────────────────────────────────────────────────────
 function openSearchModal(colId,sectionId,inTop10){
+  if(_navMode){ return; } // blocked in nav mode
   showModal(`
     <button class="modal-close-x" onclick="closeModal()">✕</button>
     <h2>${inTop10?'Añadir al Top 10':'Buscar título'}</h2>
@@ -2752,6 +2784,7 @@ async function reloadAllMeta(){
 
 // ── SECTION MANAGEMENT ────────────────────────────────────────────────────
 function addSection(colId){
+  if(_navMode){ return; } // blocked in nav mode
   showModal(`
     <button class="modal-close-x" onclick="closeModal()">✕</button>
     <h2>Nueva subsección</h2>
@@ -3258,6 +3291,10 @@ function handleImportFile(input){
 // ── INIT ──────────────────────────────────────────────────────────────────
 window.onload=async ()=>{
   detectTizen();
+  // Default nav mode on touch devices
+  if(window.matchMedia('(hover:none) and (pointer:coarse)').matches){
+    setMode('nav');
+  }
   applyCanvasTransform(); // init at 65% zoom with Figma engine
   updateDots();
   // Load from Supabase (falls back to localStorage if offline)
