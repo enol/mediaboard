@@ -432,17 +432,14 @@
   #canvas-viewport.nav-mode { cursor: grab; }
   #canvas-viewport.nav-mode.panning-active { cursor: grabbing; }
 
-  /* Nav overlay — z900, covers all cards */
+  /* Nav overlay — transparent, catches touch/click for pan
+     pointer-events none so HLTB and +N pills work normally */
   #nav-overlay {
     display: none; position: absolute; inset: 0;
-    z-index: 900; cursor: grab; touch-action: none;
+    z-index: 50; cursor: grab; touch-action: none;
+    pointer-events: none;
   }
-  #canvas-viewport.nav-mode #nav-overlay { display: block; }
-
-  /* HLTB links above overlay */
-  #canvas-viewport.nav-mode a[href*="howlongtobeat"] {
-    position: relative; z-index: 901; pointer-events: auto !important;
-  }
+  #canvas-viewport.nav-mode #nav-overlay { display: block; pointer-events: auto; }
 
   /* Hide edit chrome in nav mode */
   #canvas-viewport.nav-mode .delete-btn,
@@ -454,6 +451,17 @@
   #canvas-viewport.nav-mode .col-rename-btn,
   #canvas-viewport.nav-mode .sec-drag-handle,
   #canvas-viewport.nav-mode #add-col-btn { display: none !important; }
+
+  /* HLTB links and +N pills above overlay */
+  #canvas-viewport.nav-mode a[href*="howlongtobeat"],
+  #canvas-viewport.nav-mode .platform-pill-more {
+    position: relative; z-index: 51; pointer-events: auto !important;
+  }
+  /* Their parent card-info and card-platforms need to pass through */
+  #canvas-viewport.nav-mode .card-info,
+  #canvas-viewport.nav-mode .card-platforms {
+    position: relative; z-index: 51;
+  }
 
   /* Nav hint */
   #nav-hint {
@@ -1059,7 +1067,11 @@ function setMode(mode){
   // Wire overlay
   if(overlay){
     overlay.ontouchstart = _navMode ? (e=>{
-      if(e.touches.length>1) return; // let pinch through
+      if(e.touches.length>1) return;
+      // Overlay has pointer-events:auto but HLTB/pills are z-index:51 above it
+      // so they won't reach here — safe to always pan
+      cancelAnimationFrame(_inertiaRaf);
+      _velX=0; _velY=0; _prevPanT=0;
       _oneTouchPanning=true;
       _oneTouchStartX=e.touches[0].clientX; _oneTouchStartY=e.touches[0].clientY;
       _oneTouchOriginX=_cx; _oneTouchOriginY=_cy;
