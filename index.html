@@ -432,14 +432,9 @@
   #canvas-viewport.nav-mode { cursor: grab; }
   #canvas-viewport.nav-mode.panning-active { cursor: grabbing; }
 
-  /* Nav overlay — transparent, catches touch/click for pan
-     pointer-events none so HLTB and +N pills work normally */
-  #nav-overlay {
-    display: none; position: absolute; inset: 0;
-    z-index: 50; cursor: grab; touch-action: none;
-    pointer-events: none;
-  }
-  #canvas-viewport.nav-mode #nav-overlay { display: block; pointer-events: auto; }
+  /* Nav overlay — NO pointer-events, pan is handled by canvas-viewport touchstart */
+  #nav-overlay { display: none; }
+  #canvas-viewport.nav-mode #nav-overlay { display: none; }
 
   /* Hide edit chrome in nav mode */
   #canvas-viewport.nav-mode .delete-btn,
@@ -451,17 +446,6 @@
   #canvas-viewport.nav-mode .col-rename-btn,
   #canvas-viewport.nav-mode .sec-drag-handle,
   #canvas-viewport.nav-mode #add-col-btn { display: none !important; }
-
-  /* HLTB links and +N pills above overlay */
-  #canvas-viewport.nav-mode a[href*="howlongtobeat"],
-  #canvas-viewport.nav-mode .platform-pill-more {
-    position: relative; z-index: 51; pointer-events: auto !important;
-  }
-  /* Their parent card-info and card-platforms need to pass through */
-  #canvas-viewport.nav-mode .card-info,
-  #canvas-viewport.nav-mode .card-platforms {
-    position: relative; z-index: 51;
-  }
 
   /* Nav hint */
   #nav-hint {
@@ -495,7 +479,7 @@
   #tv-zoom {
     display: none;
     position: fixed;
-    top: 60px; right: 16px;
+    top: 64px; right: 16px;
     z-index: 2000;
     flex-direction: column;
     gap: 6px;
@@ -537,6 +521,12 @@
   .tizen-detected * { transition: none !important; }
   .tizen-detected #canvas-wrapper { will-change: auto !important; }
   .tizen-detected #canvas-viewport { overflow: visible !important; }
+  .tizen-detected #filter-bar {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
 
   @media (hover:none) and (pointer:coarse) {
     #mode-btns { display: flex; }
@@ -1064,29 +1054,7 @@ function setMode(mode){
     setTimeout(()=>hint.classList.remove('visible'), 2000);
   }
 
-  // Wire overlay
-  if(overlay){
-    overlay.ontouchstart = _navMode ? (e=>{
-      if(e.touches.length>1) return;
-      // Overlay has pointer-events:auto but HLTB/pills are z-index:51 above it
-      // so they won't reach here — safe to always pan
-      cancelAnimationFrame(_inertiaRaf);
-      _velX=0; _velY=0; _prevPanT=0;
-      _oneTouchPanning=true;
-      _oneTouchStartX=e.touches[0].clientX; _oneTouchStartY=e.touches[0].clientY;
-      _oneTouchOriginX=_cx; _oneTouchOriginY=_cy;
-    }) : null;
-    overlay.ontouchmove = _navMode ? (e=>{
-      if(e.touches.length>1) return;
-      e.preventDefault();
-      _rafPanX=_oneTouchOriginX+(e.touches[0].clientX-_oneTouchStartX);
-      _rafPanY=_oneTouchOriginY+(e.touches[0].clientY-_oneTouchStartY);
-      if(!_rafPanPending){ _rafPanPending=true; requestAnimationFrame(()=>{ _cx=_rafPanX; _cy=_rafPanY; applyCanvasTransform(); _rafPanPending=false; }); }
-    }) : null;
-    overlay.ontouchend = _navMode ? (e=>{
-      if(e.touches.length===0) _oneTouchPanning=false;
-    }) : null;
-  }
+  // Pan is handled by canvas-viewport touchstart (checks _navMode + whitelist)
 }
 function toggleNavMode(){ setMode(_navMode?'edit':'nav'); } // legacy compat
 
@@ -1111,23 +1079,31 @@ document.addEventListener('focusout', e=>{
 
 
 // One-finger pan in nav mode
+// Whitelisted elements in nav mode — allow their native interaction
+function _isNavAllowed(el){
+  return el.closest('a[href*="howlongtobeat"]') ||
+         el.closest('.platform-pill-more') ||
+         el.closest('input,textarea,select,button[id^="btn-"],#mode-btns');
+}
 document.getElementById('canvas-viewport')?.addEventListener('touchstart', e=>{
   if(!_navMode || e.touches.length !== 1) return;
-  cancelAnimationFrame(_inertiaRaf); // stop inertia on new touch
+  if(_isNavAllowed(e.target)) return; // let whitelisted elements handle it
+  e.preventDefault();
+  cancelAnimationFrame(_inertiaRaf);
   _velX=0; _velY=0; _prevPanT=0;
   _oneTouchPanning = true;
   _oneTouchStartX = e.touches[0].clientX;
   _oneTouchStartY = e.touches[0].clientY;
   _oneTouchOriginX = _cx; _oneTouchOriginY = _cy;
   document.getElementById('canvas-viewport')?.classList.add('panning-active');
-}, {passive:true});
+}, {passive:false});
 
 let _rafPanPending = false;
 let _rafPanX = 0, _rafPanY = 0;
 let _prevPanX = 0, _prevPanY = 0, _prevPanT = 0;
 document.getElementById('canvas-viewport')?.addEventListener('touchmove', e=>{
   if(!_oneTouchPanning || e.touches.length !== 1) return;
-  e.preventDefault();
+  e.preventDefault(); // safe — listener is passive:false
   cancelAnimationFrame(_inertiaRaf); // stop inertia if user re-touches
   const now = Date.now();
   const nx = _oneTouchOriginX + (e.touches[0].clientX - _oneTouchStartX);
@@ -1203,20 +1179,19 @@ function tvToggleNav(){
 }
 function tvKeyHandler(e){
   if(e.target.matches('input,textarea,select')) return;
-  const STEP = 100;
-  const ZOOM_STEP = 0.15;
-  if(_tvNavMode){
-    switch(e.key){
-      case 'ArrowUp':    e.preventDefault(); tvPan(0, STEP); break;   // up = pan up (+ Y)
-      case 'ArrowDown':  e.preventDefault(); tvPan(0,-STEP); break;   // down = pan down
-      case 'ArrowLeft':  e.preventDefault(); tvPan(STEP, 0); break;   // left = pan left (+ X)
-      case 'ArrowRight': e.preventDefault(); tvPan(-STEP, 0); break;  // right = pan right
-      case '+': case '=': e.preventDefault(); setCanvasZoom(_cz+ZOOM_STEP); break;
-      case '-':           e.preventDefault(); setCanvasZoom(_cz-ZOOM_STEP); break;
-      case 'Enter': tvToggleNav(); break;
-    }
-  } else {
-    if(e.key==='Enter') tvToggleNav();
+  const STEP = 150;
+  const ZOOM_STEP = 0.12;
+  // Enter always toggles nav mode
+  if(e.key==='Enter'){ e.preventDefault(); tvToggleNav(); return; }
+  if(!_tvNavMode) return; // only handle directional in nav mode
+  switch(e.key){
+    case 'ArrowUp':    e.preventDefault(); tvPan(0, STEP); break;
+    case 'ArrowDown':  e.preventDefault(); tvPan(0,-STEP); break;
+    case 'ArrowLeft':  e.preventDefault(); tvPan(STEP, 0); break;
+    case 'ArrowRight': e.preventDefault(); tvPan(-STEP, 0); break;
+    case 'XF86AudioRaiseVolume': // some remotes
+    case '+': case '=': e.preventDefault(); setCanvasZoom(_cz+ZOOM_STEP); break;
+    case '-':           e.preventDefault(); setCanvasZoom(_cz-ZOOM_STEP); break;
   }
 }
 
@@ -2507,6 +2482,7 @@ function renderSection(sec,colId){
       style="cursor:grab">
       <span class="sec-drag-handle" title="Arrastrar para reordenar">⠿</span>
       <span class="sec-title">${escHtml(sec.name)}</span>
+      <span style="font-family:'DM Sans',sans-serif;font-size:10px;color:var(--text-muted);font-weight:600;background:var(--border);border-radius:10px;padding:1px 6px;margin-left:4px;flex-shrink:0">${sec.cards.filter(c=>!c.isEmpty&&!c.isManual||c.title).length}</span>
       <div class="sec-actions">
         <button class="sec-rename-btn" onclick="renameSection('${colId}','${sec.id}')" title="Renombrar / color">✎</button>
         <button class="sec-delete-btn" onclick="confirmDeleteSection('${colId}','${sec.id}')" title="Eliminar subsección">✕</button>
