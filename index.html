@@ -2441,7 +2441,9 @@ function renderColumn(col){
       </div>
       <div class="combined-card">
         <div class="top10-section" style="background:${col.sections[0]?.bgColor||'transparent'}">
-          <div class="top10-title">TOP 10 ${escHtml(col.name).toUpperCase()} <span class="badge">TO WATCH</span></div>
+          <div class="top10-title">TOP 10 ${escHtml(col.name).toUpperCase()} <span class="badge">TO WATCH</span>
+            <span style="font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;opacity:.55;letter-spacing:0;margin-left:4px">(${col.top10.filter(x=>!x.isEmpty&&x.title).length + col.sections.reduce((a,s)=>a+s.cards.filter(x=>!x.isEmpty&&x.title).length,0)})</span>
+          </div>
           ${top10Html}
         </div>
         <div class="card-divider"></div>
@@ -2481,8 +2483,7 @@ function renderSection(sec,colId){
       ondragleave="onSecDragLeave(event)"
       style="cursor:grab">
       <span class="sec-drag-handle" title="Arrastrar para reordenar">⠿</span>
-      <span class="sec-title">${escHtml(sec.name)}</span>
-      <span style="font-family:'DM Sans',sans-serif;font-size:10px;color:var(--text-muted);font-weight:600;background:var(--border);border-radius:10px;padding:1px 6px;margin-left:4px;flex-shrink:0">${sec.cards.filter(c=>!c.isEmpty&&!c.isManual||c.title).length}</span>
+      <span class="sec-title">${escHtml(sec.name)} <span style="font-size:11px;opacity:.6;font-weight:400;letter-spacing:0">(${sec.cards.filter(x=>!x.isEmpty&&x.title).length})</span></span>
       <div class="sec-actions">
         <button class="sec-rename-btn" onclick="renameSection('${colId}','${sec.id}')" title="Renombrar / color">✎</button>
         <button class="sec-delete-btn" onclick="confirmDeleteSection('${colId}','${sec.id}')" title="Eliminar subsección">✕</button>
