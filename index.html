@@ -432,6 +432,29 @@
   #canvas-viewport.nav-mode { cursor: grab; }
   #canvas-viewport.nav-mode.panning-active { cursor: grabbing; }
 
+  /* Nav overlay — z900, covers all cards */
+  #nav-overlay {
+    display: none; position: absolute; inset: 0;
+    z-index: 900; cursor: grab; touch-action: none;
+  }
+  #canvas-viewport.nav-mode #nav-overlay { display: block; }
+
+  /* HLTB links above overlay */
+  #canvas-viewport.nav-mode a[href*="howlongtobeat"] {
+    position: relative; z-index: 901; pointer-events: auto !important;
+  }
+
+  /* Hide edit chrome in nav mode */
+  #canvas-viewport.nav-mode .delete-btn,
+  #canvas-viewport.nav-mode .card-menu-btn,
+  #canvas-viewport.nav-mode .pending-btn,
+  #canvas-viewport.nav-mode .add-card,
+  #canvas-viewport.nav-mode .add-section-btn,
+  #canvas-viewport.nav-mode .sec-actions,
+  #canvas-viewport.nav-mode .col-rename-btn,
+  #canvas-viewport.nav-mode .sec-drag-handle,
+  #canvas-viewport.nav-mode #add-col-btn { display: none !important; }
+
   /* Nav hint */
   #nav-hint {
     display: none;
@@ -1022,6 +1045,11 @@ function setMode(mode){
   if(btnNav) btnNav.querySelector('svg').setAttribute('stroke', _navMode?'#fff':'#333');
 
   vp?.classList.toggle('nav-mode', _navMode);
+
+  // Block/unblock card dragging
+  document.querySelectorAll('.media-card,.genre-section,.combined-card').forEach(el=>{
+    el.draggable = !_navMode;
+  });
 
   if(_navMode && hint){
     hint.classList.add('visible');
@@ -2372,6 +2400,12 @@ function overlayClose(e){ if(e.target.classList.contains('modal-overlay')) close
 
 // ── RENDER ────────────────────────────────────────────────────────────────
 function renderAll(){
+  // After render, re-apply nav mode drag block if active
+  if(typeof _navMode!=='undefined'&&_navMode){
+    requestAnimationFrame(()=>{
+      document.querySelectorAll('.media-card,.genre-section,.combined-card').forEach(el=>{ el.draggable=false; });
+    });
+  }
   const container=document.getElementById('columns-container');
   container.querySelectorAll('.genre-column').forEach(el=>el.remove());
   const addBtn=document.getElementById('add-col-btn');
