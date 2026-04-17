@@ -1876,12 +1876,12 @@ const DURATION_FILTERS = [
   { id:'series',label:'Series',       test: c => c.mediaType==='tv' },
   { id:'ended', label:'Terminadas',    test: c => c.mediaType==='tv'&&c.ended===true },
   { id:'ongoing',label:'En emisión',   test: c => c.mediaType==='tv'&&!c.ended },
-  { id:'lt30',  label:'Hasta 30 min', test: c => c.runtime&&c.runtime<=30 },
-  { id:'lt60',  label:'Hasta 60 min', test: c => c.runtime&&c.runtime<=60 },
-  { id:'lt90',  label:'Hasta 90 min', test: c => c.runtime&&c.runtime<=90 },
-  { id:'lt120', label:'Hasta 2h',     test: c => c.runtime&&c.runtime<=120 },
-  { id:'lt150', label:'Hasta 2h30',   test: c => c.runtime&&c.runtime<=150 },
-  { id:'gt150', label:'Más de 2h30',  test: c => c.runtime&&c.runtime>150 },
+  { id:'lt30',  label:'Aprox. 30 min', test: c => c.runtime&&c.runtime<=45 },
+  { id:'lt60',  label:'Aprox. 60 min', test: c => c.runtime&&c.runtime>=45&&c.runtime<=75 },
+  { id:'lt90',  label:'Aprox. 90 min', test: c => c.runtime&&c.runtime>=75&&c.runtime<=105 },
+  { id:'lt120', label:'Aprox. 2h',     test: c => c.runtime&&c.runtime>=105&&c.runtime<=135 },
+  { id:'lt150', label:'Aprox. 2h30',   test: c => c.runtime&&c.runtime>=135&&c.runtime<=165 },
+  { id:'gt150', label:'Más de 2h30',   test: c => c.runtime&&c.runtime>150 },
 ];
 
 function cardMatchesFilters(card){
