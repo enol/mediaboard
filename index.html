@@ -669,7 +669,6 @@
   ::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
 
   /* Touch drag ghost */
-  .card-row.touch-drop-target { outline: 2px dashed var(--accent); outline-offset: -2px; border-radius:6px; }
 
 </style>
 </head>
@@ -3291,34 +3290,32 @@ function _highlightTouchTarget(x, y){
   if(!el) return;
 
   const row = el.closest('.card-row');
-  if(!row){ return; }
+  if(!row) return;
   row.classList.add('touch-drop-target');
 
-  // Find insert position and draw line like desktop drag
-  const cards = [...row.querySelectorAll('.media-card')];
+  // Find insert position between cards
+  const cards = [...row.querySelectorAll('.media-card:not(.dragging)')];
   let insertIdx = cards.length;
   for(let i=0;i<cards.length;i++){
     const rect = cards[i].getBoundingClientRect();
     if(x < rect.left + rect.width/2){ insertIdx=i; break; }
   }
 
+  // Insert the same drop-line div used by desktop drag
   const line = document.createElement('div');
-  line.className = 'drop-line touch-drop-line';
-  line.style.cssText = 'position:absolute;top:0;bottom:0;width:3px;background:var(--accent);border-radius:2px;z-index:200;pointer-events:none;';
+  line.className = 'drop-line';
   _touchDropLine = line;
 
   if(insertIdx < cards.length){
-    const ref = cards[insertIdx];
-    ref.style.position='relative';
-    ref.parentNode.insertBefore(line, ref);
+    cards[insertIdx].parentNode.insertBefore(line, cards[insertIdx]);
   } else if(cards.length > 0){
-    const last = cards[cards.length-1];
-    last.parentNode.insertBefore(line, last.nextSibling);
+    const addCard = row.querySelector('.add-card');
+    if(addCard) row.insertBefore(line, addCard);
+    else row.appendChild(line);
   } else {
     row.appendChild(line);
   }
 
-  // Store for drop
   row._touchInsertIdx = insertIdx;
 }
 
