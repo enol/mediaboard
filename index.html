@@ -667,6 +667,10 @@
   ::-webkit-scrollbar { width:6px; height:6px; }
   ::-webkit-scrollbar-track { background:var(--bg2); }
   ::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+
+  /* Touch drag ghost */
+  .card-row.touch-drop-target { outline: 2px dashed var(--accent); outline-offset: -2px; border-radius:6px; }
+
 </style>
 </head>
 <body>
@@ -1147,8 +1151,19 @@ document.getElementById('canvas-viewport')?.addEventListener('touchend', e=>{
 
 // ── TV / TIZEN CONTROLS ───────────────────────────────────────────────────
 function tvPan(dx, dy){
-  _cx += dx; _cy += dy;
-  applyCanvasTransform(true);
+  const target_cx = _cx + dx;
+  const target_cy = _cy + dy;
+  const startX = _cx, startY = _cy;
+  const dur = 200, start = performance.now();
+  function step(now){
+    const t = Math.min(1,(now-start)/dur);
+    const ease = t<0.5 ? 2*t*t : -1+(4-2*t)*t; // easeInOut
+    _cx = startX + (target_cx-startX)*ease;
+    _cy = startY + (target_cy-startY)*ease;
+    applyCanvasTransform();
+    if(t<1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
 }
 
 // Tizen detection
@@ -1171,11 +1186,12 @@ function tvToggleNav(){
   const vp = document.getElementById('canvas-viewport');
   vp?.classList.toggle('nav-mode', _tvNavMode);
   if(icon){ icon.classList.toggle('visible', _tvNavMode); }
-  // Brief flash then hide icon if exiting nav mode
   if(!_tvNavMode && icon){
     icon.classList.add('visible');
     setTimeout(()=>icon.classList.remove('visible'), 600);
   }
+  // Blur any focused element so arrow keys go to window
+  if(_tvNavMode) document.activeElement?.blur();
 }
 function tvKeyHandler(e){
   if(e.target.matches('input,textarea,select')) return;
@@ -2013,6 +2029,32 @@ function confirmAddColumn(){
   state.columns.push({id:uid(),name,top10:[],sections:[{id:uid(),name,cards:[]}]});
   closeModal(); renderAll();
 }
+
+function insertColumn(refColId, dir){
+  // dir: -1 = left of refCol, 1 = right of refCol
+  showModal(`
+    <button class="modal-close-x" onclick="closeModal()">✕</button>
+    <h2>Nueva sección</h2>
+    <input class="modal-input" id="col-name-inp" placeholder="Nombre (ej: Terror, Anime…)">
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-primary" onclick="confirmInsertColumn('${refColId}',${dir})">Crear</button>
+    </div>`
+    .replace("'${refColId}'", "'" + refColId + "'")
+    .replace('${dir}', dir)
+  );
+  setTimeout(()=>document.getElementById('col-name-inp')?.focus(),50);
+}
+function confirmInsertColumn(refColId, dir){
+  const name=document.getElementById('col-name-inp')?.value.trim(); if(!name) return;
+  const idx=state.columns.findIndex(c=>c.id===refColId);
+  if(idx<0) return;
+  const newCol={id:uid(),name,top10:[],sections:[{id:uid(),name,cards:[]}]};
+  const insertAt = dir===1 ? idx+1 : idx;
+  state.columns.splice(insertAt,0,newCol);
+  closeModal(); renderAll();
+}
+
 function moveColumn(colId,dir){
   const idx=state.columns.findIndex(c=>c.id===colId), nxt=idx+dir;
   if(nxt<0||nxt>=state.columns.length) return;
@@ -2387,12 +2429,6 @@ function overlayClose(e){ if(e.target.classList.contains('modal-overlay')) close
 
 // ── RENDER ────────────────────────────────────────────────────────────────
 function renderAll(){
-  // After render, re-apply nav mode drag block if active
-  if(typeof _navMode!=='undefined'&&_navMode){
-    requestAnimationFrame(()=>{
-      document.querySelectorAll('.media-card,.genre-section,.combined-card').forEach(el=>{ el.draggable=false; });
-    });
-  }
   const container=document.getElementById('columns-container');
   container.querySelectorAll('.genre-column').forEach(el=>el.remove());
   const addBtn=document.getElementById('add-col-btn');
@@ -2435,7 +2471,9 @@ function renderColumn(col){
         <div class="col-title-row">
           <span class="col-drag-handle" title="Arrastrar para reordenar">⠿</span>
           <span class="col-title">${escHtml(col.name)}</span>
+          <button class="col-rename-btn" onclick="insertColumn('${col.id}',-1)" title="Insertar columna a la izquierda" style="font-size:13px;font-weight:300">◀+</button>
           <button class="col-rename-btn" onclick="renameColumn('${col.id}')" title="Renombrar">✎</button>
+          <button class="col-rename-btn" onclick="insertColumn('${col.id}',1)" title="Insertar columna a la derecha" style="font-size:13px;font-weight:300">+▶</button>
         </div>
         <button class="col-delete-btn" onclick="confirmDeleteCol('${col.id}')">✕</button>
       </div>
@@ -2486,6 +2524,7 @@ function renderSection(sec,colId){
       <span class="sec-title">${escHtml(sec.name)} <span style="font-size:11px;opacity:.6;font-weight:400;letter-spacing:0">(${sec.cards.filter(x=>!x.isEmpty&&x.title).length})</span></span>
       <div class="sec-actions">
         <button class="sec-rename-btn" onclick="renameSection('${colId}','${sec.id}')" title="Renombrar / color">✎</button>
+        <button class="sec-rename-btn" onclick="addSection('${colId}')" title="Nueva subsección aquí" style="font-size:14px;font-weight:300">＋</button>
         <button class="sec-delete-btn" onclick="confirmDeleteSection('${colId}','${sec.id}')" title="Eliminar subsección">✕</button>
       </div>
     </div>
@@ -3152,6 +3191,147 @@ function openHLTBModal(title, url){
     </div>`;
 }
 
+
+// ── TOUCH DRAG (mobile) ───────────────────────────────────────────────────
+let _touchDragCard = null;  // {cardId, colId, sectionId, inTop10, el, ghost}
+let _touchDragActive = false;
+let _touchDragStartX = 0, _touchDragStartY = 0;
+const DRAG_THRESHOLD = 8; // px before drag starts
+
+function initTouchDrag(){
+  document.getElementById('columns-container')?.addEventListener('touchstart', e=>{
+    if(_navMode) return;
+    const card = e.target.closest('.media-card');
+    if(!card || card.dataset.cardId === undefined) return;
+    if(e.touches.length !== 1) return;
+    // Don't start drag from buttons
+    if(e.target.closest('button,a,.platform-pill')) return;
+
+    const t = e.touches[0];
+    _touchDragStartX = t.clientX;
+    _touchDragStartY = t.clientY;
+    _touchDragActive = false;
+    _touchDragCard = {
+      cardId: card.dataset.cardId,
+      colId: card.dataset.col,
+      sectionId: card.dataset.sec || null,
+      inTop10: card.dataset.top10 === 'true',
+      el: card,
+      ghost: null,
+      longPressTimer: setTimeout(()=>{ _beginTouchDrag(card, t); }, 350)
+    };
+  }, {passive:true});
+
+  document.addEventListener('touchmove', e=>{
+    if(!_touchDragCard) return;
+    if(!_touchDragActive){
+      const t = e.touches[0];
+      const dx = t.clientX - _touchDragStartX;
+      const dy = t.clientY - _touchDragStartY;
+      if(Math.hypot(dx,dy) > DRAG_THRESHOLD){
+        clearTimeout(_touchDragCard.longPressTimer);
+        _touchDragCard = null; // moved before longpress — it's a scroll
+      }
+      return;
+    }
+    e.preventDefault();
+    const t = e.touches[0];
+    _moveTouchGhost(t.clientX, t.clientY);
+    _highlightTouchTarget(t.clientX, t.clientY);
+  }, {passive:false});
+
+  document.addEventListener('touchend', e=>{
+    if(!_touchDragCard) return;
+    clearTimeout(_touchDragCard.longPressTimer);
+    if(_touchDragActive){
+      const t = e.changedTouches[0];
+      _dropTouchCard(t.clientX, t.clientY);
+    }
+    _cancelTouchDrag();
+  }, {passive:true});
+}
+
+function _beginTouchDrag(card, touch){
+  _touchDragActive = true;
+  card.style.opacity = '0.4';
+  // Create ghost
+  const ghost = card.cloneNode(true);
+  ghost.style.cssText = `position:fixed;z-index:9999;pointer-events:none;opacity:0.85;
+    width:${card.offsetWidth}px;transform:scale(1.05);border-radius:8px;
+    box-shadow:0 8px 24px rgba(0,0,0,.35);transition:none;`;
+  document.body.appendChild(ghost);
+  _touchDragCard.ghost = ghost;
+  _moveTouchGhost(touch.clientX, touch.clientY);
+}
+
+function _moveTouchGhost(x, y){
+  if(!_touchDragCard?.ghost) return;
+  const g = _touchDragCard.ghost;
+  const w = parseInt(g.style.width);
+  g.style.left = (x - w/2) + 'px';
+  g.style.top  = (y - 80)  + 'px'; // above finger
+}
+
+function _highlightTouchTarget(x, y){
+  document.querySelectorAll('.card-row.touch-drop-target').forEach(r=>r.classList.remove('touch-drop-target'));
+  const el = document.elementFromPoint(x, y);
+  if(!el) return;
+  const row = el.closest('.card-row');
+  if(row) row.classList.add('touch-drop-target');
+}
+
+function _dropTouchCard(x, y){
+  // Find target row under finger
+  const ghost = _touchDragCard?.ghost;
+  if(ghost) ghost.style.display = 'none'; // hide ghost to hit-test under it
+  const el = document.elementFromPoint(x, y);
+  if(ghost) ghost.style.display = '';
+  if(!el) return;
+  const row = el.closest('.card-row');
+  if(!row) return;
+
+  const tColId = row.dataset.col;
+  const tSecId = row.dataset.sec || '';
+  const zone = row.dataset.zone || '';
+  const inTop10Target = zone === 'top10' || zone === 'top10b';
+
+  const srcColId = _touchDragCard.colId;
+  const srcSecId = _touchDragCard.sectionId;
+  const cardId   = _touchDragCard.cardId;
+  const srcInTop10 = _touchDragCard.inTop10;
+
+  const srcCol = state.columns.find(c=>c.id===srcColId); if(!srcCol) return;
+  let srcCard;
+  if(srcInTop10){
+    srcCard = srcCol.top10.find(c=>c.id===cardId);
+    srcCol.top10 = srcCol.top10.filter(c=>c.id!==cardId);
+  } else {
+    const srcSec = srcCol.sections.find(s=>s.id===srcSecId); if(!srcSec) return;
+    srcCard = srcSec.cards.find(c=>c.id===cardId);
+    srcSec.cards = srcSec.cards.filter(c=>c.id!==cardId);
+  }
+  if(!srcCard) return;
+
+  const tCol = state.columns.find(c=>c.id===tColId); if(!tCol) return;
+  if(inTop10Target){
+    if(tCol.top10.length>=10){showToast('Top 10 lleno');return;}
+    tCol.top10.push(srcCard);
+  } else {
+    const tSec = tCol.sections.find(s=>s.id===tSecId);
+    if(!tSec) return;
+    tSec.cards.push(srcCard);
+  }
+  renderAll();
+}
+
+function _cancelTouchDrag(){
+  if(_touchDragCard?.ghost) _touchDragCard.ghost.remove();
+  if(_touchDragCard?.el) _touchDragCard.el.style.opacity = '';
+  document.querySelectorAll('.card-row.touch-drop-target').forEach(r=>r.classList.remove('touch-drop-target'));
+  _touchDragCard = null;
+  _touchDragActive = false;
+}
+
 function escHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 // ── DRAG & DROP ───────────────────────────────────────────────────────────
@@ -3339,6 +3519,7 @@ function handleImportFile(input){
 // ── INIT ──────────────────────────────────────────────────────────────────
 window.onload=async ()=>{
   detectTizen();
+  initTouchDrag();
   // Default nav mode on touch devices
   if(window.matchMedia('(hover:none) and (pointer:coarse)').matches){
     setMode('nav');
