@@ -148,7 +148,7 @@
   @keyframes pulse-line { from{opacity:.7} to{opacity:1} }
 
   /* MEDIA CARD */
-  .media-card { position:relative; width:var(--tw); flex-shrink:0; cursor:grab; user-select:none; }
+  .media-card { position:relative; -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; width:var(--tw); flex-shrink:0; cursor:grab; user-select:none; }
   .media-card.dragging { opacity:.35; cursor:grabbing; }
   .media-card.pending { opacity:.5; }
   .card-img-wrap { position:relative; width:var(--tw); height:var(--th); }
@@ -3204,7 +3204,6 @@ function initTouchDrag(){
     const card = e.target.closest('.media-card');
     if(!card || card.dataset.cardId === undefined) return;
     if(e.touches.length !== 1) return;
-    // Don't start drag from buttons
     if(e.target.closest('button,a,.platform-pill')) return;
 
     const t = e.touches[0];
@@ -3218,9 +3217,17 @@ function initTouchDrag(){
       inTop10: card.dataset.top10 === 'true',
       el: card,
       ghost: null,
-      longPressTimer: setTimeout(()=>{ _beginTouchDrag(card, t); }, 350)
+      longPressTimer: setTimeout(()=>{ _beginTouchDrag(card, t); }, 400)
     };
   }, {passive:true});
+
+  // Block browser context menu on card long press
+  document.getElementById('columns-container')?.addEventListener('contextmenu', e=>{
+    if(e.target.closest('.media-card')){
+      e.preventDefault();
+      return false;
+    }
+  });
 
   document.addEventListener('touchmove', e=>{
     if(!_touchDragCard) return;
@@ -3254,6 +3261,8 @@ function initTouchDrag(){
 function _beginTouchDrag(card, touch){
   _touchDragActive = true;
   card.style.opacity = '0.4';
+  // Close any open card menus
+  closeCardMenu?.();
   // Create ghost
   const ghost = card.cloneNode(true);
   ghost.style.cssText = `position:fixed;z-index:9999;pointer-events:none;opacity:0.85;
