@@ -2966,34 +2966,7 @@ function doDeleteSection(colId, secId){
 }
 
 
-// ── LONG PRESS → card menu on touch ──────────────────────────────────────
-let _lpTimer=null, _lpCard=null;
-document.addEventListener('touchstart',e=>{
-  const btn=e.target.closest('.card-menu-btn');
-  if(btn){
-    // Normal tap on menu btn — handled by onclick
-    return;
-  }
-  const card=e.target.closest('.media-card');
-  if(!card) return;
-  _lpCard=card;
-  _lpTimer=setTimeout(()=>{
-    if(!_lpCard) return;
-    const menuBtn=_lpCard.querySelector('.card-menu-btn');
-    if(menuBtn){
-      // Simulate click with touch position
-      const touch=e.touches[0];
-      const fakeEvent={currentTarget:menuBtn, clientX:touch.clientX, clientY:touch.clientY, stopPropagation:()=>{}};
-      const colId=_lpCard.dataset.col, secId=_lpCard.dataset.sec||'';
-      const cardId=_lpCard.dataset.cardId, inTop10=_lpCard.dataset.top10==='true';
-      openCardMenu(fakeEvent,colId,secId,cardId,inTop10);
-    }
-    _lpCard=null;
-  },500);
-},{passive:true});
-document.addEventListener('touchend',()=>{ clearTimeout(_lpTimer); _lpCard=null; },{passive:true});
-document.addEventListener('touchmove',()=>{ clearTimeout(_lpTimer); _lpCard=null; },{passive:true});
-
+// ── // Long press menu removed — use ≡ button directly
 
 // ── IGDB DIAGNOSTIC ───────────────────────────────────────────────────────
 async function testIGDB(){
@@ -3273,20 +3246,80 @@ function _beginTouchDrag(card, touch){
   _moveTouchGhost(touch.clientX, touch.clientY);
 }
 
+let _autoPanRaf = null;
 function _moveTouchGhost(x, y){
   if(!_touchDragCard?.ghost) return;
   const g = _touchDragCard.ghost;
   const w = parseInt(g.style.width);
   g.style.left = (x - w/2) + 'px';
-  g.style.top  = (y - 80)  + 'px'; // above finger
+  g.style.top  = (y - 80)  + 'px';
+
+  // Auto-pan canvas when near edges
+  cancelAnimationFrame(_autoPanRaf);
+  const EDGE = 80;     // px from screen edge to trigger pan
+  const MAX_SPEED = 12; // max px per frame
+  const vh = window.innerHeight;
+  const vw = window.innerWidth;
+  let panX = 0, panY = 0;
+
+  if(x < EDGE)       panX =  Math.round((x - EDGE) / EDGE * MAX_SPEED);
+  else if(x > vw-EDGE) panX = Math.round((x - (vw-EDGE)) / EDGE * MAX_SPEED);
+  if(y < EDGE+60)    panY =  Math.round((y - EDGE-60) / EDGE * MAX_SPEED); // +60 for header
+  else if(y > vh-EDGE) panY = Math.round((y - (vh-EDGE)) / EDGE * MAX_SPEED);
+
+  if(panX !== 0 || panY !== 0){
+    function autoPanStep(){
+      if(!_touchDragActive) return;
+      _cx -= panX; _cy -= panY;
+      applyCanvasTransform();
+      _autoPanRaf = requestAnimationFrame(autoPanStep);
+    }
+    _autoPanRaf = requestAnimationFrame(autoPanStep);
+  }
 }
 
+let _touchDropLine = null;
 function _highlightTouchTarget(x, y){
+  // Clear previous line
+  if(_touchDropLine){ _touchDropLine.remove(); _touchDropLine=null; }
   document.querySelectorAll('.card-row.touch-drop-target').forEach(r=>r.classList.remove('touch-drop-target'));
+
+  const ghost = _touchDragCard?.ghost;
+  if(ghost) ghost.style.display='none';
   const el = document.elementFromPoint(x, y);
+  if(ghost) ghost.style.display='';
   if(!el) return;
+
   const row = el.closest('.card-row');
-  if(row) row.classList.add('touch-drop-target');
+  if(!row){ return; }
+  row.classList.add('touch-drop-target');
+
+  // Find insert position and draw line like desktop drag
+  const cards = [...row.querySelectorAll('.media-card')];
+  let insertIdx = cards.length;
+  for(let i=0;i<cards.length;i++){
+    const rect = cards[i].getBoundingClientRect();
+    if(x < rect.left + rect.width/2){ insertIdx=i; break; }
+  }
+
+  const line = document.createElement('div');
+  line.className = 'drop-line touch-drop-line';
+  line.style.cssText = 'position:absolute;top:0;bottom:0;width:3px;background:var(--accent);border-radius:2px;z-index:200;pointer-events:none;';
+  _touchDropLine = line;
+
+  if(insertIdx < cards.length){
+    const ref = cards[insertIdx];
+    ref.style.position='relative';
+    ref.parentNode.insertBefore(line, ref);
+  } else if(cards.length > 0){
+    const last = cards[cards.length-1];
+    last.parentNode.insertBefore(line, last.nextSibling);
+  } else {
+    row.appendChild(line);
+  }
+
+  // Store for drop
+  row._touchInsertIdx = insertIdx;
 }
 
 function _dropTouchCard(x, y){
@@ -3322,20 +3355,26 @@ function _dropTouchCard(x, y){
   if(!srcCard) return;
 
   const tCol = state.columns.find(c=>c.id===tColId); if(!tCol) return;
+  const insertIdx = row._touchInsertIdx ?? 99;
   if(inTop10Target){
     if(tCol.top10.length>=10){showToast('Top 10 lleno');return;}
-    tCol.top10.push(srcCard);
+    const absIdx = Math.min(insertIdx + (zone==='top10b'?5:0), tCol.top10.length);
+    tCol.top10.splice(absIdx, 0, srcCard);
   } else {
     const tSec = tCol.sections.find(s=>s.id===tSecId);
     if(!tSec) return;
-    tSec.cards.push(srcCard);
+    const rowIdx = parseInt(row.dataset.rowri||'0');
+    const absIdx = Math.min(rowIdx*5 + insertIdx, tSec.cards.length);
+    tSec.cards.splice(absIdx, 0, srcCard);
   }
   renderAll();
 }
 
 function _cancelTouchDrag(){
+  cancelAnimationFrame(_autoPanRaf); _autoPanRaf=null;
   if(_touchDragCard?.ghost) _touchDragCard.ghost.remove();
   if(_touchDragCard?.el) _touchDragCard.el.style.opacity = '';
+  if(_touchDropLine){ _touchDropLine.remove(); _touchDropLine=null; }
   document.querySelectorAll('.card-row.touch-drop-target').forEach(r=>r.classList.remove('touch-drop-target'));
   _touchDragCard = null;
   _touchDragActive = false;
